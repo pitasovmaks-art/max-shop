@@ -25,4 +25,5 @@ app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, (req, re
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Точка Монтажа запущена: http://localhost:${PORT}`);
+    require('../bot').startBot();
 });

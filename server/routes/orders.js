@@ -1,6 +1,7 @@
 const router       = require('express').Router();
 const db           = require('../db');
 const { requireAdmin } = require('../middleware/auth');
+const { notifyAdmin } = require('../../bot');
 
 function normalize(o) {
     return {
@@ -27,7 +28,9 @@ router.post('/', (req, res) => {
         VALUES (?,?,?,?,?,?)
     `).run(name, phone, store, comment||null, JSON.stringify(items), total);
 
-    res.status(201).json({ ok: true, id: r.lastInsertRowid });
+    const order = normalize(db.prepare('SELECT * FROM orders WHERE id=?').get(r.lastInsertRowid));
+    notifyAdmin(order).catch(e => console.error('[bot] notifyAdmin:', e.message));
+    res.status(201).json({ ok: true, id: order.id });
 });
 
 /* GET /api/orders — admin only */
