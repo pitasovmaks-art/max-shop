@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Точка Монтажа — Публичная оферта</title>
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
+    <style>
+        :root {
+            --orange: #FF6600;
+            --dark:   #1C1C1E;
+            --gray:   #6B7280;
+            --gray-light: #F2F2F7;
+            --border: #E5E7EB;
+            --white:  #FFFFFF;
+            --header-h: 56px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--gray-light);
+            color: var(--dark);
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button { cursor: pointer; border: none; background: none; font: inherit; }
+        a { text-decoration: none; color: var(--orange); }
+
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100dvh;
+            background: var(--gray-light);
+        }
+
+        .header {
+            position: sticky;
+            top: 0; z-index: 100;
+            display: flex;
+            align-items: center;
+            height: var(--header-h);
+            padding: 0 16px 0 4px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            gap: 4px;
+        }
+        .header__back {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+            color: var(--orange);
+            flex-shrink: 0;
+        }
+        .header__back:active { background: var(--gray-light); }
+        .header__title {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -.3px;
+        }
+
+        .content {
+            padding: 20px 16px 48px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .doc-intro {
+            background: var(--white);
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 13px;
+            color: var(--gray);
+            line-height: 1.55;
+        }
+
+        .doc-section {
+            background: var(--white);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .doc-section__title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .doc-section p {
+            font-size: 14px;
+            color: var(--dark);
+            line-height: 1.65;
+        }
+
+        .doc-section ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-left: 2px;
+        }
+        .doc-section ul li {
+            font-size: 14px;
+            color: var(--dark);
+            line-height: 1.55;
+            padding-left: 16px;
+            position: relative;
+        }
+        .doc-section ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--orange);
+            font-weight: 700;
+        }
+
+        .seller-block {
+            background: #FFF3EC;
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .seller-block__title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        .seller-row {
+            display: flex;
+            gap: 6px;
+            font-size: 14px;
+            color: var(--dark);
+            line-height: 1.4;
+        }
+        .seller-row__label {
+            color: var(--gray);
+            min-width: 80px;
+            flex-shrink: 0;
+        }
+        .seller-row a { color: var(--orange); font-weight: 500; }
+
+        .store-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .store-item {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .store-item__city {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--orange);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .store-item__addr { font-size: 14px; font-weight: 600; color: var(--dark); }
+        .store-item__hours { font-size: 12px; color: var(--gray); }
+
+        .doc-meta {
+            font-size: 12px;
+            color: var(--gray);
+            text-align: center;
+            padding-bottom: 4px;
+        }
+
+        strong { font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <header class="header">
+        <button class="header__back"
+            onclick="history.length > 1 ? history.back() : location.href='index.html'"
+            aria-label="Назад">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <span class="header__title">Публичная оферта</span>
+    </header>
+
+    <div class="content">
+
+        <div class="doc-intro">
+            Настоящий документ является публичной офертой в соответствии со статьёй 437 Гражданского
+            кодекса РФ и содержит все существенные условия договора купли-продажи товаров дистанционным
+            способом (ст. 26.1 Закона РФ «О защите прав потребителей»).
+            Оформление заказа означает полное и безоговорочное принятие условий настоящей оферты.
+        </div>
+
+        <!-- 1. Продавец -->
+        <div class="seller-block">
+            <div class="seller-block__title">📋 Продавец</div>
+            <div class="seller-row">
+                <span class="seller-row__label">Продавец:</span>
+                <span><strong>ИП Питасов Максим Сергеевич</strong></span>
+            </div>
+            <div class="seller-row">
+                <span class="seller-row__label">ИНН:</span>
+                <span>635009278943</span>
+            </div>
+            <div class="seller-row">
+                <span class="seller-row__label">Телефон:</span>
+                <a href="tel:+79880861308">+7 (988) 086-13-08</a>
+            </div>
+            <div class="seller-row">
+                <span class="seller-row__label">Магазин:</span>
+                <span>Точка Монтажа</span>
+            </div>
+        </div>
+
+        <!-- 2. Предмет договора -->
+        <div class="doc-section">
+            <div class="doc-section__title">1. Предмет договора</div>
+            <p>Продавец обязуется передать в собственность Покупателя товары, а Покупатель обязуется
+            принять и оплатить их в соответствии с условиями настоящей оферты.</p>
+            <p>Ассортимент товаров, доступных для заказа:</p>
+            <ul>
+                <li>Монтажные (гвоздезабивные) пистолеты — газовые, Toua и FengBao</li>
+                <li>Аккумуляторный инструмент — шуруповёрты, перфораторы, УШМ, дрели</li>
+                <li>Расходные материалы — монтажные гвозди, газовые баллоны, клипсы, площадки, дюбели</li>
+                <li>Услуги — ремонт и чистка монтажных пистолетов</li>
+            </ul>
+            <p>Актуальный ассортимент и цены указаны в каталоге на сайте и могут изменяться
+            без предварительного уведомления.</p>
+        </div>
+
+        <!-- 3. Оформление заказа -->
+        <div class="doc-section">
+            <div class="doc-section__title">2. Порядок оформления заказа</div>
+            <p>2.1. Покупатель выбирает товары в каталоге и добавляет их в корзину.</p>
+            <p>2.2. При оформлении заказа Покупатель указывает имя и номер телефона, а также выбирает
+            магазин для самовывоза.</p>
+            <p>2.3. После оформления заказа Продавец связывается с Покупателем по указанному номеру
+            телефона для подтверждения наличия товара и согласования времени выдачи.</p>
+            <p>2.4. Договор купли-продажи считается заключённым с момента подтверждения заказа
+            Продавцом по телефону.</p>
+            <p>2.5. Продавец вправе отказать в оформлении заказа при отсутствии товара на складе.</p>
+        </div>
+
+        <!-- 4. Цена и оплата -->
+        <div class="doc-section">
+            <div class="doc-section__title">3. Цена и оплата</div>
+            <p>3.1. Цена товара указана в рублях РФ на сайте в момент оформления заказа.</p>
+            <p>3.2. Продавец вправе изменять цены на товары. Цена, действующая на момент
+            подтверждения заказа, фиксируется и изменению не подлежит.</p>
+            <p>3.3. Оплата производится при получении товара в магазине (наличными или
+            банковской картой).</p>
+            <p>3.4. Продавец не принимает авансовые платежи через сайт.</p>
+        </div>
+
+        <!-- 5. Самовывоз -->
+        <div class="doc-section">
+            <div class="doc-section__title">4. Самовывоз товара</div>
+            <p>Товары передаются Покупателю в одном из магазинов Продавца:</p>
+            <div class="store-list">
+                <div class="store-item">
+                    <div class="store-item__city">Краснодар</div>
+                    <div class="store-item__addr">ул. Селезнева, 4/10</div>
+                    <div class="store-item__hours">Пн–Пт 9:00–18:00, Сб 10:00–16:00</div>
+                </div>
+                <div class="store-item">
+                    <div class="store-item__city">Краснодар</div>
+                    <div class="store-item__addr">ул. Котлярова, 21</div>
+                    <div class="store-item__hours">Пн–Пт 9:00–18:00, Сб 10:00–16:00</div>
+                </div>
+                <div class="store-item">
+                    <div class="store-item__city">Москва</div>
+                    <div class="store-item__addr">Аллея Первой Маевки, 15 стр3</div>
+                    <div class="store-item__hours">Пн–Пт 9:00–19:00, Сб 10:00–17:00</div>
+                </div>
+            </div>
+            <p>Покупатель обязан получить товар в течение <strong>5 (пяти) рабочих дней</strong>
+            с момента подтверждения его готовности Продавцом. По истечении данного срока заказ
+            может быть аннулирован.</p>
+        </div>
+
+        <!-- 6. Права потребителя -->
+        <div class="doc-section">
+            <div class="doc-section__title">5. Права потребителя. Возврат и обмен</div>
+            <p>5.1. Покупатель вправе отказаться от заказа до момента его подтверждения Продавцом,
+            уведомив об этом по телефону <a href="tel:+79880861308">+7 (988) 086-13-08</a>.</p>
+            <p>5.2. Возврат и обмен товара надлежащего качества осуществляется в соответствии со
+            статьёй 25 Закона РФ «О защите прав потребителей» в течение <strong>14 дней</strong>
+            с момента передачи товара, при условии сохранения товарного вида, потребительских
+            свойств, упаковки и документов.</p>
+            <p>5.3. Возврат товара ненадлежащего качества осуществляется в соответствии со
+            статьёй 18 Закона РФ «О защите прав потребителей».</p>
+            <p>5.4. Инструменты и расходные материалы, бывшие в эксплуатации, обмену и возврату
+            не подлежат.</p>
+            <p>5.5. Услуги по ремонту и обслуживанию возврату не подлежат после их фактического
+            оказания.</p>
+        </div>
+
+        <!-- 7. Гарантия -->
+        <div class="doc-section">
+            <div class="doc-section__title">6. Гарантийные обязательства</div>
+            <p>6.1. Гарантийный срок на товары устанавливается производителем и указывается в
+            прилагаемых документах.</p>
+            <p>6.2. Гарантия не распространяется на дефекты, возникшие вследствие:</p>
+            <ul>
+                <li>Нарушения правил эксплуатации, хранения или транспортировки</li>
+                <li>Механических повреждений, попадания жидкости или посторонних предметов</li>
+                <li>Использования несовместимых расходных материалов</li>
+                <li>Самостоятельного ремонта или вмешательства в конструкцию</li>
+            </ul>
+            <p>6.3. Гарантийное обслуживание осуществляется в магазинах Продавца.</p>
+        </div>
+
+        <!-- 8. Ответственность -->
+        <div class="doc-section">
+            <div class="doc-section__title">7. Ответственность сторон</div>
+            <p>7.1. Продавец несёт ответственность за качество и комплектность реализуемых товаров
+            в соответствии с законодательством РФ.</p>
+            <p>7.2. Продавец не несёт ответственности за невозможность обработки заказа, вызванную
+            техническими неполадками, не зависящими от Продавца.</p>
+            <p>7.3. Стороны освобождаются от ответственности при наступлении обстоятельств
+            непреодолимой силы (форс-мажор).</p>
+        </div>
+
+        <!-- 9. Персональные данные -->
+        <div class="doc-section">
+            <div class="doc-section__title">8. Персональные данные</div>
+            <p>Оформляя заказ, Покупатель даёт согласие на обработку своих персональных данных
+            (имя, телефон) в целях исполнения договора купли-продажи в соответствии с
+            <a href="privacy.html">Политикой конфиденциальности</a> и Федеральным законом
+            № 152-ФЗ «О персональных данных».</p>
+        </div>
+
+        <!-- 10. Применимое право -->
+        <div class="doc-section">
+            <div class="doc-section__title">9. Применимое право и споры</div>
+            <p>9.1. К отношениям сторон применяется законодательство Российской Федерации,
+            в том числе Закон РФ «О защите прав потребителей».</p>
+            <p>9.2. Споры разрешаются путём переговоров, а при недостижении согласия —
+            в судебном порядке по месту нахождения Продавца.</p>
+        </div>
+
+        <!-- 11. Реквизиты -->
+        <div class="seller-block">
+            <div class="seller-block__title">📄 Реквизиты продавца</div>
+            <div class="seller-row">
+                <span class="seller-row__label">Продавец:</span>
+                <span>ИП Питасов Максим Сергеевич</span>
+            </div>
+            <div class="seller-row">
+                <span class="seller-row__label">ИНН:</span>
+                <span>635009278943</span>
+            </div>
+            <div class="seller-row">
+                <span class="seller-row__label">Телефон:</span>
+                <a href="tel:+79880861308">+7 (988) 086-13-08</a>
+            </div>
+            <div class="seller-row">
+                <span class="seller-row__label">Режим работы:</span>
+                <span>Пн–Пт 9:00–18:00, Сб 10:00–16:00</span>
+            </div>
+        </div>
+
+        <div class="doc-meta">
+            Дата публикации оферты: 25 мая 2025 г.
+        </div>
+
+    </div>
+
+</div>
+</body>
+</html>
