@@ -12,9 +12,10 @@
     function init() {
         if (getConsent()) return; // already decided
 
-        // Detect bottom nav height for positioning
+        // Detect fixed bottom element height for positioning
         const nav = document.querySelector('.bottom-nav');
-        const navH = nav ? nav.offsetHeight : 0;
+        const footer = document.querySelector('.checkout-footer');
+        const navH = nav ? nav.offsetHeight : (footer ? footer.offsetHeight : 0);
 
         const banner = document.createElement('div');
         banner.className = 'cookie-banner';
