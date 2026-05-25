@@ -11,15 +11,15 @@ if (!DB_HOST || !DB_NAME || !DB_USER || !DB_PASSWORD) {
     process.exit(1);
 }
 
-const isLocalhost = DB_HOST === 'localhost' || DB_HOST === '127.0.0.1';
-
 const pool = new Pool({
-    host:     DB_HOST,
-    port:     parseInt(DB_PORT, 10),
-    database: DB_NAME,
-    user:     DB_USER,
-    password: DB_PASSWORD,
-    ssl:      isLocalhost ? false : { rejectUnauthorized: false },
+    host:                   DB_HOST,
+    port:                   parseInt(DB_PORT, 10),
+    database:               DB_NAME,
+    user:                   DB_USER,
+    password:               DB_PASSWORD,
+    ssl:                    { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis:       30000,
 });
 
 pool.on('error', (err) => console.error('PostgreSQL pool error:', err.message));
