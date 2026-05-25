@@ -104,6 +104,11 @@ function updateBadges() {
     }
 }
 
+/* ─── Product page navigation ───────────────────────────── */
+function openProduct(id) {
+    location.href = `src/catalog/product.html?id=${id}`;
+}
+
 /* ─── Toast ─────────────────────────────────────────────── */
 function showToast(msg) {
     const el = document.getElementById('toast');
@@ -233,31 +238,31 @@ function render() {
             ? `<div class="variant-pills">${p.variants.map(vr =>
                 `<button class="variant-pill${activeVar && vr.id === activeVar.id ? ' variant-pill--active' : ''}"
                     data-vid="${vr.id}"
-                    onclick="selectVariant(${p.id},${vr.id})">${vr.label}</button>`
+                    onclick="event.stopPropagation();selectVariant(${p.id},${vr.id})">${vr.label}</button>`
               ).join('')}</div>`
             : '';
 
         if (p.isService) {
             return `
-            <div class="product-card" id="pcard-${p.id}">
+            <div class="product-card" id="pcard-${p.id}" onclick="openProduct(${p.id})">
                 <div class="product-card__img ${imgBg}">${imgIcon}${subBadge}</div>
                 <div class="product-card__body">
                     <div class="product-card__name">${p.name}</div>
                     <div class="product-card__desc">${p.desc || ''}</div>
                     <div class="product-card__footer">
                         <span class="product-card__price product-card__price--service">${p.priceLabel || fmt(p.price)}</span>
-                        <button class="add-btn add-btn--service" onclick="addToCart(${p.id})">Записаться</button>
+                        <button class="add-btn add-btn--service" onclick="event.stopPropagation();addToCart(${p.id})">Записаться</button>
                     </div>
                 </div>
             </div>`;
         }
 
         const btn = p.inStock
-            ? `<button class="add-btn" onclick="addToCart(${p.id})" aria-label="В корзину">+</button>`
+            ? `<button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})" aria-label="В корзину">+</button>`
             : `<button class="add-btn add-btn--disabled" disabled>+</button>`;
 
         return `
-        <div class="product-card" id="pcard-${p.id}">
+        <div class="product-card" id="pcard-${p.id}" onclick="openProduct(${p.id})">
             <div class="product-card__img ${imgBg}">${imgIcon}${outBadge}${subBadge}</div>
             <div class="product-card__body">
                 <div class="product-card__name">${p.name}</div>

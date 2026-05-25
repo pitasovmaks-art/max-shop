@@ -226,6 +226,7 @@ a      { text-decoration: none; color: inherit; }
     display: flex;
     flex-direction: column;
     transition: transform .15s;
+    cursor: pointer;
 }
 .product-card:active { transform: scale(.98); }
 
