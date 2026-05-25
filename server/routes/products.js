@@ -144,6 +144,42 @@ router.put('/:id', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+/* GET /api/products/:id/images */
+router.get('/:id/images', async (req, res) => {
+    try {
+        const rows = await db.query(
+            'SELECT * FROM product_images WHERE product_id=$1 ORDER BY sort_order, id',
+            [+req.params.id]
+        );
+        res.json(rows.map(r => ({ id: r.id, productId: r.product_id, url: r.url, sortOrder: r.sort_order })));
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* POST /api/products/:id/images */
+router.post('/:id/images', requireAdmin, async (req, res) => {
+    const { url, sort_order } = req.body;
+    if (!url) return res.status(400).json({ error: 'url required' });
+    try {
+        const row = await db.queryOne(
+            'INSERT INTO product_images (product_id,url,sort_order) VALUES ($1,$2,$3) RETURNING *',
+            [+req.params.id, url, sort_order ?? 0]
+        );
+        res.status(201).json({ id: row.id, productId: row.product_id, url: row.url, sortOrder: row.sort_order });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* DELETE /api/products/:id/images/:imageId */
+router.delete('/:id/images/:imageId', requireAdmin, async (req, res) => {
+    try {
+        const changed = await db.execute(
+            'DELETE FROM product_images WHERE id=$1 AND product_id=$2',
+            [+req.params.imageId, +req.params.id]
+        );
+        if (changed === 0) return res.status(404).json({ error: 'Not found' });
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 /* DELETE /api/products/:id */
 router.delete('/:id', requireAdmin, async (req, res) => {
     try {
