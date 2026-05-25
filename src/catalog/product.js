@@ -1,0 +1,210 @@
+const productId = +new URLSearchParams(location.search).get('id');
+
+let _product   = null;
+let _allImages = []; // [{ url }, ...] — main image first, then extra sorted by sort_order
+
+/* ─── Cart (mirrors catalog.js) ─────────────────────────────── */
+function getCart() {
+    try {
+        const c = JSON.parse(localStorage.getItem('cart') || '[]');
+        return c.map(i => ({ ...i, key: i.key || String(i.id) }));
+    } catch { return []; }
+}
+
+function saveCart(cart) {
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateBadges();
+}
+
+function getTotalQty() {
+    return getCart().reduce((s, i) => s + i.qty, 0);
+}
+
+function updateBadges() {
+    const qty      = getTotalQty();
+    const badge    = document.getElementById('cartBadge');
+    const navBadge = document.getElementById('navBadge');
+    if (!badge) return;
+    if (qty > 0) {
+        const text = qty > 99 ? '99+' : String(qty);
+        badge.textContent = text;
+        badge.classList.remove('hidden');
+        if (navBadge) { navBadge.textContent = text; navBadge.classList.remove('hidden'); }
+    } else {
+        badge.classList.add('hidden');
+        if (navBadge) navBadge.classList.add('hidden');
+    }
+}
+
+/* ─── Helpers ───────────────────────────────────────────────── */
+function fmt(price) { return price.toLocaleString('ru-RU') + ' ₽'; }
+
+function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 2400);
+}
+
+/* ─── Variant selection ─────────────────────────────────────── */
+let _selectedVariantId = null;
+
+function effectiveVariant() {
+    if (!_product || !_product.variants || !_product.variants.length) return null;
+    return _product.variants.find(v => v.id === _selectedVariantId)
+        || _product.variants.find(v => v.isDefault)
+        || _product.variants[0];
+}
+
+function selectVariant(variantId) {
+    _selectedVariantId = variantId;
+    document.querySelectorAll('.variant-pill').forEach(pill => {
+        pill.classList.toggle('variant-pill--active', +pill.dataset.vid === variantId);
+    });
+    updatePrice();
+}
+
+function updatePrice() {
+    const el = document.getElementById('productPrice');
+    if (_product.isService) {
+        el.className = 'product-price product-price--service';
+        el.textContent = _product.priceLabel || fmt(_product.price);
+    } else {
+        const variant = effectiveVariant();
+        el.className = 'product-price';
+        el.textContent = fmt(variant ? variant.price : _product.price);
+    }
+}
+
+/* ─── Gallery ───────────────────────────────────────────────── */
+function renderGallery() {
+    const mainEl = document.getElementById('galleryMain');
+    const wrapEl = document.getElementById('galleryStripWrap');
+    const stripEl = document.getElementById('galleryStrip');
+
+    if (!_allImages.length) {
+        mainEl.className = `gallery__main cat-bg-${_product.categoryId || 1}`;
+        mainEl.innerHTML = '<span style="font-size:72px">📦</span>';
+        if (!_product.inStock) {
+            mainEl.innerHTML += '<span class="badge-out">Нет в наличии</span>';
+        }
+        wrapEl.classList.add('hidden');
+        return;
+    }
+
+    setMainImage(0);
+
+    if (_allImages.length > 1) {
+        stripEl.innerHTML = _allImages.map((img, i) => `
+            <div class="gallery__thumb${i === 0 ? ' gallery__thumb--active' : ''}"
+                 id="thumb-${i}" onclick="setMainImage(${i})">
+                <img src="${img.url}" alt="">
+            </div>`).join('');
+        wrapEl.classList.remove('hidden');
+    } else {
+        wrapEl.classList.add('hidden');
+    }
+}
+
+function setMainImage(idx) {
+    const mainEl = document.getElementById('galleryMain');
+    mainEl.className = 'gallery__main';
+    mainEl.innerHTML = `<img src="${_allImages[idx].url}" alt="${_product.name}">`;
+    if (!_product.inStock) {
+        mainEl.innerHTML += '<span class="badge-out">Нет в наличии</span>';
+    }
+    document.querySelectorAll('.gallery__thumb').forEach((el, i) => {
+        el.classList.toggle('gallery__thumb--active', i === idx);
+    });
+}
+
+/* ─── Render product info ───────────────────────────────────── */
+function renderInfo() {
+    document.title = `${_product.name} — Точка Монтажа`;
+    document.getElementById('pageTitle').textContent = _product.name;
+    document.getElementById('productName').textContent = _product.name;
+
+    const descEl = document.getElementById('productDesc');
+    if (_product.desc) {
+        descEl.textContent = _product.desc;
+        descEl.classList.remove('hidden');
+    }
+
+    // Variants
+    const varSection = document.getElementById('variantSection');
+    const pillsEl    = document.getElementById('variantPills');
+    if (_product.variants && _product.variants.length) {
+        const def = _product.variants.find(v => v.isDefault) || _product.variants[0];
+        _selectedVariantId = def.id;
+        pillsEl.innerHTML = _product.variants.map(v => `
+            <button class="variant-pill${v.id === _selectedVariantId ? ' variant-pill--active' : ''}"
+                    data-vid="${v.id}"
+                    onclick="selectVariant(${v.id})">${v.label}</button>`
+        ).join('');
+        varSection.classList.remove('hidden');
+    }
+
+    updatePrice();
+
+    // Cart button
+    const btn = document.getElementById('addToCartBtn');
+    if (!_product.inStock) {
+        btn.classList.add('add-to-cart-btn--disabled');
+        btn.disabled = true;
+        btn.textContent = 'Нет в наличии';
+    } else {
+        btn.textContent = _product.isService ? 'Записаться' : 'В корзину';
+        btn.onclick = addToCart;
+    }
+}
+
+/* ─── Add to cart ───────────────────────────────────────────── */
+function addToCart() {
+    const variant = effectiveVariant();
+    const price   = variant ? variant.price : _product.price;
+    const key     = variant ? `${_product.id}_v${variant.id}` : String(_product.id);
+
+    const cart     = getCart();
+    const existing = cart.find(i => i.key === key);
+    if (existing) {
+        existing.qty += 1;
+    } else {
+        const item = { key, id: _product.id, name: _product.name, price, qty: 1, categoryId: _product.categoryId };
+        if (variant) { item.variantId = variant.id; item.variantLabel = variant.label; }
+        cart.push(item);
+    }
+    saveCart(cart);
+    showToast(`${_product.name}${variant ? ` (${variant.label})` : ''} добавлен в корзину`);
+}
+
+/* ─── Init ──────────────────────────────────────────────────── */
+async function init() {
+    if (!productId) { location.href = '../../index.html'; return; }
+
+    try {
+        const [product, extraImages] = await Promise.all([
+            fetch(`/api/products/${productId}`).then(r => {
+                if (!r.ok) throw new Error('not found');
+                return r.json();
+            }),
+            fetch(`/api/products/${productId}/images`).then(r => r.json()).catch(() => []),
+        ]);
+
+        _product = product;
+
+        _allImages = [];
+        if (product.image) _allImages.push({ url: product.image });
+        (Array.isArray(extraImages) ? extraImages : [])
+            .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+            .forEach(img => _allImages.push({ url: img.url }));
+
+        renderGallery();
+        renderInfo();
+        updateBadges();
+    } catch {
+        document.getElementById('pageTitle').textContent = 'Товар не найден';
+        document.getElementById('productName').textContent = 'Товар не найден';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', init);

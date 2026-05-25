@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Точка Монтажа</title>
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
+    <style>
+        :root {
+            --orange:       #FF6600;
+            --orange-dark:  #E05500;
+            --orange-light: #FFF3EC;
+            --dark:         #1C1C1E;
+            --gray:         #6B7280;
+            --gray-light:   #F2F2F7;
+            --border:       #E5E7EB;
+            --white:        #FFFFFF;
+            --header-h:     56px;
+            --nav-h:        64px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--gray-light);
+            color: var(--dark);
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button { cursor: pointer; border: none; background: none; font: inherit; }
+        a { text-decoration: none; color: inherit; }
+        .hidden { display: none !important; }
+
+        /* ─── App ───────────────────────────────────────────── */
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100dvh;
+            background: var(--gray-light);
+        }
+
+        /* ─── Header ────────────────────────────────────────── */
+        .header {
+            position: sticky;
+            top: 0; z-index: 100;
+            display: flex;
+            align-items: center;
+            height: var(--header-h);
+            padding: 0 8px 0 4px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+        }
+        .header__back {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+            color: var(--orange);
+            flex-shrink: 0;
+        }
+        .header__back:active { background: var(--gray-light); }
+        .header__title {
+            flex: 1;
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -.3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 0 4px;
+        }
+        .header__cart {
+            position: relative;
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+            color: var(--dark);
+            flex-shrink: 0;
+        }
+        .header__cart:active { background: var(--gray-light); }
+        .cart-badge {
+            position: absolute;
+            top: 4px; right: 4px;
+            min-width: 17px; height: 17px;
+            background: var(--orange);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            border-radius: 9px;
+            padding: 0 3px;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid var(--white);
+        }
+
+        /* ─── Gallery ───────────────────────────────────────── */
+        .gallery { background: var(--white); }
+
+        .gallery__main {
+            width: 100%;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            background: var(--gray-light);
+        }
+        .gallery__main img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+
+        .badge-out {
+            position: absolute;
+            top: 12px; right: 12px;
+            background: #FF3B30;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 10px;
+        }
+
+        .gallery__strip-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 10px 12px;
+            border-top: 1px solid var(--border);
+        }
+        .gallery__strip-wrap::-webkit-scrollbar { display: none; }
+
+        .gallery__strip {
+            display: flex;
+            gap: 8px;
+            width: max-content;
+        }
+
+        .gallery__thumb {
+            width: 64px; height: 64px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: border-color .15s;
+        }
+        .gallery__thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .gallery__thumb--active { border-color: var(--orange); }
+        .gallery__thumb:active { opacity: .75; }
+
+        /* ─── Product info ───────────────────────────────────── */
+        .product-info {
+            background: var(--white);
+            margin-top: 8px;
+            padding: 18px 16px calc(var(--nav-h) + 100px);
+        }
+
+        .product-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--dark);
+            letter-spacing: -.4px;
+            line-height: 1.25;
+            margin-bottom: 8px;
+        }
+
+        .product-desc {
+            font-size: 14px;
+            color: var(--gray);
+            line-height: 1.65;
+            margin-bottom: 16px;
+        }
+
+        /* ─── Variants ───────────────────────────────────────── */
+        .variant-section { margin-bottom: 16px; }
+
+        .variant-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            margin-bottom: 8px;
+        }
+
+        .variant-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .variant-pill {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--gray-light);
+            color: var(--dark);
+            border: 1.5px solid var(--border);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: border-color .15s, background .15s, color .15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .variant-pill--active {
+            border-color: var(--orange);
+            background: var(--orange-light);
+            color: var(--orange);
+        }
+        .variant-pill:active { opacity: .7; }
+
+        /* ─── Fixed footer: price + button ──────────────────── */
+        .product-footer {
+            position: fixed;
+            bottom: var(--nav-h);
+            left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 480px;
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 90;
+        }
+
+        .product-price {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--dark);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .product-price--service {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray);
+        }
+
+        .add-to-cart-btn {
+            flex: 1;
+            height: 48px;
+            background: var(--orange);
+            color: #fff;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            transition: background .15s, transform .1s;
+            box-shadow: 0 4px 12px rgba(255,102,0,.28);
+        }
+        .add-to-cart-btn:active { background: var(--orange-dark); transform: scale(.98); }
+        .add-to-cart-btn--disabled {
+            background: var(--border);
+            color: var(--gray);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* ─── Toast ─────────────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: calc(var(--nav-h) + 82px);
+            left: 50%; transform: translateX(-50%);
+            background: rgba(28,28,30,.9);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 20px;
+            white-space: nowrap;
+            z-index: 200;
+            animation: fadeInOut 2.4s ease forwards;
+            pointer-events: none;
+        }
+        @keyframes fadeInOut {
+            0%   { opacity: 0; transform: translateX(-50%) translateY(8px); }
+            12%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+            75%  { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* ─── Bottom nav ─────────────────────────────────────── */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 100%; max-width: 480px;
+            height: var(--nav-h);
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            z-index: 100;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 100%;
+            color: var(--gray);
+            font-size: 11px;
+        }
+        .nav-item:active { opacity: .7; }
+        .nav-icon-wrap {
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .nav-badge {
+            position: absolute;
+            top: -6px; right: -8px;
+            min-width: 17px; height: 17px;
+            background: var(--orange);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            border-radius: 9px;
+            padding: 0 4px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* ─── Category backgrounds ───────────────────────────── */
+        .cat-bg-1 { background: linear-gradient(135deg,#FFE8D6,#FFCBA8); }
+        .cat-bg-2 { background: linear-gradient(135deg,#D6E8FF,#A8CBFF); }
+        .cat-bg-3 { background: linear-gradient(135deg,#D6F5E3,#A8E8C2); }
+        .cat-bg-4 { background: linear-gradient(135deg,#EDD6FF,#D4A8FF); }
+        .cat-bg-5 { background: linear-gradient(135deg,#FFD6D6,#FFA8A8); }
+        .cat-bg-6 { background: linear-gradient(135deg,#FFF3D6,#FFE3A8); }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <header class="header">
+        <button class="header__back"
+            onclick="history.length > 1 ? history.back() : location.href='../../index.html'"
+            aria-label="Назад">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <span class="header__title" id="pageTitle"></span>
+        <button class="header__cart" onclick="location.href='../../cart.html'" aria-label="Корзина">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="cart-badge hidden" id="cartBadge">0</span>
+        </button>
+    </header>
+
+    <!-- Gallery -->
+    <div class="gallery">
+        <div class="gallery__main" id="galleryMain"></div>
+        <div class="gallery__strip-wrap hidden" id="galleryStripWrap">
+            <div class="gallery__strip" id="galleryStrip"></div>
+        </div>
+    </div>
+
+    <!-- Product info -->
+    <div class="product-info">
+        <h1 class="product-name" id="productName"></h1>
+        <p class="product-desc hidden" id="productDesc"></p>
+
+        <div class="variant-section hidden" id="variantSection">
+            <div class="variant-label">Вариант</div>
+            <div class="variant-pills" id="variantPills"></div>
+        </div>
+    </div>
+
+    <!-- Fixed footer: price + add to cart -->
+    <div class="product-footer">
+        <div class="product-price" id="productPrice"></div>
+        <button class="add-to-cart-btn" id="addToCartBtn">В корзину</button>
+    </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast hidden" id="toast"></div>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+    <a href="../../index.html" class="nav-item">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+            <rect x="15" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+            <rect x="2" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+            <rect x="15" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <span>Каталог</span>
+    </a>
+    <a href="../../cart.html" class="nav-item" id="navCart">
+        <div class="nav-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="nav-badge hidden" id="navBadge">0</span>
+        </div>
+        <span>Корзина</span>
+    </a>
+</nav>
+
+<script src="product.js"></script>
+</body>
+</html>
