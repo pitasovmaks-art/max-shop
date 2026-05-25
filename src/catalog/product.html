@@ -148,6 +148,27 @@
         .gallery__thumb--active { border-color: var(--orange); }
         .gallery__thumb:active { opacity: .75; }
 
+        /* ─── Gallery dots ───────────────────────────────────── */
+        .gallery__dots {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 0 6px;
+            background: var(--white);
+        }
+        .gallery__dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: background .2s, transform .2s;
+            flex-shrink: 0;
+        }
+        .gallery__dot--active {
+            background: var(--orange);
+            transform: scale(1.4);
+        }
+
         /* ─── Product info ───────────────────────────────────── */
         .product-info {
             background: var(--white);
@@ -359,6 +380,7 @@
     <!-- Gallery -->
     <div class="gallery">
         <div class="gallery__main" id="galleryMain"></div>
+        <div class="gallery__dots hidden" id="galleryDots"></div>
         <div class="gallery__strip-wrap hidden" id="galleryStripWrap">
             <div class="gallery__strip" id="galleryStrip"></div>
         </div>

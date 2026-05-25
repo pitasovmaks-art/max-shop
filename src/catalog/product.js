@@ -1,7 +1,11 @@
 const productId = +new URLSearchParams(location.search).get('id');
 
 let _product   = null;
-let _allImages = []; // [{ url }, ...] — main image first, then extra sorted by sort_order
+let _allImages = [];
+let _currentImgIdx = 0;
+
+let _touchStartX = 0;
+let _touchStartY = 0;
 
 /* ─── Cart (mirrors catalog.js) ─────────────────────────────── */
 function getCart() {
@@ -76,10 +80,24 @@ function updatePrice() {
     }
 }
 
+/* ─── Dots ──────────────────────────────────────────────────── */
+function renderDots() {
+    const dotsEl = document.getElementById('galleryDots');
+    if (!dotsEl) return;
+    if (_allImages.length <= 1) {
+        dotsEl.classList.add('hidden');
+        return;
+    }
+    dotsEl.classList.remove('hidden');
+    dotsEl.innerHTML = _allImages.map((_, i) =>
+        `<div class="gallery__dot${i === _currentImgIdx ? ' gallery__dot--active' : ''}"></div>`
+    ).join('');
+}
+
 /* ─── Gallery ───────────────────────────────────────────────── */
 function renderGallery() {
-    const mainEl = document.getElementById('galleryMain');
-    const wrapEl = document.getElementById('galleryStripWrap');
+    const mainEl  = document.getElementById('galleryMain');
+    const wrapEl  = document.getElementById('galleryStripWrap');
     const stripEl = document.getElementById('galleryStrip');
 
     if (!_allImages.length) {
@@ -89,6 +107,7 @@ function renderGallery() {
             mainEl.innerHTML += '<span class="badge-out">Нет в наличии</span>';
         }
         wrapEl.classList.add('hidden');
+        renderDots();
         return;
     }
 
@@ -104,9 +123,12 @@ function renderGallery() {
     } else {
         wrapEl.classList.add('hidden');
     }
+
+    renderDots();
 }
 
 function setMainImage(idx) {
+    _currentImgIdx = idx;
     const mainEl = document.getElementById('galleryMain');
     mainEl.className = 'gallery__main';
     mainEl.innerHTML = `<img src="${_allImages[idx].url}" alt="${_product.name}">`;
@@ -116,6 +138,31 @@ function setMainImage(idx) {
     document.querySelectorAll('.gallery__thumb').forEach((el, i) => {
         el.classList.toggle('gallery__thumb--active', i === idx);
     });
+    renderDots();
+}
+
+/* ─── Swipe ─────────────────────────────────────────────────── */
+function initSwipe() {
+    const mainEl = document.getElementById('galleryMain');
+    if (!mainEl) return;
+
+    mainEl.addEventListener('touchstart', e => {
+        _touchStartX = e.touches[0].clientX;
+        _touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    mainEl.addEventListener('touchend', e => {
+        if (!_allImages.length) return;
+        const dx = e.changedTouches[0].clientX - _touchStartX;
+        const dy = e.changedTouches[0].clientY - _touchStartY;
+        if (Math.abs(dy) > Math.abs(dx)) return;
+        if (Math.abs(dx) < 50) return;
+        if (dx < 0 && _currentImgIdx < _allImages.length - 1) {
+            setMainImage(_currentImgIdx + 1);
+        } else if (dx > 0 && _currentImgIdx > 0) {
+            setMainImage(_currentImgIdx - 1);
+        }
+    }, { passive: true });
 }
 
 /* ─── Render product info ───────────────────────────────────── */
@@ -130,7 +177,6 @@ function renderInfo() {
         descEl.classList.remove('hidden');
     }
 
-    // Variants
     const varSection = document.getElementById('variantSection');
     const pillsEl    = document.getElementById('variantPills');
     if (_product.variants && _product.variants.length) {
@@ -146,7 +192,6 @@ function renderInfo() {
 
     updatePrice();
 
-    // Cart button
     const btn = document.getElementById('addToCartBtn');
     if (!_product.inStock) {
         btn.classList.add('add-to-cart-btn--disabled');
@@ -207,4 +252,7 @@ async function init() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+    initSwipe();
+    init();
+});
