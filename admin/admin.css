@@ -708,7 +708,7 @@ a      { text-decoration: none; color: inherit; }
 
 /* ─── Tab bar ───────────────────────────────────────────── */
 .tab-bar { display:flex; background:var(--white); border-bottom:1px solid var(--border); }
-.tab-btn { flex:1; height:44px; font-size:15px; font-weight:600; color:var(--gray); border-bottom:2px solid transparent; transition:all .15s; }
+.tab-btn { flex:1; height:44px; font-size:13px; font-weight:600; color:var(--gray); border-bottom:2px solid transparent; transition:all .15s; }
 .tab-btn.active { color:var(--orange); border-bottom-color:var(--orange); }
 
 /* ─── Category list ─────────────────────────────────────── */
@@ -876,3 +876,53 @@ a      { text-decoration: none; color: inherit; }
     outline: none;
 }
 .order-status-select:focus { border-color: var(--orange); }
+
+/* ─── Stores admin ──────────────────────────────────────── */
+.stores-admin-list {
+    padding: 10px 12px calc(var(--nav-h) + 72px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.store-row {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 14px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.store-row__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.store-row__name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.store-row__addr {
+    font-size: 13px;
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.store-row__hours {
+    font-size: 12px;
+    color: var(--gray);
+}
+
+/* ─── Store form fields (shared ff + sff modifier) ─────── */
+.sff--error .ff__input,
+.sff--error textarea.ff__input { border-color: var(--red) !important; }
+.sff__error { display: block; font-size: 12px; color: var(--red); margin-top: 4px; min-height: 16px; }

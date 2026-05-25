@@ -45,6 +45,17 @@ CREATE TABLE IF NOT EXISTS orders (
     status     TEXT    NOT NULL DEFAULT 'new',
     created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
 );
+
+CREATE TABLE IF NOT EXISTS stores (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT    NOT NULL,
+    city       TEXT    NOT NULL,
+    address    TEXT    NOT NULL,
+    hours      TEXT    NOT NULL DEFAULT '',
+    phone      TEXT    NOT NULL DEFAULT '',
+    directions TEXT    NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
 `);
 
 /* ─── Transaction helper ─────────────────────────────────── */
@@ -56,11 +67,14 @@ function inTransaction(fn) {
 
 /* ─── Seed default data ──────────────────────────────────── */
 function seedDefaults() {
-    const insCat  = db.prepare('INSERT INTO categories (id,name,icon,color) VALUES (?,?,?,?)');
-    const insSub  = db.prepare('INSERT INTO subcategories (id,category_id,name) VALUES (?,?,?)');
-    const insProd = db.prepare(`
+    const insCat   = db.prepare('INSERT INTO categories (id,name,icon,color) VALUES (?,?,?,?)');
+    const insSub   = db.prepare('INSERT INTO subcategories (id,category_id,name) VALUES (?,?,?)');
+    const insProd  = db.prepare(`
         INSERT INTO products (name,desc,category_id,sub_id,price,in_stock,is_service,price_label)
         VALUES (?,?,?,?,?,?,?,?)`);
+    const insStore = db.prepare(`
+        INSERT INTO stores (name,city,address,hours,phone,directions,sort_order)
+        VALUES (?,?,?,?,?,?,?)`);
 
     inTransaction(() => {
         insCat.run(1, 'Монтажные пистолеты',       '🔨', 1);
@@ -98,6 +112,10 @@ function seedDefaults() {
         insProd.run('Дюбель-гвоздь 8×60 (50 шт)',       'Нейлоновый, усиленный',                                         3, 7,   310, 0, 0, null);
         insProd.run('Ремонт монтажного пистолета',       'Диагностика, замена деталей, настройка. Toua и FengBao',        4, null, 3500, 1, 1, 'от 3 500 ₽');
         insProd.run('Чистка монтажного пистолета',       'Профессиональная разборка, очистка, смазка всех механизмов',   4, null, 1500, 1, 1, 'от 1 500 ₽');
+
+        insStore.run('Краснодар — ул. Селезнева', 'Краснодар', 'ул. Селезнева, 4/10',            'Пн–Пт 9:00–18:00, Сб 10:00–16:00', '', '', 1);
+        insStore.run('Краснодар — ул. Котлярова', 'Краснодар', 'ул. Котлярова, 21',              'Пн–Пт 9:00–18:00, Сб 10:00–16:00', '', '', 2);
+        insStore.run('Москва — Аллея Первой Маевки', 'Москва', 'Аллея Первой Маевки, 15 стр3',  'Пн–Пт 9:00–19:00, Сб 10:00–17:00', '', '', 3);
     });
 
     console.log('База данных заполнена начальными данными');
@@ -109,7 +127,8 @@ function resetToDefaults() {
         db.exec('DELETE FROM products');
         db.exec('DELETE FROM subcategories');
         db.exec('DELETE FROM categories');
-        db.exec("DELETE FROM sqlite_sequence WHERE name IN ('products','orders')");
+        db.exec('DELETE FROM stores');
+        db.exec("DELETE FROM sqlite_sequence WHERE name IN ('products','orders','stores')");
     });
     seedDefaults();
 }
@@ -117,6 +136,16 @@ function resetToDefaults() {
 /* ─── Auto-seed on first run ─────────────────────────────── */
 if (db.prepare('SELECT COUNT(*) as n FROM categories').get().n === 0) {
     seedDefaults();
+} else if (db.prepare('SELECT COUNT(*) as n FROM stores').get().n === 0) {
+    const insStore = db.prepare(`
+        INSERT INTO stores (name,city,address,hours,phone,directions,sort_order)
+        VALUES (?,?,?,?,?,?,?)`);
+    inTransaction(() => {
+        insStore.run('Краснодар — ул. Селезнева',    'Краснодар', 'ул. Селезнева, 4/10',           'Пн–Пт 9:00–18:00, Сб 10:00–16:00', '', '', 1);
+        insStore.run('Краснодар — ул. Котлярова',    'Краснодар', 'ул. Котлярова, 21',             'Пн–Пт 9:00–18:00, Сб 10:00–16:00', '', '', 2);
+        insStore.run('Москва — Аллея Первой Маевки', 'Москва',    'Аллея Первой Маевки, 15 стр3', 'Пн–Пт 9:00–19:00, Сб 10:00–17:00', '', '', 3);
+    });
+    console.log('Магазины добавлены в базу данных');
 }
 
 db.inTransaction   = inTransaction;

@@ -67,7 +67,7 @@ function request(method, endpoint, body = null, query = {}) {
 
 /* ─── Send message ──────────────────────────────────────── */
 function sendMessage(chatId, text, buttons = null) {
-    const body = { text };
+    const body = { text, format: 'markdown' };
 
     if (buttons) {
         body.attachments = [{
@@ -87,7 +87,7 @@ async function handleStart(chatId, userName) {
         chatId,
         `Привет, ${userName || 'друг'}! 👋\n\nДобро пожаловать в *Точку Монтажа* 🔨\n\nЗдесь вы найдёте монтажные пистолеты Toua и FengBao, аккумуляторные инструменты и расходники.`,
         [[
-            { type: 'link', text: '🛒 Открыть магазин', url: SHOP_URL },
+            { type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL },
         ]]
     );
 }
@@ -122,7 +122,7 @@ async function processUpdate(update) {
         await sendMessage(
             chatId,
             'Воспользуйтесь кнопкой ниже, чтобы открыть каталог 👇',
-            [[{ type: 'link', text: '🛒 Открыть магазин', url: SHOP_URL }]]
+            [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL }]]
         );
     }
 }
@@ -183,7 +183,7 @@ async function notifyAdmin(order) {
     for (const chatId of admins) {
         try {
             await sendMessage(chatId, text, [[
-                { type: 'link', text: '📋 Открыть заказы', url: `${SHOP_URL}/admin/` },
+                { type: 'open_app', text: '📋 Открыть заказы', web_app: `${SHOP_URL}/admin/` },
             ]]);
         } catch (e) {
             console.error(`[bot] Не удалось отправить уведомление chat_id=${chatId}:`, e.message);

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Точка Монтажа — Политика конфиденциальности</title>
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
+    <style>
+        :root {
+            --orange: #FF6600;
+            --dark:   #1C1C1E;
+            --gray:   #6B7280;
+            --gray-light: #F2F2F7;
+            --border: #E5E7EB;
+            --white:  #FFFFFF;
+            --header-h: 56px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--gray-light);
+            color: var(--dark);
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button { cursor: pointer; border: none; background: none; font: inherit; }
+        a      { text-decoration: none; color: var(--orange); }
+
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100dvh;
+            background: var(--gray-light);
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0; z-index: 100;
+            display: flex;
+            align-items: center;
+            height: var(--header-h);
+            padding: 0 16px 0 4px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            gap: 4px;
+        }
+        .header__back {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+            color: var(--orange);
+            flex-shrink: 0;
+        }
+        .header__back:active { background: var(--gray-light); }
+        .header__title {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -.3px;
+        }
+
+        /* Content */
+        .content {
+            padding: 20px 16px 48px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .policy-intro {
+            background: var(--white);
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 13px;
+            color: var(--gray);
+            line-height: 1.5;
+        }
+
+        .policy-section {
+            background: var(--white);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .policy-section__title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .policy-section p {
+            font-size: 14px;
+            color: var(--dark);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        .policy-section p:last-child { margin-bottom: 0; }
+
+        .policy-section ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .policy-section ul li {
+            font-size: 14px;
+            color: var(--dark);
+            line-height: 1.5;
+            padding-left: 14px;
+            position: relative;
+        }
+        .policy-section ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--orange);
+            font-weight: 700;
+        }
+
+        .policy-meta {
+            font-size: 12px;
+            color: var(--gray);
+            text-align: center;
+            padding-bottom: 8px;
+        }
+
+        .contact-block {
+            background: #FFF3EC;
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .contact-block__title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        .contact-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--dark);
+        }
+        .contact-row a { color: var(--orange); font-weight: 500; }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <header class="header">
+        <button class="header__back" onclick="history.length > 1 ? history.back() : location.href='index.html'" aria-label="Назад">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <span class="header__title">Политика конфиденциальности</span>
+    </header>
+
+    <div class="content">
+
+        <div class="policy-intro">
+            Настоящая Политика конфиденциальности описывает, как ИП «Точка Монтажа» обрабатывает персональные данные пользователей сайта в соответствии с Федеральным законом № 152-ФЗ «О персональных данных».
+        </div>
+
+        <div class="policy-section">
+            <div class="policy-section__title">1. Оператор персональных данных</div>
+            <p>Оператором персональных данных является:</p>
+            <p><strong>Точка Монтажа</strong> — магазин монтажного оборудования и инструментов.</p>
+            <p>Телефон: <a href="tel:+79880861308">+7 (988) 086-13-08</a></p>
+        </div>
+
+        <div class="policy-section">
+            <div class="policy-section__title">2. Какие данные мы собираем</div>
+            <p>При оформлении заказа мы собираем следующие персональные данные:</p>
+            <ul>
+                <li>Имя (для обращения при подтверждении заказа)</li>
+                <li>Номер телефона (для связи по вопросам заказа)</li>
+            </ul>
+            <p>Данные вводятся вами добровольно при заполнении формы заказа.</p>
+        </div>
+
+        <div class="policy-section">
+            <div class="policy-section__title">3. Цель сбора данных</div>
+            <p>Персональные данные используются исключительно для:</p>
+            <ul>
+                <li>Обработки и подтверждения заказов</li>
+                <li>Связи с вами по вопросам готовности и выдачи товара</li>
+                <li>Уточнения деталей заказа при необходимости</li>
+            </ul>
+            <p>Данные не используются в маркетинговых целях без вашего отдельного согласия.</p>
+        </div>
+
+        <div class="policy-section">
+            <div class="policy-section__title">4. Правовое основание обработки</div>
+            <p>Обработка персональных данных осуществляется на основании:</p>
+            <ul>
+                <li>Вашего явного согласия, выраженного при оформлении заказа (ч. 1 ст. 6 152-ФЗ)</li>
+                <li>Необходимости исполнения договора купли-продажи (ст. 6 п. 5 152-ФЗ)</li>
+            </ul>
+        </div>
+
+        <div class="policy-section">
+            <div class="policy-section__title">5. Срок хранения данных</div>
+            <p>Данные о заказах хранятся в течение <strong>3 лет</strong> с момента оформления заказа, что соответствует общему сроку исковой давности (ст. 196 ГК РФ).</p>
+            <p>После истечения срока данные удаляются или обезличиваются.</p>
+        </div>
+
+        <div class="policy-section">
+            <div class="policy-section__title">6. Передача данных третьим лицам</div>
+            <p>Мы не передаём ваши персональные данные третьим лицам, за исключением случаев, прямо предусмотренных законодательством РФ.</p>
+            <p>Данные не продаются, не обмениваются и не передаются партнёрам в коммерческих целях.</p>
+        </div>
+
+        <div class="policy-section">
+            <div class="policy-section__title">7. Файлы cookie</div>
+            <p>Сайт использует файлы cookie — небольшие текстовые файлы, сохраняемые браузером. Cookie применяются для:</p>
+            <ul>
+                <li>Сохранения содержимого корзины покупок</li>
+                <li>Запоминания ваших предпочтений на сайте</li>
+                <li>Обеспечения корректной работы интерфейса</li>
+            </ul>
+            <p>Вы можете отказаться от использования cookie, выбрав соответствующий вариант в баннере при первом посещении сайта, или отключить cookie в настройках браузера. Это может ограничить некоторые функции сайта.</p>
+        </div>
+
+        <div class="policy-section">
+            <div class="policy-section__title">8. Ваши права</div>
+            <p>В соответствии с 152-ФЗ вы имеете право:</p>
+            <ul>
+                <li>Получить информацию об обработке ваших персональных данных</li>
+                <li>Потребовать исправления неточных данных</li>
+                <li>Потребовать удаления данных (право на забвение)</li>
+                <li>Отозвать согласие на обработку в любой момент</li>
+                <li>Обжаловать действия оператора в Роскомнадзоре</li>
+            </ul>
+            <p>Для реализации любого из прав обратитесь к нам по контактам ниже.</p>
+        </div>
+
+        <div class="policy-section">
+            <div class="policy-section__title">9. Безопасность данных</div>
+            <p>Мы принимаем организационные и технические меры для защиты персональных данных от несанкционированного доступа, изменения, раскрытия или уничтожения.</p>
+        </div>
+
+        <div class="contact-block">
+            <div class="contact-block__title">📞 Контакты оператора</div>
+            <div class="contact-row">
+                <span>Магазин:</span>
+                <span><strong>Точка Монтажа</strong></span>
+            </div>
+            <div class="contact-row">
+                <span>Телефон:</span>
+                <a href="tel:+79880861308">+7 (988) 086-13-08</a>
+            </div>
+            <div class="contact-row" style="font-size:13px;color:var(--gray);margin-top:4px">
+                По вопросам обработки персональных данных обращайтесь по телефону в рабочее время.
+            </div>
+        </div>
+
+        <div class="policy-meta">
+            Дата последнего обновления: 25 мая 2025 г.
+        </div>
+
+    </div>
+
+</div>
+</body>
+</html>

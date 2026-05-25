@@ -224,6 +224,14 @@ a      { text-decoration: none; color: inherit; }
     color: var(--gray);
 }
 
+.store-card__directions {
+    font-size: 12px;
+    color: var(--gray);
+    margin-top: 4px;
+    line-height: 1.4;
+    white-space: pre-line;
+}
+
 .store-card__check {
     width: 26px; height: 26px;
     border-radius: 50%;
@@ -448,3 +456,90 @@ a      { text-decoration: none; color: inherit; }
     transition: background .15s, transform .1s;
 }
 .success-btn:active { background: var(--orange-dark); transform: scale(.98); }
+
+/* ─── Consent checkbox ──────────────────────────────────── */
+.consent-wrap {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.consent-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Hide native checkbox */
+.consent-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0; height: 0;
+    pointer-events: none;
+}
+
+/* Custom checkbox box */
+.consent-box {
+    width: 22px; height: 22px;
+    min-width: 22px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    background: var(--white);
+    margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color .15s, background .15s;
+    position: relative;
+}
+.consent-box::after {
+    content: '';
+    display: block;
+    width: 6px; height: 11px;
+    border: 2.5px solid transparent;
+    border-top: none; border-left: none;
+    transform: rotate(45deg) translateY(-1px);
+    transition: border-color .1s;
+}
+
+.consent-checkbox:checked ~ .consent-box {
+    background: var(--orange);
+    border-color: var(--orange);
+}
+.consent-checkbox:checked ~ .consent-box::after {
+    border-color: var(--white);
+}
+
+.consent-text {
+    font-size: 14px;
+    color: var(--dark);
+    line-height: 1.5;
+    padding-top: 2px;
+}
+
+.consent-link {
+    color: var(--orange);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.consent-error {
+    font-size: 12px;
+    color: var(--red);
+    padding-left: 34px;
+}
+
+.consent-wrap--error .consent-box {
+    border-color: var(--red);
+}
+
+/* Disabled submit button state */
+.submit-btn--disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+.submit-btn--disabled:active { transform: none; background: var(--orange); }

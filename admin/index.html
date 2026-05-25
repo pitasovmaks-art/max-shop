@@ -78,6 +78,7 @@
         <button class="tab-btn active" id="tabProducts" onclick="switchTab('products')">Товары</button>
         <button class="tab-btn" id="tabCategories" onclick="switchTab('categories')">Категории</button>
         <button class="tab-btn" id="tabOrders" onclick="switchTab('orders')">Заказы</button>
+        <button class="tab-btn" id="tabStores" onclick="switchTab('stores')">Магазины</button>
     </div>
 
     <!-- Products section -->
@@ -142,6 +143,19 @@
     <div id="sectionOrders" class="hidden">
         <div id="ordersList"></div>
     </div><!-- /sectionOrders -->
+
+    <!-- Stores section -->
+    <div id="sectionStores" class="hidden">
+        <div class="stores-admin-list" id="storesList"></div>
+
+        <!-- FAB: add store -->
+        <button class="fab hidden" id="fabStores" onclick="openStoreForm()" aria-label="Добавить магазин">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </div><!-- /sectionStores -->
 
     <!-- Bottom nav -->
     <nav class="bottom-nav">
@@ -361,10 +375,89 @@
     </div><!-- /sheet -->
 </div><!-- /subFormOverlay -->
 
+<!-- Store form overlay -->
+<div class="overlay hidden" id="storeFormOverlay" onclick="handleStoreFormOverlayClick(event)">
+    <div class="sheet">
+        <div class="sheet__handle"></div>
+        <div class="sheet__header">
+            <button class="sheet__close" onclick="closeStoreForm()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <span class="sheet__title" id="storeFormTitle">Новый магазин</span>
+            <span class="sheet__placeholder"></span>
+        </div>
+
+        <div class="sheet__body">
+
+            <!-- Name -->
+            <div class="ff sff" id="sff-name">
+                <label class="ff__label" for="sf-name">Название *</label>
+                <input class="ff__input" id="sf-name" type="text"
+                    placeholder="Краснодар — ул. Селезнева"
+                    oninput="clearSFE('sff-name')">
+                <span class="ff__error sff__error"></span>
+            </div>
+
+            <!-- City -->
+            <div class="ff sff" id="sff-city">
+                <label class="ff__label" for="sf-city">Город *</label>
+                <input class="ff__input" id="sf-city" type="text"
+                    placeholder="Краснодар"
+                    oninput="clearSFE('sff-city')">
+                <span class="ff__error sff__error"></span>
+            </div>
+
+            <!-- Address -->
+            <div class="ff sff" id="sff-address">
+                <label class="ff__label" for="sf-address">Адрес *</label>
+                <input class="ff__input" id="sf-address" type="text"
+                    placeholder="ул. Селезнева, 4/10"
+                    oninput="clearSFE('sff-address')">
+                <span class="ff__error sff__error"></span>
+            </div>
+
+            <!-- Hours -->
+            <div class="ff">
+                <label class="ff__label" for="sf-hours">Режим работы</label>
+                <input class="ff__input" id="sf-hours" type="text"
+                    placeholder="Пн–Пт 9:00–18:00, Сб 10:00–16:00">
+            </div>
+
+            <!-- Phone -->
+            <div class="ff">
+                <label class="ff__label" for="sf-phone">Телефон</label>
+                <input class="ff__input" id="sf-phone" type="tel"
+                    placeholder="+7 (861) 123-45-67">
+            </div>
+
+            <!-- Directions -->
+            <div class="ff">
+                <label class="ff__label" for="sf-directions">Как добраться</label>
+                <textarea class="ff__input" id="sf-directions" rows="3"
+                    placeholder="От остановки «Название» 5 минут пешком..."
+                    style="resize:vertical;min-height:80px;padding-top:10px"></textarea>
+            </div>
+
+            <!-- Sort order -->
+            <div class="ff">
+                <label class="ff__label" for="sf-sort">Порядок сортировки</label>
+                <input class="ff__input" id="sf-sort" type="number" min="0" placeholder="0">
+            </div>
+
+            <button class="save-btn" onclick="saveStoreForm()">Сохранить</button>
+
+        </div><!-- /sheet__body -->
+    </div><!-- /sheet -->
+</div><!-- /storeFormOverlay -->
+
 <!-- Toast -->
 <div class="toast hidden" id="toast"></div>
 
 <script src="categories.js"></script>
+<script src="stores.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>

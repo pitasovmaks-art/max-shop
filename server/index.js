@@ -11,6 +11,7 @@ app.use('/api/products',      require('./routes/products'));
 app.use('/api/categories',    require('./routes/categories'));
 app.use('/api/subcategories', require('./routes/subcategories'));
 app.use('/api/orders',        require('./routes/orders'));
+app.use('/api/stores',        require('./routes/stores'));
 
 /* Reset data to defaults (admin only) */
 app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, (req, res) => {

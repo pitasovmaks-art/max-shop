@@ -103,14 +103,16 @@ async function apiAdmin(path, method = 'GET', body = null) {
 
 /* ─── Data refresh ──────────────────────────────────────── */
 async function refreshData() {
-    const [cats, subs, prods] = await Promise.all([
+    const [cats, subs, prods, stores] = await Promise.all([
         fetch('/api/categories').then(r => r.json()),
         fetch('/api/subcategories').then(r => r.json()),
         fetch('/api/products').then(r => r.json()),
+        fetch('/api/stores').then(r => r.json()),
     ]);
     _categories    = cats;
     _subcategories = subs;
     _products      = prods;
+    _stores        = stores;
 }
 
 /* ─── Sync lookup helpers ───────────────────────────────── */
@@ -153,6 +155,7 @@ async function doReset() {
         await refreshData();
         render();
         renderCategories();
+        renderStores();
         showToast('Данные сброшены');
     } catch {
         showToast('Ошибка сброса данных');
@@ -164,20 +167,25 @@ function switchTab(tab) {
     const isProducts   = tab === 'products';
     const isCategories = tab === 'categories';
     const isOrders     = tab === 'orders';
+    const isStores     = tab === 'stores';
 
     document.getElementById('sectionProducts').classList.toggle('hidden',   !isProducts);
     document.getElementById('sectionCategories').classList.toggle('hidden', !isCategories);
     document.getElementById('sectionOrders').classList.toggle('hidden',     !isOrders);
+    document.getElementById('sectionStores').classList.toggle('hidden',     !isStores);
 
     document.getElementById('fabProducts').classList.toggle('hidden',   !isProducts);
     document.getElementById('fabCategories').classList.toggle('hidden', !isCategories);
+    document.getElementById('fabStores').classList.toggle('hidden',     !isStores);
 
     document.getElementById('tabProducts').classList.toggle('active',   isProducts);
     document.getElementById('tabCategories').classList.toggle('active', isCategories);
     document.getElementById('tabOrders').classList.toggle('active',     isOrders);
+    document.getElementById('tabStores').classList.toggle('active',     isStores);
 
     if (isCategories) renderCategories();
     if (isOrders)     renderOrders();
+    if (isStores)     renderStores();
 }
 
 /* ─── Format ────────────────────────────────────────────── */

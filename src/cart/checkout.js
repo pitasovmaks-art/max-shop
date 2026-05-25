@@ -1,9 +1,57 @@
 /* ─── Stores ────────────────────────────────────────────── */
-const STORES = {
-    krd1: { city: 'Краснодар', address: 'ул. Селезнева, 4/10' },
-    krd2: { city: 'Краснодар', address: 'ул. Котлярова, 21' },
-    msk1: { city: 'Москва',    address: 'Аллея Первой Маевки, 15 стр3' },
-};
+let _stores = [];
+
+async function loadAndRenderStores() {
+    try {
+        _stores = await fetch('/api/stores').then(r => r.json());
+    } catch {
+        _stores = [];
+    }
+    renderStoreList();
+}
+
+const PIN_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+    <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+</svg>`;
+
+const CHECK_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+function renderStoreList() {
+    const list = document.getElementById('storeList');
+    if (!list) return;
+
+    if (!_stores.length) {
+        list.innerHTML = '<p style="padding:16px;color:#6B7280;font-size:14px">Нет доступных магазинов</p>';
+        return;
+    }
+
+    list.innerHTML = _stores.map((s, i) => `
+        <label class="store-card" for="store-${s.id}">
+            <input class="store-radio" type="radio" name="store" id="store-${s.id}" value="${s.id}" ${i === 0 ? 'checked' : ''}>
+            <div class="store-card__content">
+                <div class="store-card__city">${PIN_SVG}${escHtml(s.city)}</div>
+                <div class="store-card__address">${escHtml(s.address)}</div>
+                ${s.hours      ? `<div class="store-card__hours">${escHtml(s.hours)}</div>` : ''}
+                ${s.phone      ? `<div class="store-card__hours">📞 ${escHtml(s.phone)}</div>` : ''}
+                ${s.directions ? `<div class="store-card__directions">${escHtml(s.directions)}</div>` : ''}
+            </div>
+            <div class="store-card__check">${CHECK_SVG}</div>
+        </label>
+    `).join('');
+
+    initStoreCards();
+}
+
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
 
 /* ─── Cart ──────────────────────────────────────────────── */
 function getCart() {
@@ -58,6 +106,11 @@ function getSelectedStore() {
     return radio ? radio.value : null;
 }
 
+function getSelectedStoreObj() {
+    const id = getSelectedStore();
+    return _stores.find(s => String(s.id) === String(id)) || null;
+}
+
 /* ─── Phone mask ────────────────────────────────────────── */
 function handlePhone(input) {
     const raw = input.value.replace(/\D/g, '');
@@ -102,7 +155,31 @@ function validate() {
     if (!phone) { showError('fieldPhone', 'Введите номер телефона'); ok = false; }
     else if (getDigits(phone).length < 11) { showError('fieldPhone', 'Введите полный номер телефона'); ok = false; }
 
+    if (!document.getElementById('consentCheck')?.checked) {
+        document.getElementById('consentWrap')?.classList.add('consent-wrap--error');
+        document.getElementById('consentError')?.classList.remove('hidden');
+        ok = false;
+    }
+
     return ok;
+}
+
+/* ─── Consent checkbox ──────────────────────────────────── */
+function handleConsentChange() {
+    const checked = document.getElementById('consentCheck').checked;
+    const btn     = document.getElementById('submitBtn');
+    const wrap    = document.getElementById('consentWrap');
+    const err     = document.getElementById('consentError');
+
+    if (checked) {
+        btn.disabled = false;
+        btn.classList.remove('submit-btn--disabled');
+        wrap?.classList.remove('consent-wrap--error');
+        err?.classList.add('hidden');
+    } else {
+        btn.disabled = true;
+        btn.classList.add('submit-btn--disabled');
+    }
 }
 
 /* ─── Submit ────────────────────────────────────────────── */
@@ -113,13 +190,21 @@ async function submitOrder() {
     btn.disabled = true;
     btn.textContent = 'Оформляем...';
 
-    const storeKey = getSelectedStore();
-    const store    = STORES[storeKey];
+    const storeId  = getSelectedStore();
+    const store    = _stores.find(s => String(s.id) === String(storeId));
     const cart     = getCart();
     const total    = cart.reduce((s, i) => s + i.price * i.qty, 0);
     const phone    = document.getElementById('inputPhone').value;
     const name     = document.getElementById('inputName').value.trim();
     const comment  = (document.getElementById('inputComment')?.value || '').trim();
+
+    if (!store) {
+        btn.disabled = false;
+        btn.classList.remove('submit-btn--disabled');
+        btn.textContent = 'Подтвердить заказ';
+        alert('Выберите магазин для самовывоза');
+        return;
+    }
 
     try {
         const r = await fetch('/api/orders', {
@@ -147,7 +232,8 @@ async function submitOrder() {
     } catch (e) {
         console.error('Order error:', e);
         btn.disabled = false;
-        btn.textContent = 'Оформить заказ';
+        btn.classList.remove('submit-btn--disabled');
+        btn.textContent = 'Подтвердить заказ';
         alert('Ошибка при оформлении заказа. Попробуйте ещё раз.');
     }
 }
@@ -161,5 +247,5 @@ function checkCart() {
 document.addEventListener('DOMContentLoaded', () => {
     checkCart();
     renderSummary();
-    initStoreCards();
+    loadAndRenderStores();
 });
