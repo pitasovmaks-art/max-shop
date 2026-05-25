@@ -82,13 +82,13 @@
 
 .site-footer__sep {
     font-size: 12px;
-    color: var(--border, #E5E7EB);
+    color: var(--border, #E5E5E5);
     user-select: none;
 }
 
 .site-footer__link {
     font-size: 12px;
-    color: var(--gray, #6B7280);
+    color: var(--gray, #555555);
     text-decoration: underline;
     text-underline-offset: 2px;
     text-decoration-color: transparent;

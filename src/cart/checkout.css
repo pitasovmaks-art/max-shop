@@ -2,15 +2,15 @@
 :root {
     --orange:       #F5A800;
     --orange-dark:  #E8950A;
-    --orange-light: #FFF3D6;
-    --dark:         #1A1A1A;
-    --gray:         #6B6B6B;
-    --gray-light:   #F8F6F2;
-    --border:       #E8E4DC;
+    --orange-light: #FFF8E7;
+    --dark:         #111111;
+    --gray:         #555555;
+    --gray-light:   #F5F5F5;
+    --border:       #E5E5E5;
     --white:        #FFFFFF;
     --red:          #FF3B30;
     --green:        #34C759;
-    --card-shadow:  0 2px 12px rgba(0,0,0,.06);
+    --card-shadow:  0 1px 4px rgba(0,0,0,.06);
     --radius:       14px;
     --header-h:     56px;
     --footer-h:     112px;
@@ -47,22 +47,23 @@ a      { text-decoration: none; color: inherit; }
     justify-content: space-between;
     height: var(--header-h);
     padding: 0 16px 0 4px;
-    background: var(--white);
-    border-bottom: 1px solid var(--border);
+    background: #111111;
+    border-bottom: none;
 }
 
 .header__back {
     width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    color: var(--orange);
+    color: #FFFFFF;
 }
-.header__back:active { background: var(--gray-light); }
+.header__back:active { background: rgba(255,255,255,.12); }
 
 .header__title {
     font-size: 17px;
     font-weight: 700;
     letter-spacing: -.3px;
+    color: #FFFFFF;
 }
 .header__placeholder { width: 44px; }
 
@@ -97,6 +98,7 @@ a      { text-decoration: none; color: inherit; }
 .card {
     background: var(--white);
     border-radius: var(--radius);
+    border: 0.5px solid var(--border);
     box-shadow: var(--card-shadow);
     overflow: hidden;
 }
@@ -176,6 +178,7 @@ a      { text-decoration: none; color: inherit; }
     gap: 12px;
     background: var(--white);
     border-radius: var(--radius);
+    border: 0.5px solid var(--border);
     box-shadow: var(--card-shadow);
     padding: 14px 14px 14px 16px;
     cursor: pointer;
@@ -186,10 +189,8 @@ a      { text-decoration: none; color: inherit; }
 .store-card:active { background: var(--gray-light); }
 
 .store-radio { display: none; }
-
 .store-radio:checked ~ .store-card__content { color: var(--dark); }
 
-/* selected state applied via JS */
 .store-card--selected {
     border-color: var(--orange);
     background: var(--orange-light);
@@ -244,7 +245,7 @@ a      { text-decoration: none; color: inherit; }
 
 .store-card--selected .store-card__check {
     background: var(--orange);
-    color: var(--white);
+    color: #111111;
 }
 
 /* ─── Form fields ───────────────────────────────────────── */
@@ -303,13 +304,8 @@ a      { text-decoration: none; color: inherit; }
     min-height: 16px;
 }
 
-/* Error state */
-.field--error .field__input {
-    color: var(--red);
-}
-.field--error .field__label {
-    color: var(--red);
-}
+.field--error .field__input { color: var(--red); }
+.field--error .field__label { color: var(--red); }
 
 /* ─── Footer ────────────────────────────────────────────── */
 .checkout-footer {
@@ -343,7 +339,7 @@ a      { text-decoration: none; color: inherit; }
     width: 100%;
     height: 50px;
     background: var(--orange);
-    color: var(--white);
+    color: #111111;
     border-radius: 14px;
     font-size: 16px;
     font-weight: 700;
@@ -405,6 +401,7 @@ a      { text-decoration: none; color: inherit; }
     width: 100%;
     background: var(--white);
     border-radius: var(--radius);
+    border: 0.5px solid var(--border);
     box-shadow: var(--card-shadow);
     overflow: hidden;
     margin-top: 4px;
@@ -448,7 +445,7 @@ a      { text-decoration: none; color: inherit; }
     width: 100%;
     height: 50px;
     background: var(--orange);
-    color: var(--white);
+    color: #111111;
     border-radius: 14px;
     font-size: 16px;
     font-weight: 700;
@@ -461,6 +458,7 @@ a      { text-decoration: none; color: inherit; }
 .consent-wrap {
     background: var(--white);
     border-radius: var(--radius);
+    border: 0.5px solid var(--border);
     box-shadow: var(--card-shadow);
     padding: 14px 16px;
     display: flex;
@@ -476,7 +474,6 @@ a      { text-decoration: none; color: inherit; }
     -webkit-tap-highlight-color: transparent;
 }
 
-/* Hide native checkbox */
 .consent-checkbox {
     position: absolute;
     opacity: 0;
@@ -484,7 +481,6 @@ a      { text-decoration: none; color: inherit; }
     pointer-events: none;
 }
 
-/* Custom checkbox box */
 .consent-box {
     width: 22px; height: 22px;
     min-width: 22px;
@@ -511,7 +507,7 @@ a      { text-decoration: none; color: inherit; }
     border-color: var(--orange);
 }
 .consent-checkbox:checked ~ .consent-box::after {
-    border-color: var(--white);
+    border-color: #111111;
 }
 
 .consent-text {
@@ -537,7 +533,6 @@ a      { text-decoration: none; color: inherit; }
     border-color: var(--red);
 }
 
-/* Disabled submit button state */
 .submit-btn--disabled {
     opacity: .45;
     cursor: not-allowed;
@@ -547,6 +542,6 @@ a      { text-decoration: none; color: inherit; }
 /* ─── Variant label in order summary ────────────────────── */
 .order-item__variant {
     font-size: 12px;
-    color: var(--gray, #6B7280);
+    color: var(--gray);
     font-weight: 400;
 }

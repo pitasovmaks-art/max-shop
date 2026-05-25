@@ -2,14 +2,14 @@
 :root {
     --orange:       #F5A800;
     --orange-dark:  #E8950A;
-    --orange-light: #FFF3D6;
-    --dark:         #1A1A1A;
-    --gray:         #6B6B6B;
-    --gray-light:   #F8F6F2;
-    --border:       #E8E4DC;
+    --orange-light: #FFF8E7;
+    --dark:         #111111;
+    --gray:         #555555;
+    --gray-light:   #F5F5F5;
+    --border:       #E5E5E5;
     --white:        #FFFFFF;
     --red:          #FF3B30;
-    --card-shadow:  0 2px 12px rgba(0,0,0,.06);
+    --card-shadow:  0 1px 4px rgba(0,0,0,.06);
     --radius:       14px;
     --nav-h:        64px;
     --header-h:     56px;
@@ -47,34 +47,35 @@ a      { text-decoration: none; color: inherit; }
     justify-content: space-between;
     height: var(--header-h);
     padding: 0 8px 0 4px;
-    background: var(--white);
-    border-bottom: 1px solid var(--border);
+    background: #111111;
+    border-bottom: none;
 }
 
 .header__back {
     width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    color: var(--orange);
+    color: #FFFFFF;
     transition: background .15s;
 }
-.header__back:active { background: var(--gray-light); }
+.header__back:active { background: rgba(255,255,255,.12); }
 
 .header__title {
     font-size: 17px;
     font-weight: 700;
     letter-spacing: -.3px;
+    color: #FFFFFF;
 }
 
 .header__clear {
     font-size: 14px;
-    color: var(--red);
+    color: #FF6B6B;
     padding: 0 12px;
     height: 36px;
     border-radius: 8px;
     transition: background .15s;
 }
-.header__clear:active { background: #FFF0EF; }
+.header__clear:active { background: rgba(255,255,255,.1); }
 
 /* ─── Main ──────────────────────────────────────────────── */
 .main {
@@ -92,6 +93,7 @@ a      { text-decoration: none; color: inherit; }
 .cart-item {
     background: var(--white);
     border-radius: var(--radius);
+    border: 0.5px solid var(--border);
     box-shadow: var(--card-shadow);
     display: flex;
     align-items: flex-start;
@@ -117,7 +119,7 @@ a      { text-decoration: none; color: inherit; }
 .img-bg--battery     { background: linear-gradient(135deg,#D6E8FF,#A8CBFF); }
 .img-bg--consumables { background: linear-gradient(135deg,#D6F5E3,#A8E8C2); }
 .img-bg--services    { background: linear-gradient(135deg,#EDD6FF,#D4A8FF); }
-.img-bg--default     { background: linear-gradient(135deg,#F2F2F7,#E5E5EA); }
+.img-bg--default     { background: linear-gradient(135deg,#F5F5F5,#E5E5E5); }
 
 .cart-item__info {
     flex: 1;
@@ -172,7 +174,7 @@ a      { text-decoration: none; color: inherit; }
 .cart-item__line-total {
     font-size: 15px;
     font-weight: 700;
-    color: var(--dark);
+    color: var(--orange);
     margin-left: auto;
     padding-left: 8px;
     align-self: center;
@@ -209,7 +211,7 @@ a      { text-decoration: none; color: inherit; }
     height: 44px;
     padding: 0 24px;
     background: var(--orange);
-    color: var(--white);
+    color: #111111;
     border-radius: 22px;
     font-size: 15px;
     font-weight: 600;
@@ -261,7 +263,7 @@ a      { text-decoration: none; color: inherit; }
     width: 100%;
     height: 50px;
     background: var(--orange);
-    color: var(--white);
+    color: #111111;
     border-radius: 14px;
     font-size: 16px;
     font-weight: 700;
@@ -277,8 +279,8 @@ a      { text-decoration: none; color: inherit; }
     transform: translateX(-50%);
     width: 100%; max-width: 480px;
     height: var(--nav-h);
-    background: var(--white);
-    border-top: 1px solid var(--border);
+    background: #111111;
+    border-top: none;
     display: flex;
     align-items: center;
     justify-content: space-around;
@@ -294,7 +296,7 @@ a      { text-decoration: none; color: inherit; }
     justify-content: center;
     gap: 3px;
     height: 100%;
-    color: var(--gray);
+    color: rgba(255,255,255,.5);
     font-size: 11px;
 }
 .nav-item.active { color: var(--orange); }
@@ -309,7 +311,7 @@ a      { text-decoration: none; color: inherit; }
     top: -6px; right: -8px;
     min-width: 17px; height: 17px;
     background: var(--orange);
-    color: #fff;
+    color: #111111;
     font-size: 10px;
     font-weight: 700;
     border-radius: 9px;
@@ -371,6 +373,6 @@ a      { text-decoration: none; color: inherit; }
 .cart-item__variant {
     font-size: 12px;
     font-weight: 600;
-    color: var(--orange, #F5A800);
+    color: var(--orange);
     margin-top: 1px;
 }
