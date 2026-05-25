@@ -23,6 +23,16 @@ app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, async (r
     }
 });
 
+/* Seed database (admin only) */
+app.post('/api/admin/seed', require('./middleware/auth').requireAdmin, async (req, res) => {
+    try {
+        await require('./db').resetToDefaults();
+        res.json({ ok: true, message: 'База данных заполнена начальными данными' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 const db = require('./db');
 app.listen(PORT, '0.0.0.0', () => {

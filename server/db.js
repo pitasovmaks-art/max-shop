@@ -184,18 +184,9 @@ async function resetToDefaults() {
 async function init() {
     await createSchema();
 
-    const catCount = await queryOne('SELECT COUNT(*) AS n FROM categories');
-    if (parseInt(catCount.n, 10) === 0) {
-        await seedDefaults();
-    } else {
-        const storeCount = await queryOne('SELECT COUNT(*) AS n FROM stores');
-        if (parseInt(storeCount.n, 10) === 0) {
-            await pool.query(`INSERT INTO stores (name,city,address,hours,phone,directions,sort_order) VALUES
-                ('Краснодар — ул. Селезнева',    'Краснодар','ул. Селезнева, 4/10',          'Пн–Сб 08:00–18:00','','',1),
-                ('Краснодар — ул. Котлярова',    'Краснодар','ул. Котлярова, 21',            'Пн–Сб 08:00–18:00','','',2),
-                ('Москва — Аллея Первой Маевки', 'Москва',   'Аллея Первой Маевки, 15 стр3','Пн–Сб 08:00–18:00','','',3)`);
-            console.log('Магазины добавлены в базу данных');
-        }
+    const prodCount = await queryOne('SELECT COUNT(*) AS n FROM products');
+    if (parseInt(prodCount.n, 10) === 0) {
+        await resetToDefaults();
     }
 
     console.log('PostgreSQL: схема готова');
