@@ -14,6 +14,7 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, '..')));
 
 app.use('/api/auth',          require('./routes/auth'));
+app.use('/api/upload',        require('./routes/upload'));
 app.use('/api/products',      require('./routes/products'));
 app.use('/api/categories',    require('./routes/categories'));
 app.use('/api/subcategories', require('./routes/subcategories'));
