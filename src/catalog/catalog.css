@@ -215,7 +215,6 @@ a      { text-decoration: none; color: inherit; }
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-    align-items: start;
 }
 
 /* ─── Product card ──────────────────────────────────────── */
@@ -226,6 +225,7 @@ a      { text-decoration: none; color: inherit; }
     box-shadow: var(--card-shadow);
     display: flex;
     flex-direction: column;
+    min-height: 280px;
     transition: transform .15s;
     cursor: pointer;
 }
