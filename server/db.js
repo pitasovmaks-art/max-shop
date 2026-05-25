@@ -1,15 +1,25 @@
 const { Pool } = require('pg');
 
-if (!process.env.DATABASE_URL) {
-    console.error('FATAL: DATABASE_URL env var is not set');
+const DB_HOST = process.env.DB_HOST;
+const DB_PORT = process.env.DB_PORT || '5432';
+const DB_NAME = process.env.DB_NAME;
+const DB_USER = process.env.DB_USER;
+const DB_PASSWORD = process.env.DB_PASSWORD;
+
+if (!DB_HOST || !DB_NAME || !DB_USER || !DB_PASSWORD) {
+    console.error('FATAL: Не заданы переменные окружения DB_HOST, DB_NAME, DB_USER или DB_PASSWORD');
     process.exit(1);
 }
 
+const isLocalhost = DB_HOST === 'localhost' || DB_HOST === '127.0.0.1';
+
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1')
-        ? false
-        : { rejectUnauthorized: false },
+    host:     DB_HOST,
+    port:     parseInt(DB_PORT, 10),
+    database: DB_NAME,
+    user:     DB_USER,
+    password: DB_PASSWORD,
+    ssl:      isLocalhost ? false : { rejectUnauthorized: false },
 });
 
 pool.on('error', (err) => console.error('PostgreSQL pool error:', err.message));
@@ -46,20 +56,24 @@ async function inTransaction(fn) {
 
 /* ─── Schema ─────────────────────────────────────────────── */
 async function createSchema() {
+    // Run each statement separately — multi-statement strings are not
+    // reliably supported by all connection poolers (e.g. PgBouncer).
     await pool.query(`
         CREATE TABLE IF NOT EXISTS categories (
             id    INTEGER PRIMARY KEY,
             name  TEXT    NOT NULL,
             icon  TEXT    NOT NULL DEFAULT '📦',
             color INTEGER NOT NULL DEFAULT 1
-        );
-
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS subcategories (
             id          INTEGER PRIMARY KEY,
             category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
             name        TEXT    NOT NULL
-        );
-
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS products (
             id          SERIAL  PRIMARY KEY,
             name        TEXT    NOT NULL,
@@ -71,8 +85,9 @@ async function createSchema() {
             is_service  INTEGER NOT NULL DEFAULT 0,
             price_label TEXT,
             image       TEXT
-        );
-
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS orders (
             id         SERIAL PRIMARY KEY,
             name       TEXT    NOT NULL,
@@ -83,8 +98,9 @@ async function createSchema() {
             total      INTEGER NOT NULL,
             status     TEXT    NOT NULL DEFAULT 'new',
             created_at TEXT    NOT NULL DEFAULT TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-        );
-
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS stores (
             id         SERIAL  PRIMARY KEY,
             name       TEXT    NOT NULL,
@@ -94,8 +110,9 @@ async function createSchema() {
             phone      TEXT    NOT NULL DEFAULT '',
             directions TEXT    NOT NULL DEFAULT '',
             sort_order INTEGER NOT NULL DEFAULT 0
-        );
-
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS product_variants (
             id         SERIAL  PRIMARY KEY,
             product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -103,23 +120,28 @@ async function createSchema() {
             price      INTEGER NOT NULL DEFAULT 0,
             is_default INTEGER NOT NULL DEFAULT 0,
             sort_order INTEGER NOT NULL DEFAULT 0
-        );
+        )
     `);
 }
 
 /* ─── Seed default data ──────────────────────────────────── */
 async function seedDefaults() {
+    console.log('[SEED] Начало заполнения базы данных...');
     await inTransaction(async (client) => {
+        console.log('[SEED] Вставка категорий...');
         await client.query(`INSERT INTO categories (id,name,icon,color) VALUES
             (1,'Монтажные пистолеты','🔨',1),
             (2,'Аккумуляторные инструменты','⚡',2),
             (3,'Расходники','📦',3),
             (4,'Услуги','🔧',4)`);
+        console.log('[SEED] Категории добавлены (4)');
 
+        console.log('[SEED] Вставка подкатегорий...');
         await client.query(`INSERT INTO subcategories (id,category_id,name) VALUES
             (1,1,'NTC'),(2,1,'FengBao'),
             (3,3,'Гвозди'),(4,3,'Газовые баллоны'),
             (5,3,'Клипсы'),(6,3,'Площадки'),(7,3,'Дюбеля')`);
+        console.log('[SEED] Подкатегории добавлены (7)');
 
         const ins = (name, desc, catId, subId, price, inStock, isService, priceLabel) =>
             client.query(
@@ -128,10 +150,15 @@ async function seedDefaults() {
                 [name, desc, catId, subId, price, inStock, isService, priceLabel]
             );
 
+        console.log('[SEED] Вставка NTC пистолетов с вариантами...');
         const r57 = (await ins('NTC57C3-1',  'Газовый монтажный пистолет, гвоздь до 57 мм', 1,1,46500,1,0,null)).rows[0].id;
+        console.log(`[SEED] NTC57C3-1 → id=${r57}`);
         const r65 = (await ins('NTC65C3-1',  'Газовый монтажный пистолет, гвоздь до 65 мм', 1,1,52000,1,0,null)).rows[0].id;
+        console.log(`[SEED] NTC65C3-1 → id=${r65}`);
         const r90 = (await ins('NTC90C3-1',  'Газовый монтажный пистолет, гвоздь до 90 мм', 1,1,61000,0,0,null)).rows[0].id;
+        console.log(`[SEED] NTC90C3-1 → id=${r90}`);
 
+        console.log('[SEED] Вставка вариантов аренды...');
         await client.query(
             `INSERT INTO product_variants (product_id,label,price,is_default,sort_order) VALUES
             ($1,'14 дней',46500,1,1),($1,'6 месяцев',51000,0,2),($1,'12 месяцев',56500,0,3),
@@ -139,6 +166,7 @@ async function seedDefaults() {
             ($3,'14 дней',61000,1,1),($3,'6 месяцев',67000,0,2),($3,'12 месяцев',73000,0,3)`,
             [r57, r65, r90]
         );
+        console.log('[SEED] Варианты аренды добавлены (9)');
 
         const products = [
             ['FengBao F22',                       'Газовый монтажный пистолет, компактный',                    1,2,37800,1,0,null],
@@ -161,15 +189,19 @@ async function seedDefaults() {
             ['Ремонт монтажного пистолета',      'Диагностика, замена деталей, настройка. NTC и FengBao',      4,null,3500,1,1,'от 3 500 ₽'],
             ['Чистка монтажного пистолета',      'Профессиональная разборка, очистка, смазка всех механизмов',4,null,1500,1,1,'от 1 500 ₽'],
         ];
+        console.log(`[SEED] Вставка ${products.length} остальных продуктов...`);
         for (const p of products) await ins(...p);
+        console.log(`[SEED] Продукты добавлены (${products.length})`);
 
+        console.log('[SEED] Вставка магазинов...');
         await client.query(`INSERT INTO stores (name,city,address,hours,phone,directions,sort_order) VALUES
             ('Краснодар — ул. Селезнева',    'Краснодар','ул. Селезнева, 4/10',          'Пн–Сб 08:00–18:00','','',1),
             ('Краснодар — ул. Котлярова',    'Краснодар','ул. Котлярова, 21',            'Пн–Сб 08:00–18:00','','',2),
             ('Москва — Аллея Первой Маевки', 'Москва',   'Аллея Первой Маевки, 15 стр3','Пн–Сб 08:00–18:00','','',3)`);
+        console.log('[SEED] Магазины добавлены (3)');
     });
 
-    console.log('База данных заполнена начальными данными');
+    console.log('[SEED] База данных успешно заполнена начальными данными');
 }
 
 /* ─── Reset to defaults ──────────────────────────────────── */
@@ -182,14 +214,42 @@ async function resetToDefaults() {
 
 /* ─── Init: schema + auto-seed ───────────────────────────── */
 async function init() {
-    await createSchema();
+    console.log(`[DB] Инициализация: ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}`);
 
-    const prodCount = await queryOne('SELECT COUNT(*) AS n FROM products');
-    if (parseInt(prodCount.n, 10) === 0) {
-        await resetToDefaults();
+    console.log('[DB] Создание схемы (CREATE TABLE IF NOT EXISTS)...');
+    try {
+        await createSchema();
+        console.log('[DB] Схема готова');
+    } catch (e) {
+        console.error('[DB] ОШИБКА при создании схемы:', e.message);
+        console.error(e.stack);
+        throw e;
     }
 
-    console.log('PostgreSQL: схема готова');
+    let prodCount;
+    try {
+        prodCount = await queryOne('SELECT COUNT(*) AS n FROM products');
+        console.log(`[DB] Продуктов в базе: ${prodCount.n}`);
+    } catch (e) {
+        console.error('[DB] ОШИБКА при проверке количества продуктов:', e.message);
+        console.error(e.stack);
+        throw e;
+    }
+
+    if (parseInt(prodCount.n, 10) === 0) {
+        console.log('[DB] База пустая — запускаю автозаполнение...');
+        try {
+            await seedDefaults();
+        } catch (e) {
+            console.error('[DB] ОШИБКА при автозаполнении:', e.message);
+            console.error(e.stack);
+            throw e;
+        }
+    } else {
+        console.log('[DB] Автозаполнение пропущено — данные уже есть');
+    }
+
+    console.log('[DB] PostgreSQL инициализирована и готова');
 }
 
 module.exports = { query, queryOne, execute, inTransaction, init, resetToDefaults };
