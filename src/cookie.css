@@ -36,7 +36,7 @@
 }
 
 .cookie-banner__text a {
-    color: #00D4AA;
+    color: #FFFFFF;
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -61,7 +61,7 @@
 .cookie-btn:active { opacity: .75; }
 
 .cookie-btn--accept {
-    background: #00D4AA;
+    background: #FFFFFF;
     color: #000000;
 }
 
@@ -97,4 +97,4 @@
     white-space: nowrap;
 }
 .site-footer__link:hover,
-.site-footer__link:active { color: #00D4AA; text-decoration-color: currentColor; }
+.site-footer__link:active { color: #FFFFFF; text-decoration-color: currentColor; }

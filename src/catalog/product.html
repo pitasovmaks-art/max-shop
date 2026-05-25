@@ -7,14 +7,12 @@
     <script src="https://st.max.ru/js/max-web-app.js"></script>
     <style>
         :root {
-            --accent:        #00D4AA;
-            --accent-dark:   #00BF99;
-            --bg-page:       #0F0F0F;
-            --bg-card:       #1A1A1A;
+            --bg-page:       #141414;
+            --bg-card:       #1E1E1E;
             --bg-secondary:  #252525;
-            --bg-input:      #2A2A2A;
+            --bg-input:      #252525;
             --text-primary:  #FFFFFF;
-            --text-secondary:#888888;
+            --text-secondary:#666666;
             --border:        #2A2A2A;
             --red:           #EF4444;
             --header-h:      56px;
@@ -24,7 +22,7 @@
         html { -webkit-text-size-adjust: 100%; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0F0F0F;
+            background: #141414;
             color: #FFFFFF;
             overscroll-behavior: none;
             -webkit-tap-highlight-color: transparent;
@@ -38,7 +36,7 @@
             max-width: 480px;
             margin: 0 auto;
             min-height: 100dvh;
-            background: #0F0F0F;
+            background: #141414;
         }
 
         /* ─── Header ────────────────────────────────────────── */
@@ -50,7 +48,7 @@
             height: var(--header-h);
             padding: 0 8px 0 4px;
             background: #111111;
-            border-bottom: 1px solid #2A2A2A;
+            border-bottom: 1px solid var(--border);
         }
         .header__back {
             width: 44px; height: 44px;
@@ -84,7 +82,7 @@
             position: absolute;
             top: 4px; right: 4px;
             min-width: 17px; height: 17px;
-            background: var(--accent);
+            background: #FFFFFF;
             color: #000000;
             font-size: 10px;
             font-weight: 700;
@@ -95,7 +93,7 @@
         }
 
         /* ─── Gallery ───────────────────────────────────────── */
-        .gallery { background: #1A1A1A; }
+        .gallery { background: var(--bg-card); }
 
         .gallery__main {
             width: 100%;
@@ -105,7 +103,7 @@
             justify-content: center;
             overflow: hidden;
             position: relative;
-            background: #252525;
+            background: var(--bg-secondary);
         }
         .gallery__main img {
             width: 100%; height: 100%;
@@ -128,8 +126,8 @@
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
             padding: 10px 12px;
-            border-top: 1px solid #2A2A2A;
-            background: #1A1A1A;
+            border-top: 1px solid var(--border);
+            background: var(--bg-card);
         }
         .gallery__strip-wrap::-webkit-scrollbar { display: none; }
 
@@ -149,7 +147,7 @@
             transition: border-color .15s;
         }
         .gallery__thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .gallery__thumb--active { border-color: var(--accent); }
+        .gallery__thumb--active { border-color: #FFFFFF; }
         .gallery__thumb:active { opacity: .75; }
 
         /* ─── Gallery dots ───────────────────────────────────── */
@@ -159,7 +157,7 @@
             align-items: center;
             gap: 6px;
             padding: 8px 0 6px;
-            background: #1A1A1A;
+            background: var(--bg-card);
         }
         .gallery__dot {
             width: 6px; height: 6px;
@@ -169,16 +167,16 @@
             flex-shrink: 0;
         }
         .gallery__dot--active {
-            background: var(--accent);
+            background: #FFFFFF;
             transform: scale(1.4);
         }
 
         /* ─── Product info ───────────────────────────────────── */
         .product-info {
-            background: #1A1A1A;
+            background: var(--bg-card);
             margin-top: 8px;
             padding: 18px 16px calc(var(--nav-h) + 100px);
-            border-top: 1px solid #2A2A2A;
+            border-top: 1px solid var(--border);
         }
 
         .product-name {
@@ -192,7 +190,7 @@
 
         .product-desc {
             font-size: 14px;
-            color: #888888;
+            color: var(--text-secondary);
             line-height: 1.65;
             margin-bottom: 16px;
         }
@@ -203,7 +201,7 @@
         .variant-label {
             font-size: 12px;
             font-weight: 600;
-            color: #888888;
+            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: .4px;
             margin-bottom: 8px;
@@ -220,17 +218,17 @@
             border-radius: 20px;
             font-size: 13px;
             font-weight: 600;
-            background: #2A2A2A;
-            color: #888888;
-            border: 1px solid #3A3A3A;
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
             cursor: pointer;
             white-space: nowrap;
             transition: border-color .15s, background .15s, color .15s;
             -webkit-tap-highlight-color: transparent;
         }
         .variant-pill--active {
-            border-color: var(--accent);
-            background: var(--accent);
+            border-color: #FFFFFF;
+            background: #FFFFFF;
             color: #000000;
         }
         .variant-pill:active { opacity: .7; }
@@ -241,8 +239,8 @@
             bottom: var(--nav-h);
             left: 50%; transform: translateX(-50%);
             width: 100%; max-width: 480px;
-            background: #1A1A1A;
-            border-top: 1px solid #2A2A2A;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
             padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
             display: flex;
             align-items: center;
@@ -260,23 +258,23 @@
         .product-price--service {
             font-size: 16px;
             font-weight: 600;
-            color: #888888;
+            color: var(--text-secondary);
         }
 
         .add-to-cart-btn {
             flex: 1;
             height: 48px;
-            background: var(--accent);
+            background: #FFFFFF;
             color: #000000;
             border-radius: 14px;
             font-size: 16px;
             font-weight: 700;
             transition: background .15s, transform .1s;
         }
-        .add-to-cart-btn:active { background: var(--accent-dark); transform: scale(.98); }
+        .add-to-cart-btn:active { background: #DDDDDD; transform: scale(.98); }
         .add-to-cart-btn--disabled {
-            background: #2A2A2A;
-            color: #888888;
+            background: var(--bg-input);
+            color: var(--text-secondary);
             cursor: not-allowed;
         }
 
@@ -285,7 +283,7 @@
             position: fixed;
             bottom: calc(var(--nav-h) + 82px);
             left: 50%; transform: translateX(-50%);
-            background: #2A2A2A;
+            background: var(--bg-secondary);
             color: #FFFFFF;
             font-size: 14px;
             font-weight: 500;
@@ -295,7 +293,7 @@
             z-index: 200;
             animation: fadeInOut 2.4s ease forwards;
             pointer-events: none;
-            border: 1px solid #3A3A3A;
+            border: 1px solid var(--border);
         }
         @keyframes fadeInOut {
             0%   { opacity: 0; transform: translateX(-50%) translateY(8px); }
@@ -312,7 +310,7 @@
             width: 100%; max-width: 480px;
             height: var(--nav-h);
             background: #111111;
-            border-top: 1px solid #2A2A2A;
+            border-top: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-around;
@@ -327,7 +325,7 @@
             justify-content: center;
             gap: 3px;
             height: 100%;
-            color: #888888;
+            color: var(--text-secondary);
             font-size: 11px;
         }
         .nav-item:active { opacity: .7; }
@@ -339,7 +337,7 @@
             position: absolute;
             top: -6px; right: -8px;
             min-width: 17px; height: 17px;
-            background: var(--accent);
+            background: #FFFFFF;
             color: #000000;
             font-size: 10px;
             font-weight: 700;
@@ -354,7 +352,7 @@
         .cat-bg-3 { background: #18261E; }
         .cat-bg-4 { background: #221A2A; }
         .cat-bg-5 { background: #2A1818; }
-        .cat-bg-6 { background: linear-gradient(135deg,#FFF3D6,#FFE3A8); }
+        .cat-bg-6 { background: #2A2318; }
     </style>
 </head>
 <body>
