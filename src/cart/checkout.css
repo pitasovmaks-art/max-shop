@@ -1,16 +1,16 @@
 /* ─── Variables ─────────────────────────────────────────── */
 :root {
-    --orange:       #FF6600;
-    --orange-dark:  #E05500;
-    --orange-light: #FFF3EC;
-    --dark:         #1C1C1E;
-    --gray:         #6B7280;
-    --gray-light:   #F2F2F7;
-    --border:       #E5E7EB;
+    --orange:       #F5A800;
+    --orange-dark:  #E8950A;
+    --orange-light: #FFF3D6;
+    --dark:         #1A1A1A;
+    --gray:         #6B6B6B;
+    --gray-light:   #F8F6F2;
+    --border:       #E8E4DC;
     --white:        #FFFFFF;
     --red:          #FF3B30;
     --green:        #34C759;
-    --card-shadow:  0 2px 12px rgba(0,0,0,.07);
+    --card-shadow:  0 2px 12px rgba(0,0,0,.06);
     --radius:       14px;
     --header-h:     56px;
     --footer-h:     112px;
