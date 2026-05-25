@@ -1029,6 +1029,52 @@ a      { text-decoration: none; color: inherit; }
 }
 .add-variant-btn:hover { border-color: var(--orange); color: var(--orange); }
 
+/* ─── Extra photos grid ─────────────────────────────────── */
+.extra-photos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.extra-photo-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--gray-light);
+}
+.extra-photo-item img { width: 100%; height: 100%; object-fit: cover; }
+.extra-photo-item__del {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 22px; height: 22px;
+    background: rgba(0,0,0,.6);
+    color: white;
+    border-radius: 50%;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+}
+.extra-photo-item__del:active { background: rgba(0,0,0,.85); }
+
+.add-extra-photo-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--gray);
+    background: none;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+}
+.add-extra-photo-btn:hover  { border-color: var(--orange); color: var(--orange); }
+.add-extra-photo-btn:disabled { opacity: .5; cursor: not-allowed; }
+
 /* ─── Variant count badge in product row ─────────────────── */
 .product-row__vars {
     font-size: 11px;

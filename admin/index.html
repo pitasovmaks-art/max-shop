@@ -221,6 +221,20 @@
                 <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoSelect(event)" style="display:none">
             </div>
 
+            <!-- Extra photos (edit mode only) -->
+            <div class="ff hidden" id="ff-extra-photos">
+                <label class="ff__label">Дополнительные фото</label>
+                <div class="extra-photos-grid" id="extraPhotosGrid"></div>
+                <button type="button" class="add-extra-photo-btn" onclick="triggerExtraPhotoInput()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                    Добавить фото
+                </button>
+                <input type="file" id="extraPhotoInput" accept="image/*" onchange="handleExtraPhotoSelect(event)" style="display:none">
+            </div>
+
             <!-- Name -->
             <div class="ff" id="ff-name">
                 <label class="ff__label" for="f-name">Название *</label>

@@ -4,6 +4,9 @@ let _products = [];
 /* ─── Variants form state ───────────────────────────────────── */
 let _formVariants = []; // { label, price, isDefault }
 
+/* ─── Extra images form state ───────────────────────────────── */
+let _extraImages = []; // { id, productId, url, sortOrder }
+
 function renderVariantRows() {
     const el = document.getElementById('variant-rows');
     if (!el) return;
@@ -421,6 +424,79 @@ function clearPhotoPreview() {
 
 function removePhoto(e) { e.stopPropagation(); clearPhotoPreview(); }
 
+/* ─── Extra photos ──────────────────────────────────────── */
+async function loadExtraImages(productId) {
+    _extraImages = [];
+    renderExtraImages();
+    try {
+        const images = await fetch(`/api/products/${productId}/images`).then(r => r.json());
+        _extraImages = Array.isArray(images) ? images : [];
+        renderExtraImages();
+    } catch {
+        _extraImages = [];
+    }
+}
+
+function renderExtraImages() {
+    const grid = document.getElementById('extraPhotosGrid');
+    if (!grid) return;
+    grid.innerHTML = _extraImages.map(img => `
+        <div class="extra-photo-item" id="extra-${img.id}">
+            <img src="${img.url}" alt="">
+            <button type="button" class="extra-photo-item__del"
+                onclick="deleteExtraImage(${img.id})" aria-label="Удалить">✕</button>
+        </div>`).join('');
+}
+
+function triggerExtraPhotoInput() {
+    document.getElementById('extraPhotoInput').click();
+}
+
+async function handleExtraPhotoSelect(e) {
+    const file = e.target.files[0];
+    if (!file || !state.editId) return;
+    e.target.value = '';
+
+    const btn = document.querySelector('.add-extra-photo-btn');
+    const savedHTML = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Загрузка...'; }
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await fetch('/api/upload', {
+            method:  'POST',
+            headers: { 'Authorization': `Bearer ${getToken()}` },
+            body:    formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.ok) throw new Error(uploadData.error || 'Upload failed');
+
+        const saved = await apiAdmin(`/api/products/${state.editId}/images`, 'POST', {
+            url:        uploadData.url,
+            sort_order: _extraImages.length,
+        });
+        _extraImages.push(saved);
+        renderExtraImages();
+        showToast('✓ Фото добавлено');
+    } catch {
+        showToast('Ошибка загрузки фото');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = savedHTML; }
+    }
+}
+
+async function deleteExtraImage(imageId) {
+    if (!state.editId) return;
+    try {
+        await apiAdmin(`/api/products/${state.editId}/images/${imageId}`, 'DELETE');
+        _extraImages = _extraImages.filter(img => img.id !== imageId);
+        renderExtraImages();
+    } catch {
+        showToast('Ошибка удаления фото');
+    }
+}
+
 /* ─── Form: populate selects ────────────────────────────── */
 function populateCategorySelect() {
     const sel = document.getElementById('f-cat');
@@ -454,11 +530,15 @@ function openProductForm(id = null) {
     state.editId = id;
     populateCategorySelect();
     document.getElementById('formTitle').textContent = id ? 'Редактировать товар' : 'Новый товар';
+    const extraSection = document.getElementById('ff-extra-photos');
     if (id) {
         const p = _products.find(p => p.id === id);
         if (p) fillForm(p);
+        extraSection.classList.remove('hidden');
+        loadExtraImages(id);
     } else {
         clearForm();
+        extraSection.classList.add('hidden');
     }
     document.getElementById('formOverlay').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -508,6 +588,8 @@ function clearForm() {
     document.querySelectorAll('.ff__error').forEach(el => el.textContent = '');
     _formVariants = [];
     renderVariantRows();
+    _extraImages = [];
+    renderExtraImages();
 }
 
 function v(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
