@@ -27,5 +27,5 @@ const PORT = process.env.PORT || 3000;
 const db = require('./db');
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Точка Монтажа запущена на порту ${PORT}`);
-  db.init().catch(console.error);
+  db.init().then(() => require('../bot').startBot()).catch(console.error);
 });
