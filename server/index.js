@@ -4,6 +4,13 @@ const path    = require('path');
 const app = express();
 
 app.use(express.json({ limit: '15mb' }));
+
+app.use((req, res, next) => {
+    res.setHeader('X-Frame-Options', 'ALLOWALL');
+    res.setHeader('Content-Security-Policy', "frame-ancestors *");
+    next();
+});
+
 app.use(express.static(path.join(__dirname, '..')));
 
 app.use('/api/auth',          require('./routes/auth'));
