@@ -248,7 +248,6 @@ function render() {
                 <div class="product-card__img ${imgBg}">${imgIcon}${subBadge}</div>
                 <div class="product-card__body">
                     <div class="product-card__name">${p.name}</div>
-                    <div class="product-card__desc">${p.desc || ''}</div>
                     <div class="product-card__footer">
                         <span class="product-card__price product-card__price--service">${p.priceLabel || fmt(p.price)}</span>
                         <button class="add-btn add-btn--service" onclick="event.stopPropagation();addToCart(${p.id})">Записаться</button>
@@ -266,7 +265,6 @@ function render() {
             <div class="product-card__img ${imgBg}">${imgIcon}${outBadge}${subBadge}</div>
             <div class="product-card__body">
                 <div class="product-card__name">${p.name}</div>
-                <div class="product-card__desc">${p.desc || ''}</div>
                 ${variantPills}
                 <div class="product-card__footer">
                     <span class="product-card__price">${fmt(displayPrice)}</span>
