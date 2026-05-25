@@ -1,0 +1,5 @@
+node_modules/
+shop.db
+*.db-shm
+*.db-wal
+.env

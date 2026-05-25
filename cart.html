@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Точка Монтажа — Корзина</title>
+    <link rel="stylesheet" href="src/cart/cart.css">
+</head>
+<body>
+<div class="app">
+
+    <!-- Header -->
+    <header class="header">
+        <button class="header__back" onclick="location.href='index.html'" aria-label="Назад">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <span class="header__title">Корзина</span>
+        <button class="header__clear hidden" id="clearBtn" onclick="confirmClear()">Очистить</button>
+    </header>
+
+    <!-- Content -->
+    <main class="main" id="main">
+
+        <!-- Cart list -->
+        <div class="cart-list hidden" id="cartList"></div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-state__icon">🛒</div>
+            <p class="empty-state__title">Корзина пуста</p>
+            <p class="empty-state__sub">Добавьте товары из каталога</p>
+            <a href="index.html" class="empty-state__btn">Перейти в каталог</a>
+        </div>
+
+    </main>
+
+    <!-- Summary footer -->
+    <div class="cart-footer hidden" id="cartFooter">
+        <div class="summary">
+            <div class="summary-row">
+                <span class="summary-label" id="itemsLabel">Товары</span>
+                <span class="summary-value" id="totalPrice">0 ₽</span>
+            </div>
+            <div class="summary-row summary-row--note">
+                <span>🏪 Самовывоз из 3 магазинов</span>
+            </div>
+        </div>
+        <button class="checkout-btn" onclick="location.href='checkout.html'">
+            Оформить заказ
+        </button>
+    </div>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="2" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>Каталог</span>
+        </a>
+        <a href="cart.html" class="nav-item active">
+            <div class="nav-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
+                    <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="nav-badge hidden" id="navBadge">0</span>
+            </div>
+            <span>Корзина</span>
+        </a>
+    </nav>
+
+</div>
+<script src="src/cart/cart.js"></script>
+</body>
+</html>

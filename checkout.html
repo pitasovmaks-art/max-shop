@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Точка Монтажа — Оформление заказа</title>
+    <link rel="stylesheet" href="src/cart/checkout.css">
+</head>
+<body>
+<div class="app" id="app">
+
+    <!-- Header -->
+    <header class="header">
+        <button class="header__back" onclick="location.href='cart.html'" aria-label="Назад">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <span class="header__title">Оформление заказа</span>
+        <span class="header__placeholder"></span>
+    </header>
+
+    <!-- Scrollable content -->
+    <div class="content">
+
+        <!-- 1. Order summary -->
+        <section class="section">
+            <h2 class="section__title">Ваш заказ</h2>
+            <div class="card" id="orderSummary">
+                <div class="order-items" id="orderItems"></div>
+                <div class="order-divider"></div>
+                <div class="order-total-row">
+                    <span class="order-total-label" id="totalLabel">Итого</span>
+                    <span class="order-total-price" id="totalPrice">0 ₽</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Store selection -->
+        <section class="section">
+            <h2 class="section__title">Магазин для самовывоза</h2>
+            <div class="stores" id="storeList">
+
+                <label class="store-card" for="store-krd1">
+                    <input class="store-radio" type="radio" name="store" id="store-krd1" value="krd1" checked>
+                    <div class="store-card__content">
+                        <div class="store-card__city">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+                                <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            Краснодар
+                        </div>
+                        <div class="store-card__address">ул. Селезнева, 4/10</div>
+                        <div class="store-card__hours">Пн–Пт 9:00–18:00, Сб 10:00–16:00</div>
+                    </div>
+                    <div class="store-card__check">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </label>
+
+                <label class="store-card" for="store-krd2">
+                    <input class="store-radio" type="radio" name="store" id="store-krd2" value="krd2">
+                    <div class="store-card__content">
+                        <div class="store-card__city">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+                                <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            Краснодар
+                        </div>
+                        <div class="store-card__address">ул. Котлярова, 21</div>
+                        <div class="store-card__hours">Пн–Пт 9:00–18:00, Сб 10:00–16:00</div>
+                    </div>
+                    <div class="store-card__check">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </label>
+
+                <label class="store-card" for="store-msk1">
+                    <input class="store-radio" type="radio" name="store" id="store-msk1" value="msk1">
+                    <div class="store-card__content">
+                        <div class="store-card__city">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+                                <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            Москва
+                        </div>
+                        <div class="store-card__address">Аллея Первой Маевки, 15 стр3</div>
+                        <div class="store-card__hours">Пн–Пт 9:00–19:00, Сб 10:00–17:00</div>
+                    </div>
+                    <div class="store-card__check">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </label>
+
+            </div>
+        </section>
+
+        <!-- 3. Contact info -->
+        <section class="section">
+            <h2 class="section__title">Контактные данные</h2>
+            <div class="card">
+                <div class="field" id="fieldName">
+                    <label class="field__label" for="inputName">Имя *</label>
+                    <input
+                        class="field__input"
+                        id="inputName"
+                        type="text"
+                        placeholder="Как к вам обращаться?"
+                        autocomplete="given-name"
+                        oninput="clearError('fieldName')"
+                    >
+                    <span class="field__error" id="errorName"></span>
+                </div>
+                <div class="field-divider"></div>
+                <div class="field" id="fieldPhone">
+                    <label class="field__label" for="inputPhone">Телефон *</label>
+                    <input
+                        class="field__input"
+                        id="inputPhone"
+                        type="tel"
+                        placeholder="+7 (___) ___-__-__"
+                        autocomplete="tel"
+                        oninput="handlePhone(this)"
+                    >
+                    <span class="field__error" id="errorPhone"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Comment -->
+        <section class="section section--last">
+            <h2 class="section__title">Комментарий <span class="section__optional">необязательно</span></h2>
+            <div class="card">
+                <textarea
+                    class="field__textarea"
+                    id="inputComment"
+                    placeholder="Уточнения по заказу, удобное время звонка..."
+                    rows="3"
+                ></textarea>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Fixed footer -->
+    <div class="checkout-footer">
+        <div class="footer-total">
+            <span class="footer-total__label">К оплате</span>
+            <span class="footer-total__price" id="footerPrice">0 ₽</span>
+        </div>
+        <button class="submit-btn" id="submitBtn" onclick="submitOrder()">
+            Подтвердить заказ
+        </button>
+    </div>
+
+</div>
+
+<!-- Success screen (hidden initially) -->
+<div class="success-screen hidden" id="successScreen">
+    <div class="success-screen__content">
+        <div class="success-icon" id="successIcon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                <polyline points="20,6 9,17 4,12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <h1 class="success-title">Заказ оформлен!</h1>
+        <p class="success-order" id="successOrder">#000000</p>
+        <div class="success-card">
+            <div class="success-card__row">
+                <span class="success-card__icon">🏪</span>
+                <div>
+                    <div class="success-card__label">Магазин самовывоза</div>
+                    <div class="success-card__value" id="successStore"></div>
+                </div>
+            </div>
+            <div class="success-divider"></div>
+            <div class="success-card__row">
+                <span class="success-card__icon">📞</span>
+                <div>
+                    <div class="success-card__label">Свяжемся с вами</div>
+                    <div class="success-card__value" id="successPhone"></div>
+                </div>
+            </div>
+        </div>
+        <p class="success-note">Мы перезвоним для подтверждения заказа и уточним время, когда товар будет готов к выдаче</p>
+        <a href="index.html" class="success-btn">Вернуться в каталог</a>
+    </div>
+</div>
+
+<script src="src/cart/checkout.js"></script>
+</body>
+</html>

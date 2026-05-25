@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Точка Монтажа — Каталог</title>
+    <link rel="stylesheet" href="src/catalog/catalog.css">
+</head>
+<body>
+<div class="app">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header__logo">
+            <img class="logo-img" src="public/logo.png" alt="Точка Монтажа">
+        </div>
+        <button class="header__cart" onclick="location.href='cart.html'" aria-label="Корзина">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="cart-badge hidden" id="cartBadge">0</span>
+        </button>
+    </header>
+
+    <!-- Search -->
+    <div class="search-wrap">
+        <div class="search-bar">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <input
+                type="text"
+                class="search-input"
+                id="searchInput"
+                placeholder="Поиск по каталогу..."
+                oninput="handleSearch()"
+                autocomplete="off"
+            >
+            <button class="search-clear hidden" id="searchClear" onclick="clearSearch()">✕</button>
+        </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="categories-scroll">
+        <div class="categories" id="categories"></div>
+    </div>
+
+    <!-- Subcategories -->
+    <div class="sub-scroll hidden" id="subScroll">
+        <div class="subcategories" id="subcategories"></div>
+    </div>
+
+    <!-- Results count -->
+    <div class="results-bar">
+        <span id="resultsCount"></span>
+    </div>
+
+    <!-- Grid -->
+    <main class="main">
+        <div class="products-grid" id="productsGrid"></div>
+        <div class="empty-state hidden" id="emptyState">
+            <div class="empty-state__icon">🔍</div>
+            <p class="empty-state__title">Ничего не найдено</p>
+            <p class="empty-state__sub">Попробуйте изменить запрос</p>
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div class="toast hidden" id="toast"></div>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item active">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="2" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>Каталог</span>
+        </a>
+        <a href="cart.html" class="nav-item" id="navCart">
+            <div class="nav-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
+                    <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="nav-badge hidden" id="navBadge">0</span>
+            </div>
+            <span>Корзина</span>
+        </a>
+    </nav>
+
+</div>
+<script src="src/catalog/catalog.js"></script>
+</body>
+</html>

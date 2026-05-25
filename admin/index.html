@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Точка Монтажа — Администратор</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- Login screen -->
+<div class="login-screen" id="loginScreen">
+    <a href="../index.html" class="login-back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        В каталог
+    </a>
+    <div class="login-wrap">
+        <img class="login-logo" src="../public/logo.png" alt="Точка Монтажа">
+        <div class="login-lock">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="12" cy="16" r="1.5" fill="currentColor"/>
+            </svg>
+        </div>
+        <h1 class="login-title">Панель администратора</h1>
+        <p class="login-sub">Введите пароль для входа</p>
+
+        <div class="login-field" id="loginField">
+            <input
+                class="login-input"
+                id="loginInput"
+                type="password"
+                placeholder="Пароль"
+                autocomplete="current-password"
+                oninput="clearLoginError()"
+                onkeydown="if(event.key==='Enter') attemptLogin()"
+            >
+            <button type="button" class="login-eye" id="loginEye" onclick="toggleEye()">
+                <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                </svg>
+            </button>
+        </div>
+        <p class="login-error hidden" id="loginError">Неверный пароль</p>
+
+        <button class="login-btn" onclick="attemptLogin()">Войти</button>
+    </div>
+</div>
+
+<div class="app" id="app">
+
+    <!-- Header -->
+    <header class="header">
+        <button class="header__back" onclick="location.href='../index.html'" aria-label="Назад">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <span class="header__title">Администратор</span>
+        <div class="header__right">
+            <button class="header__reset" id="resetBtn" onclick="confirmReset()">Сброс</button>
+            <button class="header__logout" onclick="logout()" aria-label="Выйти">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="16,17 21,12 16,7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+        <button class="tab-btn active" id="tabProducts" onclick="switchTab('products')">Товары</button>
+        <button class="tab-btn" id="tabCategories" onclick="switchTab('categories')">Категории</button>
+        <button class="tab-btn" id="tabOrders" onclick="switchTab('orders')">Заказы</button>
+    </div>
+
+    <!-- Products section -->
+    <div id="sectionProducts">
+
+        <!-- Stats -->
+        <div class="stats" id="stats"></div>
+
+        <!-- Filter -->
+        <div class="filter-scroll">
+            <div class="filters" id="filters"></div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-wrap">
+            <div class="search-bar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                    <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input type="text" class="search-input" id="searchInput" placeholder="Поиск по товарам..." oninput="handleSearch()">
+                <button class="search-clear hidden" id="searchClear" onclick="clearSearch()">✕</button>
+            </div>
+        </div>
+
+        <!-- Product list -->
+        <main class="main">
+            <div class="product-list" id="productList"></div>
+            <div class="empty-state hidden" id="emptyState">
+                <div class="empty-state__icon">📦</div>
+                <p class="empty-state__title">Нет товаров</p>
+                <p class="empty-state__sub">Добавьте первый товар кнопкой ниже</p>
+            </div>
+        </main>
+
+        <!-- FAB: add product -->
+        <button class="fab" id="fabProducts" onclick="openProductForm()" aria-label="Добавить товар">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+        </button>
+
+    </div><!-- /sectionProducts -->
+
+    <!-- Categories section -->
+    <div id="sectionCategories" class="hidden">
+
+        <div class="cat-list" id="catList"></div>
+
+        <!-- FAB: add category -->
+        <button class="fab hidden" id="fabCategories" onclick="openCategoryForm()" aria-label="Добавить категорию">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+        </button>
+
+    </div><!-- /sectionCategories -->
+
+    <!-- Orders section -->
+    <div id="sectionOrders" class="hidden">
+        <div id="ordersList"></div>
+    </div><!-- /sectionOrders -->
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+        <a href="../index.html" class="nav-item">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="2" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>Каталог</span>
+        </a>
+        <a href="../cart.html" class="nav-item">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Корзина</span>
+        </a>
+        <a href="index.html" class="nav-item active">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Админ</span>
+        </a>
+    </nav>
+
+</div><!-- /app -->
+
+<!-- Product form overlay -->
+<div class="overlay hidden" id="formOverlay" onclick="handleOverlayClick(event)">
+    <div class="sheet" id="formSheet">
+        <div class="sheet__handle"></div>
+        <div class="sheet__header">
+            <button class="sheet__close" onclick="closeForm()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <span class="sheet__title" id="formTitle">Новый товар</span>
+            <span class="sheet__placeholder"></span>
+        </div>
+
+        <div class="sheet__body" id="sheetBody">
+
+            <!-- Photo upload -->
+            <div class="ff">
+                <label class="ff__label">Фото товара</label>
+                <div class="photo-upload" id="photoUpload" onclick="triggerPhotoInput()">
+                    <img class="photo-preview hidden" id="photoPreview" alt="Фото товара">
+                    <div class="photo-placeholder" id="photoPlaceholder">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        <span>Нажмите, чтобы загрузить фото</span>
+                    </div>
+                    <button type="button" class="photo-remove hidden" id="photoRemove" onclick="removePhoto(event)">✕</button>
+                </div>
+                <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoSelect(event)" style="display:none">
+            </div>
+
+            <!-- Name -->
+            <div class="ff" id="ff-name">
+                <label class="ff__label" for="f-name">Название *</label>
+                <input class="ff__input" id="f-name" type="text" placeholder="Название товара" oninput="clearFE('ff-name')">
+                <span class="ff__error" id="fe-name"></span>
+            </div>
+
+            <!-- Category -->
+            <div class="ff" id="ff-cat">
+                <label class="ff__label" for="f-cat">Категория *</label>
+                <select class="ff__select" id="f-cat" onchange="handleCatChange()">
+                    <option value="">— выберите —</option>
+                </select>
+                <span class="ff__error" id="fe-cat"></span>
+            </div>
+
+            <!-- Subcategory (shown dynamically) -->
+            <div class="ff hidden" id="ff-sub">
+                <label class="ff__label" for="f-sub">Подкатегория</label>
+                <select class="ff__select" id="f-sub">
+                    <option value="">Не указана</option>
+                </select>
+            </div>
+
+            <!-- Description -->
+            <div class="ff">
+                <label class="ff__label" for="f-desc">Описание</label>
+                <input class="ff__input" id="f-desc" type="text" placeholder="Краткое описание товара">
+            </div>
+
+            <!-- Price -->
+            <div class="ff" id="ff-price">
+                <label class="ff__label" for="f-price">Цена (₽) *</label>
+                <input class="ff__input" id="f-price" type="number" min="0" placeholder="0" oninput="clearFE('ff-price')">
+                <span class="ff__error" id="fe-price"></span>
+            </div>
+
+            <!-- Price label (services only) -->
+            <div class="ff hidden" id="ff-price-label">
+                <label class="ff__label" for="f-price-label">Подпись к цене</label>
+                <input class="ff__input" id="f-price-label" type="text" placeholder="от 1 500 ₽">
+            </div>
+
+            <!-- Toggles -->
+            <div class="toggles-block">
+                <div class="toggle-row">
+                    <span class="toggle-row__label">В наличии</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="f-instock" checked>
+                        <span class="toggle__slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-row" id="tr-service">
+                    <span class="toggle-row__label">Это услуга</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="f-service" onchange="handleServiceChange()">
+                        <span class="toggle__slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="save-btn" onclick="saveProduct()">Сохранить</button>
+
+        </div><!-- /sheet__body -->
+    </div><!-- /sheet -->
+</div><!-- /formOverlay -->
+
+<!-- Category form overlay -->
+<div class="overlay hidden" id="catFormOverlay" onclick="handleCatFormOverlayClick(event)">
+    <div class="sheet">
+        <div class="sheet__handle"></div>
+        <div class="sheet__header">
+            <button class="sheet__close" onclick="closeCategoryForm()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <span class="sheet__title" id="catFormTitle">Новая категория</span>
+            <span class="sheet__placeholder"></span>
+        </div>
+
+        <div class="sheet__body">
+
+            <!-- Name -->
+            <div class="ff">
+                <label class="ff__label" for="cf-name">Название *</label>
+                <input class="ff__input" id="cf-name" type="text" placeholder="Название категории">
+            </div>
+
+            <!-- Icon -->
+            <div class="ff">
+                <label class="ff__label" for="cf-icon">Иконка (эмодзи)</label>
+                <div class="icon-input-row">
+                    <div class="icon-preview-big" id="catIconPreview">?</div>
+                    <input class="ff__input ff__input--flex" id="cf-icon" type="text" placeholder="🔨" maxlength="4" oninput="handleIconInput()">
+                </div>
+            </div>
+
+            <!-- Color -->
+            <div class="ff">
+                <label class="ff__label">Цвет</label>
+                <div class="color-swatches">
+                    <div class="color-swatch swatch-1 color-swatch--active" data-color="1" onclick="selectSwatch(1)"></div>
+                    <div class="color-swatch swatch-2" data-color="2" onclick="selectSwatch(2)"></div>
+                    <div class="color-swatch swatch-3" data-color="3" onclick="selectSwatch(3)"></div>
+                    <div class="color-swatch swatch-4" data-color="4" onclick="selectSwatch(4)"></div>
+                    <div class="color-swatch swatch-5" data-color="5" onclick="selectSwatch(5)"></div>
+                    <div class="color-swatch swatch-6" data-color="6" onclick="selectSwatch(6)"></div>
+                </div>
+            </div>
+
+            <button class="save-btn" onclick="saveCategoryForm()">Сохранить</button>
+
+        </div><!-- /sheet__body -->
+    </div><!-- /sheet -->
+</div><!-- /catFormOverlay -->
+
+<!-- Subcategory form overlay -->
+<div class="overlay hidden" id="subFormOverlay" onclick="handleSubFormOverlayClick(event)">
+    <div class="sheet">
+        <div class="sheet__handle"></div>
+        <div class="sheet__header">
+            <button class="sheet__close" onclick="closeSubcategoryForm()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <span class="sheet__title" id="subFormTitle">Новая подкатегория</span>
+            <span class="sheet__placeholder"></span>
+        </div>
+
+        <div class="sheet__body">
+
+            <!-- Parent category -->
+            <div class="ff">
+                <label class="ff__label">Категория</label>
+                <div style="font-size:15px;font-weight:600;padding:4px 0;" id="subFormCatName"></div>
+            </div>
+
+            <!-- Name -->
+            <div class="ff">
+                <label class="ff__label" for="sf-name">Название *</label>
+                <input class="ff__input" id="sf-name" type="text" placeholder="Название подкатегории"
+                    onkeydown="if(event.key==='Enter') saveSubcategoryForm()">
+            </div>
+
+            <button class="save-btn" onclick="saveSubcategoryForm()">Сохранить</button>
+
+        </div><!-- /sheet__body -->
+    </div><!-- /sheet -->
+</div><!-- /subFormOverlay -->
+
+<!-- Toast -->
+<div class="toast hidden" id="toast"></div>
+
+<script src="categories.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
