@@ -282,6 +282,22 @@
                 </div>
             </div>
 
+            <!-- Variants -->
+            <div class="ff" id="ff-variants">
+                <div class="ff__label-row">
+                    <span class="ff__label">Варианты товара</span>
+                    <span class="ff__hint">Гарантия, комплектация или любые опции с разной ценой</span>
+                </div>
+                <div class="variant-rows" id="variant-rows"></div>
+                <button type="button" class="add-variant-btn" onclick="addVariantRow()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                    Добавить вариант
+                </button>
+            </div>
+
             <button class="save-btn" onclick="saveProduct()">Сохранить</button>
 
         </div><!-- /sheet__body -->

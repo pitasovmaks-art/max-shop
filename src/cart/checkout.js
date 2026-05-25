@@ -55,7 +55,10 @@ function escHtml(str) {
 
 /* ─── Cart ──────────────────────────────────────────────── */
 function getCart() {
-    try { return JSON.parse(localStorage.getItem('cart') || '[]'); }
+    try {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        return cart.map(i => ({ ...i, key: i.key || String(i.id) }));
+    }
     catch { return []; }
 }
 
@@ -77,7 +80,9 @@ function renderSummary() {
 
     document.getElementById('orderItems').innerHTML = cart.map(item => `
         <div class="order-item">
-            <span class="order-item__name">${item.name}</span>
+            <span class="order-item__name">
+                ${item.name}${item.variantLabel ? `<span class="order-item__variant"> · ${item.variantLabel}</span>` : ''}
+            </span>
             <span class="order-item__qty">× ${item.qty}</span>
             <span class="order-item__price">${fmt(item.price * item.qty)}</span>
         </div>
@@ -215,7 +220,12 @@ async function submitOrder() {
                 phone,
                 store: `${store.city}, ${store.address}`,
                 comment: comment || undefined,
-                items:   cart.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty })),
+                items:   cart.map(i => ({
+                    id:    i.id,
+                    name:  i.name + (i.variantLabel ? ` (${i.variantLabel})` : ''),
+                    price: i.price,
+                    qty:   i.qty,
+                })),
                 total,
             }),
         });

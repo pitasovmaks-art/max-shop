@@ -56,6 +56,15 @@ CREATE TABLE IF NOT EXISTS stores (
     directions TEXT    NOT NULL DEFAULT '',
     sort_order INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS product_variants (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    label      TEXT    NOT NULL,
+    price      INTEGER NOT NULL DEFAULT 0,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
 `);
 
 /* ─── Transaction helper ─────────────────────────────────── */
@@ -72,6 +81,9 @@ function seedDefaults() {
     const insProd  = db.prepare(`
         INSERT INTO products (name,desc,category_id,sub_id,price,in_stock,is_service,price_label)
         VALUES (?,?,?,?,?,?,?,?)`);
+    const insVar   = db.prepare(`
+        INSERT INTO product_variants (product_id,label,price,is_default,sort_order)
+        VALUES (?,?,?,?,?)`);
     const insStore = db.prepare(`
         INSERT INTO stores (name,city,address,hours,phone,directions,sort_order)
         VALUES (?,?,?,?,?,?,?)`);
@@ -90,9 +102,21 @@ function seedDefaults() {
         insSub.run(6, 3, 'Площадки');
         insSub.run(7, 3, 'Дюбеля');
 
-        insProd.run('NTC57C3-1',                          'Газовый монтажный пистолет, гвоздь до 57 мм',                 1, 1, 46500, 1, 0, null);
-        insProd.run('NTC65C3-1',                          'Газовый монтажный пистолет, гвоздь до 65 мм',                 1, 1, 52000, 1, 0, null);
-        insProd.run('NTC90C3-1',                          'Газовый монтажный пистолет, гвоздь до 90 мм',                 1, 1, 61000, 0, 0, null);
+        const r57 = insProd.run('NTC57C3-1',  'Газовый монтажный пистолет, гвоздь до 57 мм', 1, 1, 46500, 1, 0, null);
+        const r65 = insProd.run('NTC65C3-1',  'Газовый монтажный пистолет, гвоздь до 65 мм', 1, 1, 52000, 1, 0, null);
+        const r90 = insProd.run('NTC90C3-1',  'Газовый монтажный пистолет, гвоздь до 90 мм', 1, 1, 61000, 0, 0, null);
+
+        insVar.run(r57.lastInsertRowid, '14 дней',    46500, 1, 1);
+        insVar.run(r57.lastInsertRowid, '6 месяцев',  51000, 0, 2);
+        insVar.run(r57.lastInsertRowid, '12 месяцев', 56500, 0, 3);
+
+        insVar.run(r65.lastInsertRowid, '14 дней',    52000, 1, 1);
+        insVar.run(r65.lastInsertRowid, '6 месяцев',  57000, 0, 2);
+        insVar.run(r65.lastInsertRowid, '12 месяцев', 62000, 0, 3);
+
+        insVar.run(r90.lastInsertRowid, '14 дней',    61000, 1, 1);
+        insVar.run(r90.lastInsertRowid, '6 месяцев',  67000, 0, 2);
+        insVar.run(r90.lastInsertRowid, '12 месяцев', 73000, 0, 3);
         insProd.run('FengBao F22',                        'Газовый монтажный пистолет, компактный',                      1, 2, 37800, 1, 0, null);
         insProd.run('FengBao N50',                        'Гвоздезабивной пистолет, гвоздь до 50 мм',                    1, 2, 34500, 1, 0, null);
         insProd.run('FengBao N65',                        'Гвоздезабивной пистолет, гвоздь до 65 мм',                    1, 2, 39900, 1, 0, null);
@@ -124,11 +148,12 @@ function seedDefaults() {
 function resetToDefaults() {
     inTransaction(() => {
         db.exec('DELETE FROM orders');
+        db.exec('DELETE FROM product_variants');
         db.exec('DELETE FROM products');
         db.exec('DELETE FROM subcategories');
         db.exec('DELETE FROM categories');
         db.exec('DELETE FROM stores');
-        db.exec("DELETE FROM sqlite_sequence WHERE name IN ('products','orders','stores')");
+        db.exec("DELETE FROM sqlite_sequence WHERE name IN ('products','orders','stores','product_variants')");
     });
     seedDefaults();
 }

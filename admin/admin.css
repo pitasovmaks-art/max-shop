@@ -926,3 +926,116 @@ a      { text-decoration: none; color: inherit; }
 .sff--error .ff__input,
 .sff--error textarea.ff__input { border-color: var(--red) !important; }
 .sff__error { display: block; font-size: 12px; color: var(--red); margin-top: 4px; min-height: 16px; }
+
+/* ─── Variants in product form ───────────────────────────── */
+.ff__label-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 10px;
+}
+.ff__hint {
+    font-size: 12px;
+    color: var(--gray);
+    font-weight: 400;
+}
+
+.variant-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.variant-empty {
+    font-size: 13px;
+    color: var(--gray);
+    font-style: italic;
+    padding: 4px 0 8px;
+}
+
+.variant-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.variant-row__label {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px !important;
+    padding: 8px 10px !important;
+    height: 38px !important;
+}
+
+.variant-row__price {
+    width: 90px;
+    flex-shrink: 0;
+    font-size: 14px !important;
+    padding: 8px 10px !important;
+    height: 38px !important;
+}
+
+.variant-row__def {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+.variant-row__def input[type="radio"] { display: none; }
+.vdef-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--white);
+    transition: border-color .15s, background .15s;
+    display: flex; align-items: center; justify-content: center;
+}
+.variant-row__def input[type="radio"]:checked ~ .vdef-dot {
+    border-color: var(--orange);
+    background: var(--orange);
+}
+
+.variant-row__del {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: rgba(255,59,48,.1);
+    color: var(--red);
+    font-size: 20px;
+    line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background .15s;
+}
+.variant-row__del:active { background: rgba(255,59,48,.22); }
+
+.add-variant-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--gray);
+    background: none;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+}
+.add-variant-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+/* ─── Variant count badge in product row ─────────────────── */
+.product-row__vars {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--orange);
+    background: var(--orange-light);
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin-right: 4px;
+}

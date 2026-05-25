@@ -432,3 +432,32 @@ a      { text-decoration: none; color: inherit; }
     padding: 0 4px;
     display: flex; align-items: center; justify-content: center;
 }
+
+/* ─── Variant pills ─────────────────────────────────────── */
+.variant-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 6px 0 4px;
+}
+
+.variant-pill {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--gray-light, #F2F2F7);
+    color: var(--dark, #1C1C1E);
+    border: 1.5px solid var(--border, #E5E7EB);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color .15s, background .15s, color .15s;
+    -webkit-tap-highlight-color: transparent;
+    line-height: 1.5;
+}
+
+.variant-pill--active {
+    border-color: var(--orange, #FF6600);
+    background: #FFF3EC;
+    color: var(--orange, #FF6600);
+}

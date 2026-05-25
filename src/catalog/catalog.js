@@ -23,9 +23,38 @@ function subById(id) {
     return _subcategories.find(s => s.id === id) || null;
 }
 
+/* ─── Variant selection state ───────────────────────────── */
+const _selectedVariants = {}; // { [productId]: variantId }
+
+function _effectiveVariant(product) {
+    if (!product.variants || !product.variants.length) return null;
+    const selId = _selectedVariants[product.id];
+    return selId
+        ? product.variants.find(v => v.id === selId) || null
+        : product.variants.find(v => v.isDefault) || product.variants[0];
+}
+
+function selectVariant(productId, variantId) {
+    _selectedVariants[productId] = variantId;
+    const card = document.getElementById(`pcard-${productId}`);
+    if (!card) return;
+    card.querySelectorAll('.variant-pill').forEach(pill => {
+        pill.classList.toggle('variant-pill--active', +pill.dataset.vid === variantId);
+    });
+    const product = _products.find(p => p.id === productId);
+    const variant  = product && product.variants.find(v => v.id === variantId);
+    if (variant) {
+        const priceEl = card.querySelector('.product-card__price');
+        if (priceEl) priceEl.textContent = fmt(variant.price);
+    }
+}
+
 /* ─── Cart (localStorage) ───────────────────────────────── */
 function getCart() {
-    try { return JSON.parse(localStorage.getItem('cart') || '[]'); }
+    try {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        return cart.map(i => ({ ...i, key: i.key || String(i.id) }));
+    }
     catch { return []; }
 }
 
@@ -34,18 +63,26 @@ function saveCart(cart) {
     updateBadges();
 }
 
-function addToCart(id) {
-    const product = _products.find(p => p.id === id);
+function addToCart(productId) {
+    const product = _products.find(p => p.id === productId);
     if (!product) return;
+
+    let variantId = null, variantLabel = null, price = product.price;
+    const variant = _effectiveVariant(product);
+    if (variant) { variantId = variant.id; variantLabel = variant.label; price = variant.price; }
+
+    const key  = variantId != null ? `${productId}_v${variantId}` : String(productId);
     const cart = getCart();
-    const existing = cart.find(i => i.id === id);
+    const existing = cart.find(i => i.key === key);
     if (existing) {
         existing.qty += 1;
     } else {
-        cart.push({ id, name: product.name, price: product.price, qty: 1, categoryId: product.categoryId });
+        const item = { key, id: productId, name: product.name, price, qty: 1, categoryId: product.categoryId };
+        if (variantId != null) { item.variantId = variantId; item.variantLabel = variantLabel; }
+        cart.push(item);
     }
     saveCart(cart);
-    showToast(`${product.name} добавлен в корзину`);
+    showToast(`${product.name}${variantLabel ? ` (${variantLabel})` : ''} добавлен в корзину`);
 }
 
 function getTotalQty() {
@@ -188,9 +225,21 @@ function render() {
         const subBadge = sub
             ? `<span class="product-card__badge-brand">${sub.name}</span>` : '';
 
+        const hasVariants = p.variants && p.variants.length > 0;
+        const activeVar   = _effectiveVariant(p);
+        const displayPrice = activeVar ? activeVar.price : p.price;
+
+        const variantPills = hasVariants
+            ? `<div class="variant-pills">${p.variants.map(vr =>
+                `<button class="variant-pill${activeVar && vr.id === activeVar.id ? ' variant-pill--active' : ''}"
+                    data-vid="${vr.id}"
+                    onclick="selectVariant(${p.id},${vr.id})">${vr.label}</button>`
+              ).join('')}</div>`
+            : '';
+
         if (p.isService) {
             return `
-            <div class="product-card">
+            <div class="product-card" id="pcard-${p.id}">
                 <div class="product-card__img ${imgBg}">${imgIcon}${subBadge}</div>
                 <div class="product-card__body">
                     <div class="product-card__name">${p.name}</div>
@@ -208,13 +257,14 @@ function render() {
             : `<button class="add-btn add-btn--disabled" disabled>+</button>`;
 
         return `
-        <div class="product-card">
+        <div class="product-card" id="pcard-${p.id}">
             <div class="product-card__img ${imgBg}">${imgIcon}${outBadge}${subBadge}</div>
             <div class="product-card__body">
                 <div class="product-card__name">${p.name}</div>
                 <div class="product-card__desc">${p.desc || ''}</div>
+                ${variantPills}
                 <div class="product-card__footer">
-                    <span class="product-card__price">${fmt(p.price)}</span>
+                    <span class="product-card__price">${fmt(displayPrice)}</span>
                     ${btn}
                 </div>
             </div>

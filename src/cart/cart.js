@@ -8,7 +8,10 @@ const CAT_META = {
 
 /* ─── Cart storage ──────────────────────────────────────── */
 function getCart() {
-    try { return JSON.parse(localStorage.getItem('cart') || '[]'); }
+    try {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        return cart.map(i => ({ ...i, key: i.key || String(i.id) }));
+    }
     catch { return []; }
 }
 
@@ -17,32 +20,30 @@ function saveCart(cart) {
 }
 
 /* ─── Mutations ─────────────────────────────────────────── */
-function updateQty(id, delta) {
+function updateQty(key, delta) {
     const cart = getCart();
-    const item = cart.find(i => i.id === id);
+    const item = cart.find(i => i.key === key);
     if (!item) return;
 
     item.qty += delta;
     if (item.qty <= 0) {
-        removeItem(id);
+        removeItem(key);
         return;
     }
     saveCart(cart);
     render();
 }
 
-function removeItem(id) {
-    const el = document.getElementById(`item-${id}`);
+function removeItem(key) {
+    const el = document.getElementById(`item-${key}`);
     if (el) {
         el.classList.add('removing');
         setTimeout(() => {
-            const cart = getCart().filter(i => i.id !== id);
-            saveCart(cart);
+            saveCart(getCart().filter(i => i.key !== key));
             render();
         }, 200);
     } else {
-        const cart = getCart().filter(i => i.id !== id);
-        saveCart(cart);
+        saveCart(getCart().filter(i => i.key !== key));
         render();
     }
 }
@@ -101,23 +102,25 @@ function render() {
     navBadge.classList.remove('hidden');
 
     list.innerHTML = cart.map(item => {
-        const meta = CAT_META[item.category] || { icon: '📦', bg: 'img-bg--default' };
+        const meta      = CAT_META[item.category] || { icon: '📦', bg: 'img-bg--default' };
         const lineTotal = fmt(item.price * item.qty);
+        const safeKey   = item.key.replace(/'/g, "\\'");
 
         return `
-        <div class="cart-item" id="item-${item.id}">
+        <div class="cart-item" id="item-${item.key}">
             <div class="cart-item__img ${meta.bg}">${meta.icon}</div>
             <div class="cart-item__info">
                 <div class="cart-item__name">${item.name}</div>
+                ${item.variantLabel ? `<div class="cart-item__variant">${item.variantLabel}</div>` : ''}
                 <div class="cart-item__unit">${fmt(item.price)}&nbsp;/ шт</div>
                 <div class="cart-item__controls">
-                    <button class="qty-btn qty-btn--dec" onclick="updateQty(${item.id}, -1)" aria-label="Уменьшить">−</button>
+                    <button class="qty-btn qty-btn--dec" onclick="updateQty('${safeKey}', -1)" aria-label="Уменьшить">−</button>
                     <span class="qty-value">${item.qty}</span>
-                    <button class="qty-btn" onclick="updateQty(${item.id}, 1)" aria-label="Увеличить">+</button>
+                    <button class="qty-btn" onclick="updateQty('${safeKey}', 1)" aria-label="Увеличить">+</button>
                     <span class="cart-item__line-total">${lineTotal}</span>
                 </div>
             </div>
-            <button class="remove-btn" onclick="removeItem(${item.id})" aria-label="Удалить">
+            <button class="remove-btn" onclick="removeItem('${safeKey}')" aria-label="Удалить">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                     <polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

@@ -1,6 +1,64 @@
 /* ─── Global cache (products; categories/subs in categories.js) */
 let _products = [];
 
+/* ─── Variants form state ───────────────────────────────────── */
+let _formVariants = []; // { label, price, isDefault }
+
+function renderVariantRows() {
+    const el = document.getElementById('variant-rows');
+    if (!el) return;
+    if (!_formVariants.length) {
+        el.innerHTML = '<div class="variant-empty">Нет вариантов — товар добавляется одним вариантом</div>';
+        return;
+    }
+    el.innerHTML = _formVariants.map((v, i) => `
+        <div class="variant-row" id="vrow-${i}">
+            <input class="ff__input variant-row__label" type="text"
+                   value="${_escAttr(v.label)}"
+                   placeholder="Название (напр. 14 дней)"
+                   oninput="_varField(${i},'label',this.value)">
+            <input class="ff__input variant-row__price" type="number"
+                   value="${v.price || ''}"
+                   placeholder="Цена"
+                   min="0"
+                   oninput="_varField(${i},'price',+this.value||0)">
+            <label class="variant-row__def" title="По умолчанию">
+                <input type="radio" name="f-var-default"
+                       ${v.isDefault ? 'checked' : ''}
+                       onchange="setDefaultVariant(${i})">
+                <span class="vdef-dot"></span>
+            </label>
+            <button type="button" class="variant-row__del" onclick="removeVariantRow(${i})" aria-label="Удалить">×</button>
+        </div>`).join('');
+}
+
+function _escAttr(s) { return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+function _varField(i, field, val) { if (_formVariants[i]) _formVariants[i][field] = val; }
+
+function addVariantRow() {
+    _formVariants.push({ label: '', price: 0, isDefault: _formVariants.length === 0 });
+    renderVariantRows();
+    const inputs = document.querySelectorAll('.variant-row__label');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function removeVariantRow(idx) {
+    const wasDefault = _formVariants[idx]?.isDefault;
+    _formVariants.splice(idx, 1);
+    if (wasDefault && _formVariants.length) _formVariants[0].isDefault = true;
+    renderVariantRows();
+}
+
+function setDefaultVariant(idx) {
+    _formVariants.forEach((v, i) => { v.isDefault = i === idx; });
+}
+
+function _collectVariants() {
+    return _formVariants
+        .filter(v => String(v.label).trim())
+        .map((v, i) => ({ label: String(v.label).trim(), price: v.price || 0, isDefault: !!v.isDefault, sortOrder: i }));
+}
+
 /* ─── Auth ──────────────────────────────────────────────── */
 const TOKEN_KEY = 'admin_token';
 function getToken() { return sessionStorage.getItem(TOKEN_KEY) || ''; }
@@ -276,6 +334,10 @@ function renderList() {
             ? `<span class="product-row__stock product-row__stock--in">● В наличии</span>`
             : `<span class="product-row__stock product-row__stock--out">● Нет в наличии</span>`;
 
+        const varHtml = p.variants && p.variants.length
+            ? `<span class="product-row__vars">${p.variants.length} вар.</span>`
+            : '';
+
         const priceHtml = p.isService
             ? `<span class="product-row__price">${p.priceLabel || fmt(p.price)}</span>`
             : `<span class="product-row__price">${fmt(p.price)}</span>`;
@@ -288,7 +350,7 @@ function renderList() {
             <div class="product-row__info">
                 <div class="product-row__name">${p.name}</div>
                 <div class="product-row__meta">${metaParts.join(' · ')}</div>
-                <div class="product-row__bottom">${priceHtml}${stockHtml}</div>
+                <div class="product-row__bottom">${priceHtml}${varHtml}${stockHtml}</div>
             </div>
             <div class="product-row__actions">
                 <button class="action-btn action-btn--edit" onclick="openProductForm(${p.id})" aria-label="Редактировать">
@@ -430,6 +492,8 @@ function fillForm(p) {
     if (p.image) setPhotoPreview(p.image); else clearPhotoPreview();
     document.querySelectorAll('.ff--error').forEach(el => el.classList.remove('ff--error'));
     document.querySelectorAll('.ff__error').forEach(el => el.textContent = '');
+    _formVariants = (p.variants || []).map(vr => ({ label: vr.label, price: vr.price, isDefault: vr.isDefault }));
+    renderVariantRows();
 }
 
 function clearForm() {
@@ -442,6 +506,8 @@ function clearForm() {
     clearPhotoPreview();
     document.querySelectorAll('.ff--error').forEach(el => el.classList.remove('ff--error'));
     document.querySelectorAll('.ff__error').forEach(el => el.textContent = '');
+    _formVariants = [];
+    renderVariantRows();
 }
 
 function v(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
@@ -500,10 +566,15 @@ async function saveProduct() {
     if (btn) { btn.disabled = true; btn.textContent = 'Сохраняем...'; }
 
     try {
+        let saved;
         if (state.editId) {
-            await apiAdmin(`/api/products/${state.editId}`, 'PUT', product);
+            saved = await apiAdmin(`/api/products/${state.editId}`, 'PUT', product);
         } else {
-            await apiAdmin('/api/products', 'POST', product);
+            saved = await apiAdmin('/api/products', 'POST', product);
+        }
+        const productId = state.editId || saved?.id;
+        if (productId) {
+            await apiAdmin(`/api/products/${productId}/variants`, 'PUT', _collectVariants());
         }
         await refreshData();
         closeForm();

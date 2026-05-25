@@ -366,3 +366,11 @@ a      { text-decoration: none; color: inherit; }
 }
 .dialog__btn--danger  { background: var(--red); color: #fff; }
 .dialog__btn--cancel  { background: var(--gray-light); color: var(--dark); }
+
+/* ─── Variant label in cart item ────────────────────────── */
+.cart-item__variant {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--orange, #FF6600);
+    margin-top: 1px;
+}
