@@ -1,193 +1,204 @@
-const { DatabaseSync } = require('node:sqlite');
-const path             = require('path');
-const fs               = require('fs');
+const { Pool } = require('pg');
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'shop.db');
+if (!process.env.DATABASE_URL) {
+    console.error('FATAL: DATABASE_URL env var is not set');
+    process.exit(1);
+}
 
-/* Ensure the directory exists (needed when DB_PATH points to /tmp/subdir) */
-const DB_DIR = path.dirname(DB_PATH);
-if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1')
+        ? false
+        : { rejectUnauthorized: false },
+});
 
-const db = new DatabaseSync(DB_PATH);
-console.log(`База данных: ${DB_PATH}`);
+pool.on('error', (err) => console.error('PostgreSQL pool error:', err.message));
 
-db.exec('PRAGMA journal_mode = WAL');
-db.exec('PRAGMA foreign_keys = ON');
+/* ─── Query helpers ──────────────────────────────────────── */
+async function query(sql, params = []) {
+    const { rows } = await pool.query(sql, params);
+    return rows;
+}
+
+async function queryOne(sql, params = []) {
+    const { rows } = await pool.query(sql, params);
+    return rows[0] || null;
+}
+
+async function execute(sql, params = []) {
+    const res = await pool.query(sql, params);
+    return res.rowCount;
+}
+
+async function inTransaction(fn) {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        await fn(client);
+        await client.query('COMMIT');
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+    } finally {
+        client.release();
+    }
+}
 
 /* ─── Schema ─────────────────────────────────────────────── */
-db.exec(`
-CREATE TABLE IF NOT EXISTS categories (
-    id    INTEGER PRIMARY KEY,
-    name  TEXT    NOT NULL,
-    icon  TEXT    NOT NULL DEFAULT '📦',
-    color INTEGER NOT NULL DEFAULT 1
-);
+async function createSchema() {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS categories (
+            id    INTEGER PRIMARY KEY,
+            name  TEXT    NOT NULL,
+            icon  TEXT    NOT NULL DEFAULT '📦',
+            color INTEGER NOT NULL DEFAULT 1
+        );
 
-CREATE TABLE IF NOT EXISTS subcategories (
-    id          INTEGER PRIMARY KEY,
-    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-    name        TEXT    NOT NULL
-);
+        CREATE TABLE IF NOT EXISTS subcategories (
+            id          INTEGER PRIMARY KEY,
+            category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+            name        TEXT    NOT NULL
+        );
 
-CREATE TABLE IF NOT EXISTS products (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    name        TEXT    NOT NULL,
-    desc        TEXT,
-    category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
-    sub_id      INTEGER REFERENCES subcategories(id) ON DELETE SET NULL,
-    price       INTEGER NOT NULL DEFAULT 0,
-    in_stock    INTEGER NOT NULL DEFAULT 1,
-    is_service  INTEGER NOT NULL DEFAULT 0,
-    price_label TEXT,
-    image       TEXT
-);
+        CREATE TABLE IF NOT EXISTS products (
+            id          SERIAL  PRIMARY KEY,
+            name        TEXT    NOT NULL,
+            "desc"      TEXT,
+            category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+            sub_id      INTEGER REFERENCES subcategories(id) ON DELETE SET NULL,
+            price       INTEGER NOT NULL DEFAULT 0,
+            in_stock    INTEGER NOT NULL DEFAULT 1,
+            is_service  INTEGER NOT NULL DEFAULT 0,
+            price_label TEXT,
+            image       TEXT
+        );
 
-CREATE TABLE IF NOT EXISTS orders (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    name       TEXT    NOT NULL,
-    phone      TEXT    NOT NULL,
-    store      TEXT    NOT NULL,
-    comment    TEXT,
-    items      TEXT    NOT NULL,
-    total      INTEGER NOT NULL,
-    status     TEXT    NOT NULL DEFAULT 'new',
-    created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
-);
+        CREATE TABLE IF NOT EXISTS orders (
+            id         SERIAL PRIMARY KEY,
+            name       TEXT    NOT NULL,
+            phone      TEXT    NOT NULL,
+            store      TEXT    NOT NULL,
+            comment    TEXT,
+            items      TEXT    NOT NULL,
+            total      INTEGER NOT NULL,
+            status     TEXT    NOT NULL DEFAULT 'new',
+            created_at TEXT    NOT NULL DEFAULT TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+        );
 
-CREATE TABLE IF NOT EXISTS stores (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    name       TEXT    NOT NULL,
-    city       TEXT    NOT NULL,
-    address    TEXT    NOT NULL,
-    hours      TEXT    NOT NULL DEFAULT '',
-    phone      TEXT    NOT NULL DEFAULT '',
-    directions TEXT    NOT NULL DEFAULT '',
-    sort_order INTEGER NOT NULL DEFAULT 0
-);
+        CREATE TABLE IF NOT EXISTS stores (
+            id         SERIAL  PRIMARY KEY,
+            name       TEXT    NOT NULL,
+            city       TEXT    NOT NULL,
+            address    TEXT    NOT NULL,
+            hours      TEXT    NOT NULL DEFAULT '',
+            phone      TEXT    NOT NULL DEFAULT '',
+            directions TEXT    NOT NULL DEFAULT '',
+            sort_order INTEGER NOT NULL DEFAULT 0
+        );
 
-CREATE TABLE IF NOT EXISTS product_variants (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    label      TEXT    NOT NULL,
-    price      INTEGER NOT NULL DEFAULT 0,
-    is_default INTEGER NOT NULL DEFAULT 0,
-    sort_order INTEGER NOT NULL DEFAULT 0
-);
-`);
-
-/* ─── Transaction helper ─────────────────────────────────── */
-function inTransaction(fn) {
-    db.exec('BEGIN');
-    try   { fn(); db.exec('COMMIT'); }
-    catch (e) { db.exec('ROLLBACK'); throw e; }
+        CREATE TABLE IF NOT EXISTS product_variants (
+            id         SERIAL  PRIMARY KEY,
+            product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+            label      TEXT    NOT NULL,
+            price      INTEGER NOT NULL DEFAULT 0,
+            is_default INTEGER NOT NULL DEFAULT 0,
+            sort_order INTEGER NOT NULL DEFAULT 0
+        );
+    `);
 }
 
 /* ─── Seed default data ──────────────────────────────────── */
-function seedDefaults() {
-    const insCat   = db.prepare('INSERT INTO categories (id,name,icon,color) VALUES (?,?,?,?)');
-    const insSub   = db.prepare('INSERT INTO subcategories (id,category_id,name) VALUES (?,?,?)');
-    const insProd  = db.prepare(`
-        INSERT INTO products (name,desc,category_id,sub_id,price,in_stock,is_service,price_label)
-        VALUES (?,?,?,?,?,?,?,?)`);
-    const insVar   = db.prepare(`
-        INSERT INTO product_variants (product_id,label,price,is_default,sort_order)
-        VALUES (?,?,?,?,?)`);
-    const insStore = db.prepare(`
-        INSERT INTO stores (name,city,address,hours,phone,directions,sort_order)
-        VALUES (?,?,?,?,?,?,?)`);
+async function seedDefaults() {
+    await inTransaction(async (client) => {
+        await client.query(`INSERT INTO categories (id,name,icon,color) VALUES
+            (1,'Монтажные пистолеты','🔨',1),
+            (2,'Аккумуляторные инструменты','⚡',2),
+            (3,'Расходники','📦',3),
+            (4,'Услуги','🔧',4)`);
 
-    inTransaction(() => {
-        insCat.run(1, 'Монтажные пистолеты',       '🔨', 1);
-        insCat.run(2, 'Аккумуляторные инструменты', '⚡',  2);
-        insCat.run(3, 'Расходники',                '📦', 3);
-        insCat.run(4, 'Услуги',                    '🔧', 4);
+        await client.query(`INSERT INTO subcategories (id,category_id,name) VALUES
+            (1,1,'NTC'),(2,1,'FengBao'),
+            (3,3,'Гвозди'),(4,3,'Газовые баллоны'),
+            (5,3,'Клипсы'),(6,3,'Площадки'),(7,3,'Дюбеля')`);
 
-        insSub.run(1, 1, 'NTC');
-        insSub.run(2, 1, 'FengBao');
-        insSub.run(3, 3, 'Гвозди');
-        insSub.run(4, 3, 'Газовые баллоны');
-        insSub.run(5, 3, 'Клипсы');
-        insSub.run(6, 3, 'Площадки');
-        insSub.run(7, 3, 'Дюбеля');
+        const ins = (name, desc, catId, subId, price, inStock, isService, priceLabel) =>
+            client.query(
+                `INSERT INTO products (name,"desc",category_id,sub_id,price,in_stock,is_service,price_label)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+                [name, desc, catId, subId, price, inStock, isService, priceLabel]
+            );
 
-        const r57 = insProd.run('NTC57C3-1',  'Газовый монтажный пистолет, гвоздь до 57 мм', 1, 1, 46500, 1, 0, null);
-        const r65 = insProd.run('NTC65C3-1',  'Газовый монтажный пистолет, гвоздь до 65 мм', 1, 1, 52000, 1, 0, null);
-        const r90 = insProd.run('NTC90C3-1',  'Газовый монтажный пистолет, гвоздь до 90 мм', 1, 1, 61000, 0, 0, null);
+        const r57 = (await ins('NTC57C3-1',  'Газовый монтажный пистолет, гвоздь до 57 мм', 1,1,46500,1,0,null)).rows[0].id;
+        const r65 = (await ins('NTC65C3-1',  'Газовый монтажный пистолет, гвоздь до 65 мм', 1,1,52000,1,0,null)).rows[0].id;
+        const r90 = (await ins('NTC90C3-1',  'Газовый монтажный пистолет, гвоздь до 90 мм', 1,1,61000,0,0,null)).rows[0].id;
 
-        insVar.run(r57.lastInsertRowid, '14 дней',    46500, 1, 1);
-        insVar.run(r57.lastInsertRowid, '6 месяцев',  51000, 0, 2);
-        insVar.run(r57.lastInsertRowid, '12 месяцев', 56500, 0, 3);
+        await client.query(
+            `INSERT INTO product_variants (product_id,label,price,is_default,sort_order) VALUES
+            ($1,'14 дней',46500,1,1),($1,'6 месяцев',51000,0,2),($1,'12 месяцев',56500,0,3),
+            ($2,'14 дней',52000,1,1),($2,'6 месяцев',57000,0,2),($2,'12 месяцев',62000,0,3),
+            ($3,'14 дней',61000,1,1),($3,'6 месяцев',67000,0,2),($3,'12 месяцев',73000,0,3)`,
+            [r57, r65, r90]
+        );
 
-        insVar.run(r65.lastInsertRowid, '14 дней',    52000, 1, 1);
-        insVar.run(r65.lastInsertRowid, '6 месяцев',  57000, 0, 2);
-        insVar.run(r65.lastInsertRowid, '12 месяцев', 62000, 0, 3);
+        const products = [
+            ['FengBao F22',                       'Газовый монтажный пистолет, компактный',                    1,2,37800,1,0,null],
+            ['FengBao N50',                       'Гвоздезабивной пистолет, гвоздь до 50 мм',                 1,2,34500,1,0,null],
+            ['FengBao N65',                       'Гвоздезабивной пистолет, гвоздь до 65 мм',                 1,2,39900,1,0,null],
+            ['Шуруповёрт аккумуляторный 18V',    '2 аккумулятора 2Ah, кейс в комплекте',                     2,null,11500,1,0,null],
+            ['Перфоратор аккумуляторный 20V',    'SDS+, удар 2.5 Дж, аккумулятор 4Ah',                       2,null,19800,1,0,null],
+            ['Дрель-шуруповёрт 18V',             'Безударная, 2 аккумулятора, 60 Нм',                         2,null,9200,0,0,null],
+            ['УШМ аккумуляторная 18V',           'Диск 115 мм, аккумулятор 5Ah',                              2,null,15600,1,0,null],
+            ['Гвозди монтажные 57 мм',           'Упак. 1000 шт, для газовых пистолетов',                     3,3,1250,1,0,null],
+            ['Гвозди монтажные 65 мм',           'Упак. 1000 шт, для газовых пистолетов',                     3,3,1390,1,0,null],
+            ['Гвозди монтажные 90 мм',           'Упак. 1000 шт, повышенная прочность',                       3,3,1580,1,0,null],
+            ['Газовый баллон для пистолета',     'Совместим с NTC и FengBao, 165 мл',                         3,4,890,1,0,null],
+            ['Газовый баллон (3 шт)',            'Комплект 3 баллона по 165 мл',                               3,4,2490,1,0,null],
+            ['Клипсы монтажные 16 мм (100 шт)', 'Для кабелей и труб, крепление пистолетом',                  3,5,420,1,0,null],
+            ['Клипсы монтажные 22 мм (100 шт)', 'Для труб Ø22 мм, крепление пистолетом',                     3,5,490,1,0,null],
+            ['Площадки монтажные 25×25 (100 шт)','Самоклеящиеся, крепление пистолетом',                      3,6,360,1,0,null],
+            ['Дюбель-гвоздь 6×40 (100 шт)',     'Нейлоновый, универсальный',                                  3,7,280,1,0,null],
+            ['Дюбель-гвоздь 8×60 (50 шт)',      'Нейлоновый, усиленный',                                      3,7,310,0,0,null],
+            ['Ремонт монтажного пистолета',      'Диагностика, замена деталей, настройка. NTC и FengBao',      4,null,3500,1,1,'от 3 500 ₽'],
+            ['Чистка монтажного пистолета',      'Профессиональная разборка, очистка, смазка всех механизмов',4,null,1500,1,1,'от 1 500 ₽'],
+        ];
+        for (const p of products) await ins(...p);
 
-        insVar.run(r90.lastInsertRowid, '14 дней',    61000, 1, 1);
-        insVar.run(r90.lastInsertRowid, '6 месяцев',  67000, 0, 2);
-        insVar.run(r90.lastInsertRowid, '12 месяцев', 73000, 0, 3);
-        insProd.run('FengBao F22',                        'Газовый монтажный пистолет, компактный',                      1, 2, 37800, 1, 0, null);
-        insProd.run('FengBao N50',                        'Гвоздезабивной пистолет, гвоздь до 50 мм',                    1, 2, 34500, 1, 0, null);
-        insProd.run('FengBao N65',                        'Гвоздезабивной пистолет, гвоздь до 65 мм',                    1, 2, 39900, 1, 0, null);
-        insProd.run('Шуруповёрт аккумуляторный 18V',     '2 аккумулятора 2Ah, кейс в комплекте',                        2, null, 11500, 1, 0, null);
-        insProd.run('Перфоратор аккумуляторный 20V',     'SDS+, удар 2.5 Дж, аккумулятор 4Ah',                          2, null, 19800, 1, 0, null);
-        insProd.run('Дрель-шуруповёрт 18V',              'Безударная, 2 аккумулятора, 60 Нм',                            2, null,  9200, 0, 0, null);
-        insProd.run('УШМ аккумуляторная 18V',            'Диск 115 мм, аккумулятор 5Ah',                                 2, null, 15600, 1, 0, null);
-        insProd.run('Гвозди монтажные 57 мм',            'Упак. 1000 шт, для газовых пистолетов',                        3, 3,  1250, 1, 0, null);
-        insProd.run('Гвозди монтажные 65 мм',            'Упак. 1000 шт, для газовых пистолетов',                        3, 3,  1390, 1, 0, null);
-        insProd.run('Гвозди монтажные 90 мм',            'Упак. 1000 шт, повышенная прочность',                          3, 3,  1580, 1, 0, null);
-        insProd.run('Газовый баллон для пистолета',      'Совместим с NTC и FengBao, 165 мл',                            3, 4,   890, 1, 0, null);
-        insProd.run('Газовый баллон (3 шт)',             'Комплект 3 баллона по 165 мл',                                  3, 4,  2490, 1, 0, null);
-        insProd.run('Клипсы монтажные 16 мм (100 шт)',  'Для кабелей и труб, крепление пистолетом',                     3, 5,   420, 1, 0, null);
-        insProd.run('Клипсы монтажные 22 мм (100 шт)',  'Для труб Ø22 мм, крепление пистолетом',                        3, 5,   490, 1, 0, null);
-        insProd.run('Площадки монтажные 25×25 (100 шт)','Самоклеящиеся, крепление пистолетом',                           3, 6,   360, 1, 0, null);
-        insProd.run('Дюбель-гвоздь 6×40 (100 шт)',      'Нейлоновый, универсальный',                                     3, 7,   280, 1, 0, null);
-        insProd.run('Дюбель-гвоздь 8×60 (50 шт)',       'Нейлоновый, усиленный',                                         3, 7,   310, 0, 0, null);
-        insProd.run('Ремонт монтажного пистолета',       'Диагностика, замена деталей, настройка. NTC и FengBao',         4, null, 3500, 1, 1, 'от 3 500 ₽');
-        insProd.run('Чистка монтажного пистолета',       'Профессиональная разборка, очистка, смазка всех механизмов',   4, null, 1500, 1, 1, 'от 1 500 ₽');
-
-        insStore.run('Краснодар — ул. Селезнева', 'Краснодар', 'ул. Селезнева, 4/10',            'Пн–Сб 08:00–18:00', '', '', 1);
-        insStore.run('Краснодар — ул. Котлярова', 'Краснодар', 'ул. Котлярова, 21',              'Пн–Сб 08:00–18:00', '', '', 2);
-        insStore.run('Москва — Аллея Первой Маевки', 'Москва', 'Аллея Первой Маевки, 15 стр3',  'Пн–Сб 08:00–18:00', '', '', 3);
+        await client.query(`INSERT INTO stores (name,city,address,hours,phone,directions,sort_order) VALUES
+            ('Краснодар — ул. Селезнева',    'Краснодар','ул. Селезнева, 4/10',          'Пн–Сб 08:00–18:00','','',1),
+            ('Краснодар — ул. Котлярова',    'Краснодар','ул. Котлярова, 21',            'Пн–Сб 08:00–18:00','','',2),
+            ('Москва — Аллея Первой Маевки', 'Москва',   'Аллея Первой Маевки, 15 стр3','Пн–Сб 08:00–18:00','','',3)`);
     });
 
     console.log('База данных заполнена начальными данными');
 }
 
-function resetToDefaults() {
-    inTransaction(() => {
-        db.exec('DELETE FROM orders');
-        db.exec('DELETE FROM product_variants');
-        db.exec('DELETE FROM products');
-        db.exec('DELETE FROM subcategories');
-        db.exec('DELETE FROM categories');
-        db.exec('DELETE FROM stores');
-        db.exec("DELETE FROM sqlite_sequence WHERE name IN ('products','orders','stores','product_variants')");
-    });
-    seedDefaults();
+/* ─── Reset to defaults ──────────────────────────────────── */
+async function resetToDefaults() {
+    await pool.query(
+        'TRUNCATE product_variants, products, subcategories, categories, orders, stores RESTART IDENTITY CASCADE'
+    );
+    await seedDefaults();
 }
 
-/* ─── Auto-seed on first run ─────────────────────────────── */
-if (db.prepare('SELECT COUNT(*) as n FROM categories').get().n === 0) {
-    seedDefaults();
-} else if (db.prepare('SELECT COUNT(*) as n FROM stores').get().n === 0) {
-    const insStore = db.prepare(`
-        INSERT INTO stores (name,city,address,hours,phone,directions,sort_order)
-        VALUES (?,?,?,?,?,?,?)`);
-    inTransaction(() => {
-        insStore.run('Краснодар — ул. Селезнева',    'Краснодар', 'ул. Селезнева, 4/10',           'Пн–Сб 08:00–18:00', '', '', 1);
-        insStore.run('Краснодар — ул. Котлярова',    'Краснодар', 'ул. Котлярова, 21',             'Пн–Сб 08:00–18:00', '', '', 2);
-        insStore.run('Москва — Аллея Первой Маевки', 'Москва',    'Аллея Первой Маевки, 15 стр3', 'Пн–Сб 08:00–18:00', '', '', 3);
-    });
-    console.log('Магазины добавлены в базу данных');
+/* ─── Init: schema + auto-seed ───────────────────────────── */
+async function init() {
+    await createSchema();
+
+    const catCount = await queryOne('SELECT COUNT(*) AS n FROM categories');
+    if (parseInt(catCount.n, 10) === 0) {
+        await seedDefaults();
+    } else {
+        const storeCount = await queryOne('SELECT COUNT(*) AS n FROM stores');
+        if (parseInt(storeCount.n, 10) === 0) {
+            await pool.query(`INSERT INTO stores (name,city,address,hours,phone,directions,sort_order) VALUES
+                ('Краснодар — ул. Селезнева',    'Краснодар','ул. Селезнева, 4/10',          'Пн–Сб 08:00–18:00','','',1),
+                ('Краснодар — ул. Котлярова',    'Краснодар','ул. Котлярова, 21',            'Пн–Сб 08:00–18:00','','',2),
+                ('Москва — Аллея Первой Маевки', 'Москва',   'Аллея Первой Маевки, 15 стр3','Пн–Сб 08:00–18:00','','',3)`);
+            console.log('Магазины добавлены в базу данных');
+        }
+    }
+
+    console.log('PostgreSQL: схема готова');
 }
 
-/* ─── Data migrations (idempotent) ───────────────────────── */
-db.exec("UPDATE stores SET hours='Пн–Сб 08:00–18:00' WHERE hours IN ('Пн–Пт 9:00–18:00, Сб 10:00–16:00','Пн–Пт 9:00–19:00, Сб 10:00–17:00')");
-db.exec("UPDATE subcategories SET name='NTC' WHERE name='Toua'");
-db.exec("UPDATE products SET name=REPLACE(name,'Toua ','') WHERE name LIKE 'Toua %'");
-db.exec("UPDATE products SET desc=REPLACE(desc,'Toua','NTC') WHERE desc LIKE '%Toua%'");
-
-db.inTransaction   = inTransaction;
-db.resetToDefaults = resetToDefaults;
-
-module.exports = db;
+module.exports = { query, queryOne, execute, inTransaction, init, resetToDefaults };

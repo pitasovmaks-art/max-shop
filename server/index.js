@@ -14,9 +14,9 @@ app.use('/api/orders',        require('./routes/orders'));
 app.use('/api/stores',        require('./routes/stores'));
 
 /* Reset data to defaults (admin only) */
-app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, (req, res) => {
+app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, async (req, res) => {
     try {
-        require('./db').resetToDefaults();
+        await require('./db').resetToDefaults();
         res.json({ ok: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -24,7 +24,12 @@ app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, (req, re
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Точка Монтажа запущена: http://localhost:${PORT}`);
-    require('../bot').startBot();
+require('./db').init().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Точка Монтажа запущена: http://localhost:${PORT}`);
+        require('../bot').startBot();
+    });
+}).catch(err => {
+    console.error('Ошибка инициализации БД:', err.message);
+    process.exit(1);
 });
