@@ -24,12 +24,12 @@ app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, async (r
 });
 
 const PORT = process.env.PORT || 3000;
-require('./db').init().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Точка Монтажа запущена: http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Точка Монтажа запущена: http://0.0.0.0:${PORT}`);
+    require('./db').init().then(() => {
         require('../bot').startBot();
+    }).catch(err => {
+        console.error('Ошибка инициализации БД:', err.message);
+        process.exit(1);
     });
-}).catch(err => {
-    console.error('Ошибка инициализации БД:', err.message);
-    process.exit(1);
 });
