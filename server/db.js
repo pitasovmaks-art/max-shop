@@ -1,7 +1,15 @@
 const { DatabaseSync } = require('node:sqlite');
 const path             = require('path');
+const fs               = require('fs');
 
-const db = new DatabaseSync(path.join(__dirname, '..', 'shop.db'));
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'shop.db');
+
+/* Ensure the directory exists (needed when DB_PATH points to /tmp/subdir) */
+const DB_DIR = path.dirname(DB_PATH);
+if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
+
+const db = new DatabaseSync(DB_PATH);
+console.log(`База данных: ${DB_PATH}`);
 
 db.exec('PRAGMA journal_mode = WAL');
 db.exec('PRAGMA foreign_keys = ON');
