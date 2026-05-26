@@ -5,7 +5,7 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
-const API_BASE     = 'botapi.max.ru';
+const API_BASE     = 'platform-api.max.ru';
 const TOKEN        = process.env.MAX_BOT_TOKEN || '';
 const SHOP_URL     = process.env.SHOP_URL || 'https://max-shop-production.up.railway.app';
 const BOT_USERNAME = process.env.BOT_USERNAME || '';
@@ -37,7 +37,7 @@ function request(method, endpoint, body = null, query = {}) {
         const qs = new URLSearchParams(
             Object.fromEntries(Object.entries(query).filter(([, v]) => v != null))
         ).toString();
-        const urlPath = `/v1/${endpoint}${qs ? '?' + qs : ''}`;
+        const urlPath = `/${endpoint}${qs ? '?' + qs : ''}`;
         const data    = body ? JSON.stringify(body) : null;
 
         const opts = {
