@@ -35,7 +35,6 @@ a      { text-decoration: none; color: inherit; }
     max-width: 480px;
     margin: 0 auto;
     min-height: 100dvh;
-    background: rgba(255,255,255,0.82);
     position: relative;
     z-index: 1;
 }
