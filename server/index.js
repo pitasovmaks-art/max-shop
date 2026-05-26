@@ -13,6 +13,10 @@ app.use((req, res, next) => {
 
 app.use(express.static(path.join(__dirname, '..')));
 
+app.get('/api/config', (req, res) => {
+    res.json({ botUsername: process.env.BOT_USERNAME || '' });
+});
+
 app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/upload',        require('./routes/upload'));
 app.use('/api/products',      require('./routes/products'));

@@ -5,9 +5,10 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
-const API_BASE   = 'platform-api.max.ru';
-const TOKEN      = process.env.MAX_BOT_TOKEN || '';
-const SHOP_URL   = process.env.SHOP_URL || 'https://max-shop-production.up.railway.app';
+const API_BASE    = 'platform-api.max.ru';
+const TOKEN       = process.env.MAX_BOT_TOKEN || '';
+const SHOP_URL    = process.env.SHOP_URL || 'https://max-shop-production.up.railway.app';
+const BOT_USERNAME = process.env.BOT_USERNAME || '';
 const ADMINS_FILE = path.join(__dirname, 'bot_admins.json');
 
 /* ─── Admin chat IDs (persisted between restarts) ──────── */
@@ -109,6 +110,8 @@ async function processUpdate(update) {
         const msg        = update.message;
         const text       = msg?.body?.text || '';
         const chatId     = msg?.recipient?.chat_id ?? msg?.sender?.user_id;
+        console.log('[BOT] update:', JSON.stringify(update, null, 2));
+        console.log('[BOT] text:', text, '| chatId:', chatId);
         const senderName = msg?.sender?.name || 'Пользователь';
 
         if (!chatId) return;

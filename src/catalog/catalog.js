@@ -295,3 +295,18 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+/* ─── Support ───────────────────────────────────────────── */
+let _botUsername = '';
+
+fetch('/api/config')
+    .then(r => r.json())
+    .then(cfg => { _botUsername = cfg.botUsername || ''; })
+    .catch(() => {});
+
+function openSupport() {
+    const url = _botUsername
+        ? `https://max.ru/im/bot/${_botUsername}`
+        : 'https://max.ru';
+    window.open(url, '_blank');
+}
