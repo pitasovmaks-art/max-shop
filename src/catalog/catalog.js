@@ -305,6 +305,7 @@ fetch('/api/config')
     .catch(() => {});
 
 function openSupport() {
+    alert('username: ' + (_botUsername || 'не загружен') + '\nurl: https://max.ru/im/bot/' + (_botUsername || 'id635009278943_bot'));
     const username = _botUsername || 'id635009278943_bot';
     const url = 'https://max.ru/im/bot/' + username;
     window.open(url, '_blank') || (window.location.href = url);
