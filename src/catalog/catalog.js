@@ -309,11 +309,11 @@ function openSupport() {
         ? `https://max.ru/im/bot/${_botUsername}`
         : 'https://max.ru';
 
-    if (window.MaxWebApp && window.MaxWebApp.openLink) {
-        window.MaxWebApp.openLink(url);
-    } else if (window.MaxWebApp && window.MaxWebApp.openTelegramLink) {
-        window.MaxWebApp.openTelegramLink(url);
-    } else {
-        window.location.href = url;
+    if (window.MaxWebApp) {
+        try {
+            window.MaxWebApp.close();
+        } catch(e) {}
     }
+
+    window.open(url, '_blank');
 }
