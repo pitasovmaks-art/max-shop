@@ -85,7 +85,7 @@ async function handleStart(chatId, userName) {
 
     await sendMessage(
         chatId,
-        `Привет, ${userName || 'друг'}! 👋\n\nДобро пожаловать в *Точку Монтажа* 🔨\n\nЗдесь вы найдёте монтажные пистолеты NTC и FengBao, аккумуляторные инструменты и расходники.`,
+        `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\nЧем могу помочь?`,
         [[
             { type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL },
         ]]
@@ -106,9 +106,10 @@ async function processUpdate(update) {
 
     // Входящее текстовое сообщение
     if (type === 'message_created') {
-        const msg    = update.message;
-        const text   = msg?.body?.text || '';
-        const chatId = msg?.recipient?.chat_id ?? msg?.sender?.user_id;
+        const msg        = update.message;
+        const text       = msg?.body?.text || '';
+        const chatId     = msg?.recipient?.chat_id ?? msg?.sender?.user_id;
+        const senderName = msg?.sender?.name || 'Пользователь';
 
         if (!chatId) return;
 
@@ -118,12 +119,44 @@ async function processUpdate(update) {
             return;
         }
 
-        // На любое другое сообщение — показать кнопку магазина
-        await sendMessage(
-            chatId,
-            'Воспользуйтесь кнопкой ниже, чтобы открыть каталог 👇',
-            [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL }]]
-        );
+        // /myid — ответить своим chat_id
+        if (text === '/myid') {
+            await sendMessage(chatId, `Ваш ID: ${chatId}`);
+            return;
+        }
+
+        // /reply ID текст — отправить ответ пользователю (только для админов)
+        if (text.startsWith('/reply ')) {
+            const admins = loadAdmins();
+            if (!admins.includes(chatId)) return;
+            const parts      = text.split(' ');
+            const targetId   = Number(parts[1]);
+            const replyText  = parts.slice(2).join(' ');
+            if (!targetId || !replyText) {
+                await sendMessage(chatId, 'Формат: /reply ID текст');
+                return;
+            }
+            await sendMessage(targetId, `💬 *Ответ от поддержки Точки Монтажа:*\n${replyText}`);
+            await sendMessage(chatId, '✅ Ответ отправлен');
+            return;
+        }
+
+        // Fallback — пересылаем сообщение админам, пользователю отвечаем автоматически
+        const admins = loadAdmins();
+        const isAdmin = admins.includes(chatId);
+        if (!isAdmin) {
+            await sendMessage(
+                chatId,
+                'Спасибо за обращение! Я передал ваш вопрос нашим специалистам. В ближайшее время с вами свяжутся. 🙏',
+                [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL }]]
+            );
+            for (const adminId of admins) {
+                await sendMessage(
+                    adminId,
+                    `📩 *Обращение в поддержку*\nОт: ${senderName} (ID: ${chatId})\nСообщение: ${text}\n\nОтветить: /reply ${chatId} ваш текст`
+                );
+            }
+        }
     }
 }
 
