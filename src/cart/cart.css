@@ -37,7 +37,7 @@ a      { text-decoration: none; color: inherit; }
     max-width: 480px;
     margin: 0 auto;
     min-height: 100dvh;
-    background: var(--bg-page);
+    background: transparent;
 }
 
 /* ─── Header ────────────────────────────────────────────── */
