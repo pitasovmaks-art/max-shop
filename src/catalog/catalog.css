@@ -30,22 +30,12 @@ button { cursor: pointer; border: none; background: none; font: inherit; }
 a      { text-decoration: none; color: inherit; }
 .hidden { display: none !important; }
 
-/* ─── Background overlay (sits between bg-image and content) */
-body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: rgba(240,240,240,0.45);
-    z-index: 0;
-    pointer-events: none;
-}
-
 /* ─── App shell ─────────────────────────────────────────── */
 .app {
     max-width: 480px;
     margin: 0 auto;
     min-height: 100dvh;
-    background: transparent !important;
+    background: rgba(255,255,255,0.82);
     position: relative;
     z-index: 1;
 }
@@ -224,10 +214,10 @@ body::before {
 
 /* ─── Product card ──────────────────────────────────────── */
 .product-card {
-    background: rgba(255,255,255,0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.6);
     box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     border-radius: var(--radius);
     overflow: hidden;

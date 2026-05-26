@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@600&display=swap');
+
 /* ─── Variables ─────────────────────────────────────────── */
 :root {
     --bg-page:       #FFFFFF;
@@ -46,23 +48,34 @@ a      { text-decoration: none; color: inherit; }
     align-items: center;
     justify-content: space-between;
     height: var(--header-h);
-    padding: 0 8px 0 4px;
-    background: #111111;
-    border-bottom: 1px solid var(--border);
+    padding: 0 12px 0 4px;
+    background: #FFFFFF;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+}
+.header__logo {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+.header__logo-text {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    color: #1A1A1A;
 }
 .header__back {
     width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    color: #FFFFFF;
+    color: #1A1A1A;
     transition: background .15s;
 }
-.header__back:active { background: rgba(255,255,255,.08); }
+.header__back:active { background: rgba(0,0,0,.06); }
 .header__title {
     font-size: 17px;
     font-weight: 700;
     letter-spacing: -.3px;
-    color: #FFFFFF;
+    color: #1A1A1A;
 }
 .header__clear {
     font-size: 14px;
@@ -226,8 +239,8 @@ a      { text-decoration: none; color: inherit; }
     transform: translateX(-50%);
     width: 100%; max-width: 480px;
     height: var(--nav-h);
-    background: #111111;
-    border-top: 1px solid var(--border);
+    background: #FFFFFF;
+    box-shadow: 0 -1px 8px rgba(0,0,0,0.08);
     display: flex;
     align-items: center;
     justify-content: space-around;
@@ -239,18 +252,18 @@ a      { text-decoration: none; color: inherit; }
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     gap: 3px; height: 100%;
-    color: var(--text-secondary);
+    color: #888888;
     font-size: 11px;
 }
-.nav-item.active { color: #FFFFFF; }
+.nav-item.active { color: #1A1A1A; }
 .nav-item:active { opacity: .7; }
 .nav-icon-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
 .nav-badge {
     position: absolute;
     top: -6px; right: -8px;
     min-width: 17px; height: 17px;
-    background: #FFFFFF;
-    color: #000000;
+    background: #F85800;
+    color: #FFFFFF;
     font-size: 10px; font-weight: 700;
     border-radius: 9px;
     padding: 0 4px;

@@ -13,12 +13,14 @@
 
     <!-- Header -->
     <header class="header">
-        <button class="header__back" onclick="location.href='index.html'" aria-label="Назад">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
-        <span class="header__title">Корзина</span>
+        <div class="header__logo">
+            <button class="header__back" onclick="location.href='index.html'" aria-label="Назад">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <span class="header__logo-text">Точка Монтажа</span>
+        </div>
         <button class="header__clear hidden" id="clearBtn" onclick="confirmClear()">Очистить</button>
     </header>
 
@@ -34,6 +36,13 @@
             <p class="empty-state__title">Корзина пуста</p>
             <p class="empty-state__sub">Добавьте товары из каталога</p>
             <a href="index.html" class="empty-state__btn">Перейти в каталог</a>
+        </div>
+
+        <!-- Legal footer -->
+        <div class="site-footer">
+            <a class="site-footer__link" href="privacy.html">Конфиденциальность</a>
+            <span class="site-footer__sep">·</span>
+            <a class="site-footer__link" href="offer.html">Публичная оферта</a>
         </div>
 
     </main>
@@ -52,13 +61,6 @@
         <button class="checkout-btn" onclick="location.href='checkout.html'">
             Оформить заказ
         </button>
-    </div>
-
-    <!-- Legal footer -->
-    <div class="site-footer">
-        <a class="site-footer__link" href="privacy.html">Конфиденциальность</a>
-        <span class="site-footer__sep">·</span>
-        <a class="site-footer__link" href="offer.html">Публичная оферта</a>
     </div>
 
     <!-- Bottom nav -->
