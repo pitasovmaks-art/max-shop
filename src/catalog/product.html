@@ -22,7 +22,8 @@
         html { -webkit-text-size-adjust: 100%; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #141414;
+            background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+            background-attachment: fixed;
             color: #FFFFFF;
             overscroll-behavior: none;
             -webkit-tap-highlight-color: transparent;
@@ -36,7 +37,7 @@
             max-width: 480px;
             margin: 0 auto;
             min-height: 100dvh;
-            background: #141414;
+            background: transparent;
         }
 
         /* ─── Header ────────────────────────────────────────── */
@@ -47,8 +48,8 @@
             align-items: center;
             height: var(--header-h);
             padding: 0 8px 0 4px;
-            background: #111111;
-            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.2);
         }
         .header__back {
             width: 44px; height: 44px;
@@ -57,7 +58,7 @@
             color: #FFFFFF;
             flex-shrink: 0;
         }
-        .header__back:active { background: rgba(255,255,255,.08); }
+        .header__back:active { background: rgba(255,255,255,.12); }
         .header__title {
             flex: 1;
             font-size: 17px;
@@ -82,14 +83,13 @@
             position: absolute;
             top: 4px; right: 4px;
             min-width: 17px; height: 17px;
-            background: #FFFFFF;
-            color: #000000;
+            background: #F85800;
+            color: #FFFFFF;
             font-size: 10px;
             font-weight: 700;
             border-radius: 9px;
             padding: 0 3px;
             display: flex; align-items: center; justify-content: center;
-            border: 2px solid #111111;
         }
 
         /* ─── Gallery ───────────────────────────────────────── */
@@ -173,10 +173,13 @@
 
         /* ─── Product info ───────────────────────────────────── */
         .product-info {
-            background: var(--bg-card);
-            margin-top: 8px;
+            background: rgba(255,255,255,0.35);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 16px;
+            margin: 8px 12px 0;
             padding: 18px 16px calc(var(--nav-h) + 100px);
-            border-top: 1px solid var(--border);
         }
 
         .product-name {
@@ -251,27 +254,27 @@
         .product-price {
             font-size: 22px;
             font-weight: 800;
-            color: #FFFFFF;
+            color: #F85800;
             white-space: nowrap;
             flex-shrink: 0;
         }
         .product-price--service {
             font-size: 16px;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: #F85800;
         }
 
         .add-to-cart-btn {
             flex: 1;
             height: 48px;
-            background: #FFFFFF;
-            color: #000000;
+            background: #F85800;
+            color: #FFFFFF;
             border-radius: 14px;
             font-size: 16px;
             font-weight: 700;
             transition: background .15s, transform .1s;
         }
-        .add-to-cart-btn:active { background: #DDDDDD; transform: scale(.98); }
+        .add-to-cart-btn:active { background: #D94F00; transform: scale(.98); }
         .add-to-cart-btn--disabled {
             background: var(--bg-input);
             color: var(--text-secondary);
@@ -309,8 +312,8 @@
             transform: translateX(-50%);
             width: 100%; max-width: 480px;
             height: var(--nav-h);
-            background: #111111;
-            border-top: 1px solid var(--border);
+            background: linear-gradient(135deg,#4a3728 0%,#2d4a3e 60%,#1a1a2e 100%);
+            box-shadow: 0 -1px 8px rgba(0,0,0,0.2);
             display: flex;
             align-items: center;
             justify-content: space-around;
@@ -325,9 +328,10 @@
             justify-content: center;
             gap: 3px;
             height: 100%;
-            color: var(--text-secondary);
+            color: rgba(255,255,255,0.5);
             font-size: 11px;
         }
+        .nav-item.active { color: #FFFFFF; }
         .nav-item:active { opacity: .7; }
         .nav-icon-wrap {
             position: relative;
@@ -337,8 +341,8 @@
             position: absolute;
             top: -6px; right: -8px;
             min-width: 17px; height: 17px;
-            background: #FFFFFF;
-            color: #000000;
+            background: #F85800;
+            color: #FFFFFF;
             font-size: 10px;
             font-weight: 700;
             border-radius: 9px;
