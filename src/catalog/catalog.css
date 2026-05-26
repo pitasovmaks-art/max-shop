@@ -225,16 +225,19 @@ body::before {
 
 /* ─── Product card ──────────────────────────────────────── */
 .product-card {
-    background: #FFFFFF;
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.5);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     border-radius: var(--radius);
     overflow: hidden;
-    border: 1px solid #F0F0F0;
     display: flex;
     flex-direction: column;
     transition: background .15s, transform .15s;
     cursor: pointer;
 }
-.product-card:active { background: #F5F5F5; transform: scale(.98); }
+.product-card:active { background: rgba(255,255,255,0.9); transform: scale(.98); }
 
 .product-card__img {
     height: 110px;
