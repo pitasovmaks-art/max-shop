@@ -213,10 +213,10 @@ a      { text-decoration: none; color: inherit; }
 
 /* ─── Product card ──────────────────────────────────────── */
 .product-card {
-    background: rgba(255,255,255,0.7);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.45);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.35);
     box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     border-radius: var(--radius);
     overflow: hidden;
