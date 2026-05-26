@@ -306,11 +306,6 @@ fetch('/api/config')
 
 function openSupport() {
     const username = _botUsername || 'id635009278943_bot';
-    const url = `https://max.ru/im/bot/${username}`;
-
-    if (window.WebApp && window.WebApp.openLink) {
-        window.WebApp.openLink(url);
-    } else {
-        window.location.href = url;
-    }
+    const url = 'https://max.ru/im/bot/' + username;
+    window.open(url, '_blank') || (window.location.href = url);
 }
