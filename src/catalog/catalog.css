@@ -298,12 +298,12 @@ a      { text-decoration: none; color: inherit; }
 .product-card__price {
     font-size: 15px;
     font-weight: 700;
-    color: #1A1A1A;
+    color: #F85800;
 }
 .product-card__price--service {
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: #F85800;
 }
 
 .add-btn {
