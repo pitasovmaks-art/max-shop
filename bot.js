@@ -177,6 +177,7 @@ async function poll() {
         });
 
         if (res.marker != null) marker = res.marker;
+        console.log('[BOT] poll ответ:', JSON.stringify(res).slice(0, 200));
 
         if (Array.isArray(res.updates)) {
             for (const update of res.updates) {
