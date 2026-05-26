@@ -93,33 +93,36 @@ a      { text-decoration: none; color: inherit; }
 /* ─── Search ────────────────────────────────────────────── */
 .search-wrap {
     padding: 12px 16px 8px;
-    background: #FFFFFF;
-    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 .search-bar {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--bg-input);
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.4);
     border-radius: 12px;
     padding: 0 12px;
     height: 40px;
 }
-.search-icon  { color: var(--text-secondary); flex-shrink: 0; }
+.search-icon  { color: #888888; flex-shrink: 0; }
 .search-input {
     flex: 1;
     border: none;
     background: transparent;
     font-size: 15px;
-    color: var(--text-primary);
+    color: #1A1A1A;
     outline: none;
 }
-.search-input::placeholder { color: var(--text-secondary); }
+.search-input::placeholder { color: #888888; }
 .search-clear {
     width: 20px; height: 20px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    background: #BBBBBB;
+    background: rgba(0,0,0,0.25);
     color: #fff;
     font-size: 10px;
     font-weight: 700;
@@ -127,8 +130,8 @@ a      { text-decoration: none; color: inherit; }
 
 /* ─── Categories ────────────────────────────────────────── */
 .categories-scroll {
-    background: #FFFFFF;
-    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -146,24 +149,24 @@ a      { text-decoration: none; color: inherit; }
     border-radius: 17px;
     font-size: 14px;
     font-weight: 500;
-    color: #1A1A1A;
-    background: #F0F0F0;
+    color: #FFFFFF;
+    background: rgba(255,255,255,0.15);
     white-space: nowrap;
     transition: all .18s;
-    border: 1px solid #F0F0F0;
+    border: 1px solid rgba(255,255,255,0.15);
 }
 .cat-btn:active { opacity: .75; }
 .cat-btn.active {
-    background: #1A1A1A;
-    color: #FFFFFF;
-    border-color: #1A1A1A;
+    background: #FFFFFF;
+    color: #1a1a2e;
+    border-color: #FFFFFF;
     font-weight: 600;
 }
 
 /* ─── Subcategories ─────────────────────────────────────── */
 .sub-scroll {
-    background: #FFFFFF;
-    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -181,23 +184,23 @@ a      { text-decoration: none; color: inherit; }
     border-radius: 14px;
     font-size: 13px;
     font-weight: 500;
-    color: #1A1A1A;
-    background: #F0F0F0;
+    color: #FFFFFF;
+    background: rgba(255,255,255,0.15);
     white-space: nowrap;
     transition: all .15s;
-    border: 1px solid #F0F0F0;
+    border: 1px solid rgba(255,255,255,0.15);
 }
 .sub-btn.active {
-    background: #1A1A1A;
-    color: #FFFFFF;
-    border-color: #1A1A1A;
+    background: #FFFFFF;
+    color: #1a1a2e;
+    border-color: #FFFFFF;
 }
 
 /* ─── Results bar ───────────────────────────────────────── */
 .results-bar {
     padding: 10px 16px 4px;
     font-size: 13px;
-    color: var(--text-secondary);
+    color: rgba(255,255,255,0.7);
 }
 
 /* ─── Products grid ─────────────────────────────────────── */
@@ -213,11 +216,11 @@ a      { text-decoration: none; color: inherit; }
 
 /* ─── Product card ──────────────────────────────────────── */
 .product-card {
-    background: rgba(255,255,255,0.65);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255,255,255,0.4);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    background: rgba(255,255,255,0.35);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
     box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     border-radius: var(--radius);
     overflow: hidden;
@@ -236,7 +239,7 @@ a      { text-decoration: none; color: inherit; }
     font-size: 42px;
     position: relative;
     overflow: hidden;
-    background: var(--bg-secondary);
+    background: rgba(255,255,255,0.4);
 }
 .product-card__photo {
     position: absolute; inset: 0;

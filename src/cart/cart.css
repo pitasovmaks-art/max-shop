@@ -49,8 +49,8 @@ a      { text-decoration: none; color: inherit; }
     justify-content: space-between;
     height: var(--header-h);
     padding: 0 12px 0 4px;
-    background: #FFFFFF;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+    background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+    box-shadow: 0 1px 8px rgba(0,0,0,0.2);
 }
 .header__logo {
     display: flex;
@@ -61,21 +61,21 @@ a      { text-decoration: none; color: inherit; }
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
     font-size: 20px;
-    color: #1A1A1A;
+    color: #FFFFFF;
 }
 .header__back {
     width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    color: #1A1A1A;
+    color: #FFFFFF;
     transition: background .15s;
 }
-.header__back:active { background: rgba(0,0,0,.06); }
+.header__back:active { background: rgba(255,255,255,.12); }
 .header__title {
     font-size: 17px;
     font-weight: 700;
     letter-spacing: -.3px;
-    color: #1A1A1A;
+    color: #FFFFFF;
 }
 .header__clear {
     font-size: 14px;
@@ -239,8 +239,8 @@ a      { text-decoration: none; color: inherit; }
     transform: translateX(-50%);
     width: 100%; max-width: 480px;
     height: var(--nav-h);
-    background: #FFFFFF;
-    box-shadow: 0 -1px 8px rgba(0,0,0,0.08);
+    background: linear-gradient(135deg,#4a3728 0%,#2d4a3e 60%,#1a1a2e 100%);
+    box-shadow: 0 -1px 8px rgba(0,0,0,0.2);
     display: flex;
     align-items: center;
     justify-content: space-around;
@@ -252,10 +252,10 @@ a      { text-decoration: none; color: inherit; }
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     gap: 3px; height: 100%;
-    color: #888888;
+    color: rgba(255,255,255,0.5);
     font-size: 11px;
 }
-.nav-item.active { color: #1A1A1A; }
+.nav-item.active { color: #FFFFFF; }
 .nav-item:active { opacity: .7; }
 .nav-icon-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
 .nav-badge {
