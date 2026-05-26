@@ -17,6 +17,11 @@ app.get('/api/config', (req, res) => {
     res.json({ botUsername: process.env.BOT_USERNAME || '' });
 });
 
+app.post('/webhook', express.json(), (req, res) => {
+    res.sendStatus(200);
+    require('../bot').processUpdate(req.body).catch(console.error);
+});
+
 app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/upload',        require('./routes/upload'));
 app.use('/api/products',      require('./routes/products'));

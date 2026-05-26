@@ -5,11 +5,12 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
-const API_BASE    = 'botapi.max.ru';
-const TOKEN       = process.env.MAX_BOT_TOKEN || '';
-const SHOP_URL    = process.env.SHOP_URL || 'https://max-shop-production.up.railway.app';
+const API_BASE     = 'botapi.max.ru';
+const TOKEN        = process.env.MAX_BOT_TOKEN || '';
+const SHOP_URL     = process.env.SHOP_URL || 'https://max-shop-production.up.railway.app';
 const BOT_USERNAME = process.env.BOT_USERNAME || '';
-const ADMINS_FILE = path.join(__dirname, 'bot_admins.json');
+const WEBHOOK_URL  = process.env.WEBHOOK_URL || 'https://pitasovmaks-art-max-shop-c149.twc1.net/webhook';
+const ADMINS_FILE  = path.join(__dirname, 'bot_admins.json');
 
 /* ─── Admin chat IDs (persisted between restarts) ──────── */
 function loadAdmins() {
@@ -165,35 +166,17 @@ async function processUpdate(update) {
     }
 }
 
-/* ─── Long polling loop ─────────────────────────────────── */
-let marker = undefined;
-
-async function poll() {
+/* ─── Register webhook ──────────────────────────────────── */
+async function registerWebhook() {
     try {
-        const res = await request('GET', 'updates', null, {
-            marker,
-            timeout: 20,
-            types:   'bot_started,message_created',
+        const res = await request('POST', 'subscriptions', {
+            url:          WEBHOOK_URL,
+            update_types: ['message_created', 'bot_started'],
         });
-
-        if (res.marker != null) marker = res.marker;
-        console.log('[BOT] poll ответ:', JSON.stringify(res).slice(0, 200));
-
-        if (Array.isArray(res.updates)) {
-            for (const update of res.updates) {
-                await processUpdate(update).catch(e =>
-                    console.error('[bot] Ошибка обработки обновления:', e.message)
-                );
-            }
-        }
+        console.log('[bot] Webhook зарегистрирован:', JSON.stringify(res));
     } catch (e) {
-        if (e.message !== 'timeout') {
-            console.error('[bot] Ошибка polling:', e.message);
-        }
-        await new Promise(r => setTimeout(r, 5000));
+        console.error('[bot] Ошибка регистрации webhook:', e.message);
     }
-
-    setImmediate(poll);
 }
 
 /* ─── Notify admins about new order ────────────────────── */
@@ -236,8 +219,8 @@ function startBot() {
         console.log('[bot] MAX_BOT_TOKEN не задан — бот не запущен');
         return;
     }
-    console.log('[bot] Max бот запущен, ждёт обновлений...');
-    poll();
+    console.log('[bot] Max бот запущен, регистрирует webhook...');
+    registerWebhook();
 }
 
-module.exports = { startBot, notifyAdmin };
+module.exports = { startBot, notifyAdmin, processUpdate };
