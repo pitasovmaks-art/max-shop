@@ -168,15 +168,40 @@ async function processUpdate(update) {
 
 /* ─── Register webhook ──────────────────────────────────── */
 async function registerWebhook() {
-    try {
-        const res = await request('POST', 'subscriptions', {
-            url:          WEBHOOK_URL,
-            update_types: ['message_created', 'bot_started'],
+    const data = JSON.stringify({
+        url:          WEBHOOK_URL,
+        update_types: ['message_created', 'bot_started'],
+    });
+
+    return new Promise((resolve) => {
+        const opts = {
+            hostname: 'platform-api.max.ru',
+            path:     '/subscriptions',
+            method:   'POST',
+            headers: {
+                'Authorization':  TOKEN,
+                'Content-Type':   'application/json',
+                'Content-Length': Buffer.byteLength(data),
+            },
+        };
+
+        const req = https.request(opts, res => {
+            let raw = '';
+            res.on('data', chunk => raw += chunk);
+            res.on('end', () => {
+                console.log('[bot] Webhook зарегистрирован, статус:', res.statusCode, raw);
+                resolve();
+            });
         });
-        console.log('[bot] Webhook зарегистрирован:', JSON.stringify(res));
-    } catch (e) {
-        console.error('[bot] Ошибка регистрации webhook:', e.message);
-    }
+
+        req.on('error', e => {
+            console.error('[bot] Ошибка регистрации webhook:', e.message);
+            resolve();
+        });
+
+        req.write(data);
+        req.end();
+    });
 }
 
 /* ─── Notify admins about new order ────────────────────── */
