@@ -49,8 +49,8 @@ a      { text-decoration: none; color: inherit; }
     justify-content: space-between;
     padding: 0 16px;
     height: var(--header-h);
-    background: #FFFFFF;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+    background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+    box-shadow: 0 1px 8px rgba(0,0,0,0.2);
 }
 .header__logo {
     display: flex;
@@ -66,17 +66,17 @@ a      { text-decoration: none; color: inherit; }
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
     font-size: 20px;
-    color: #1A1A1A;
+    color: #FFFFFF;
 }
 .header__cart {
     position: relative;
     width: 42px; height: 42px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    color: #1A1A1A;
+    color: #FFFFFF;
     transition: background .15s;
 }
-.header__cart:active { background: rgba(0,0,0,.06); }
+.header__cart:active { background: rgba(255,255,255,.12); }
 .cart-badge {
     position: absolute;
     top: 2px; right: 2px;
@@ -213,10 +213,11 @@ a      { text-decoration: none; color: inherit; }
 
 /* ─── Product card ──────────────────────────────────────── */
 .product-card {
-    background: rgba(255,255,255,0.88);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.4);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     border-radius: var(--radius);
     overflow: hidden;
@@ -379,8 +380,8 @@ a      { text-decoration: none; color: inherit; }
     transform: translateX(-50%);
     width: 100%; max-width: 480px;
     height: var(--nav-h);
-    background: #FFFFFF;
-    box-shadow: 0 -1px 8px rgba(0,0,0,0.08);
+    background: linear-gradient(135deg,#4a3728 0%,#2d4a3e 60%,#1a1a2e 100%);
+    box-shadow: 0 -1px 8px rgba(0,0,0,0.2);
     display: flex;
     align-items: center;
     justify-content: space-around;
@@ -395,11 +396,11 @@ a      { text-decoration: none; color: inherit; }
     justify-content: center;
     gap: 3px;
     height: 100%;
-    color: #888888;
+    color: rgba(255,255,255,0.5);
     font-size: 11px;
     transition: color .15s;
 }
-.nav-item.active { color: #1A1A1A; }
+.nav-item.active { color: #FFFFFF; }
 .nav-item:active { opacity: .7; }
 .nav-icon-wrap {
     position: relative;
