@@ -112,6 +112,7 @@ async function processUpdate(update) {
         const chatId     = msg?.recipient?.chat_id ?? msg?.sender?.user_id;
         console.log('[BOT] update:', JSON.stringify(update, null, 2));
         console.log('[BOT] text:', text, '| chatId:', chatId);
+        console.log('[BOT] сырой текст:', JSON.stringify(text), '| chatId:', chatId);
         const senderName = msg?.sender?.name || 'Пользователь';
 
         if (!chatId) return;
@@ -123,8 +124,9 @@ async function processUpdate(update) {
         }
 
         // /myid — ответить своим chat_id
-        if (text === '/myid') {
+        if (text.trim().toLowerCase() === '/myid') {
             await sendMessage(chatId, `Ваш ID: ${chatId}`);
+            console.log('[BOT] /myid запрошен, chatId:', chatId);
             return;
         }
 
