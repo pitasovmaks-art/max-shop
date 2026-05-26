@@ -311,15 +311,16 @@ a      { text-decoration: none; color: inherit; }
     border-radius: 50%;
     background: #F85800;
     color: #FFFFFF;
+    opacity: 1;
     display: flex; align-items: center; justify-content: center;
     font-size: 22px;
     line-height: 1;
     transition: background .15s, transform .1s;
     flex-shrink: 0;
 }
-.add-btn:active         { background: #D94F00; transform: scale(.9); }
-.add-btn--disabled      { background: #E0E0E0; color: #AAAAAA; cursor: default; }
-.add-btn--disabled:active { background: #E0E0E0; transform: none; }
+.add-btn:active           { background: #D94F00; transform: scale(.9); }
+.add-btn--disabled        { background: #CCCCCC; color: #FFFFFF; opacity: 1; cursor: default; }
+.add-btn--disabled:active { background: #CCCCCC; transform: none; }
 .add-btn--service {
     width: auto;
     border-radius: 10px;
@@ -329,6 +330,7 @@ a      { text-decoration: none; color: inherit; }
     height: 30px;
     background: #F85800;
     color: #FFFFFF;
+    opacity: 1;
 }
 
 /* ─── Category image backgrounds ────────────────────────── */
