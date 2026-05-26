@@ -308,8 +308,8 @@ function openSupport() {
     const username = _botUsername || 'id635009278943_bot';
 
     if (window.WebApp && window.WebApp.openLink) {
-        window.WebApp.openLink(`maxim://profile/${username}`);
+        window.WebApp.openLink(`https://max.ru/${username}`);
     } else {
-        window.location.href = `maxim://profile/${username}`;
+        window.location.href = `https://max.ru/${username}`;
     }
 }
