@@ -123,7 +123,7 @@ function renderCategoryFilters() {
     if (!el) return;
     el.innerHTML = `<button class="cat-btn ${state.categoryId === null ? 'active' : ''}" onclick="setCategory(null,this)">Все</button>`
         + _categories.map(c =>
-            `<button class="cat-btn ${state.categoryId === c.id ? 'active' : ''}" onclick="setCategory(${c.id},this)">${c.icon} ${c.name}</button>`
+            `<button class="cat-btn ${state.categoryId === c.id ? 'active' : ''}" onclick="setCategory(${c.id},this)">${c.name}</button>`
         ).join('');
 }
 
