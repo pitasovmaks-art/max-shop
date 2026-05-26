@@ -308,5 +308,12 @@ function openSupport() {
     const url = _botUsername
         ? `https://max.ru/im/bot/${_botUsername}`
         : 'https://max.ru';
-    window.open(url, '_blank');
+
+    if (window.MaxWebApp && window.MaxWebApp.openLink) {
+        window.MaxWebApp.openLink(url);
+    } else if (window.MaxWebApp && window.MaxWebApp.openTelegramLink) {
+        window.MaxWebApp.openTelegramLink(url);
+    } else {
+        window.location.href = url;
+    }
 }
