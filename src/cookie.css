@@ -17,14 +17,14 @@
 .cookie-banner__card {
     width: 100%;
     max-width: 480px;
-    background: #1A1A1A;
+    background: #FFFFFF;
     border-radius: 16px;
     padding: 14px 16px;
     display: flex;
     align-items: center;
     gap: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,.6);
-    border: 1px solid #2A2A2A;
+    box-shadow: 0 4px 24px rgba(0,0,0,.12);
+    border: 1px solid #F0F0F0;
     pointer-events: all;
 }
 
@@ -36,7 +36,7 @@
 }
 
 .cookie-banner__text a {
-    color: #FFFFFF;
+    color: #F85800;
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -61,12 +61,12 @@
 .cookie-btn:active { opacity: .75; }
 
 .cookie-btn--accept {
-    background: #FFFFFF;
-    color: #000000;
+    background: #F85800;
+    color: #FFFFFF;
 }
 
 .cookie-btn--decline {
-    background: #2A2A2A;
+    background: #F0F0F0;
     color: #888888;
 }
 
@@ -83,7 +83,7 @@
 
 .site-footer__sep {
     font-size: 12px;
-    color: #2A2A2A;
+    color: #CCCCCC;
     user-select: none;
 }
 
@@ -97,4 +97,4 @@
     white-space: nowrap;
 }
 .site-footer__link:hover,
-.site-footer__link:active { color: #FFFFFF; text-decoration-color: currentColor; }
+.site-footer__link:active { color: #F85800; text-decoration-color: currentColor; }

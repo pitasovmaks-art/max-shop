@@ -1,12 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@600&display=swap');
+
 /* ─── Variables ─────────────────────────────────────────── */
 :root {
-    --bg-page:       #141414;
-    --bg-card:       #1E1E1E;
-    --bg-secondary:  #252525;
-    --bg-input:      #252525;
-    --text-primary:  #FFFFFF;
-    --text-secondary:#666666;
-    --border:        #2A2A2A;
+    --bg-page:       #FFFFFF;
+    --bg-card:       #FFFFFF;
+    --bg-secondary:  #F5F5F5;
+    --bg-input:      #F5F5F5;
+    --text-primary:  #1A1A1A;
+    --text-secondary:#888888;
+    --border:        #F0F0F0;
+    --accent:        #F85800;
     --red:           #EF4444;
     --card-shadow:   none;
     --radius:        14px;
@@ -58,6 +61,12 @@ a      { text-decoration: none; color: inherit; }
     height: 38px;
     width: auto;
     object-fit: contain;
+}
+.header__logo-text {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    color: #FFFFFF;
 }
 .header__cart {
     position: relative;
@@ -111,7 +120,7 @@ a      { text-decoration: none; color: inherit; }
     width: 20px; height: 20px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    background: #444444;
+    background: #BBBBBB;
     color: #fff;
     font-size: 10px;
     font-weight: 700;
@@ -234,8 +243,8 @@ a      { text-decoration: none; color: inherit; }
 .product-card__badge-out {
     position: absolute;
     top: 8px; right: 8px;
-    background: #2A1414;
-    color: var(--red);
+    background: #FFF0EB;
+    color: #F85800;
     font-size: 10px;
     font-weight: 700;
     padding: 2px 7px;
@@ -294,15 +303,15 @@ a      { text-decoration: none; color: inherit; }
 .add-btn {
     width: 34px; height: 34px;
     border-radius: 50%;
-    background: #FFFFFF;
-    color: #000000;
+    background: #F85800;
+    color: #FFFFFF;
     display: flex; align-items: center; justify-content: center;
     font-size: 22px;
     line-height: 1;
     transition: background .15s, transform .1s;
     flex-shrink: 0;
 }
-.add-btn:active    { background: #DDDDDD; transform: scale(.9); }
+.add-btn:active    { background: #D94F00; transform: scale(.9); }
 .add-btn--disabled { background: var(--bg-input); color: var(--text-secondary); }
 .add-btn--service {
     width: auto;
@@ -314,16 +323,16 @@ a      { text-decoration: none; color: inherit; }
 }
 
 /* ─── Category image backgrounds ────────────────────────── */
-.img-bg--guns        { background: #2A2018; }
-.img-bg--battery     { background: #18202A; }
-.img-bg--consumables { background: #18261E; }
-.img-bg--services    { background: #221A2A; }
-.cat-bg-1 { background: #2A2018; }
-.cat-bg-2 { background: #18202A; }
-.cat-bg-3 { background: #18261E; }
-.cat-bg-4 { background: #221A2A; }
-.cat-bg-5 { background: #2A1818; }
-.cat-bg-6 { background: #2A2318; }
+.img-bg--guns        { background: #F5F0E8; }
+.img-bg--battery     { background: #E8F0F5; }
+.img-bg--consumables { background: #E8F5EE; }
+.img-bg--services    { background: #F0E8F5; }
+.cat-bg-1 { background: #F5F0E8; }
+.cat-bg-2 { background: #E8F0F5; }
+.cat-bg-3 { background: #E8F5EE; }
+.cat-bg-4 { background: #F0E8F5; }
+.cat-bg-5 { background: #F5E8E8; }
+.cat-bg-6 { background: #F5F0E8; }
 
 /* ─── Empty state ───────────────────────────────────────── */
 .empty-state {
@@ -416,9 +425,9 @@ a      { text-decoration: none; color: inherit; }
     border-radius: 20px;
     font-size: 11px;
     font-weight: 600;
-    background: var(--bg-input);
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
+    background: #FFFFFF;
+    color: #1A1A1A;
+    border: 1px solid #F85800;
     cursor: pointer;
     white-space: nowrap;
     transition: border-color .15s, background .15s, color .15s;
@@ -426,7 +435,7 @@ a      { text-decoration: none; color: inherit; }
     line-height: 1.5;
 }
 .variant-pill--active {
-    border-color: #FFFFFF;
-    background: #FFFFFF;
-    color: #000000;
+    border-color: #F85800;
+    background: #F85800;
+    color: #FFFFFF;
 }
