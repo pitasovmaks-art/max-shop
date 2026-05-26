@@ -305,15 +305,18 @@ fetch('/api/config')
     .catch(() => {});
 
 function openSupport() {
-    const url = _botUsername
-        ? `https://max.ru/im/bot/${_botUsername}`
-        : 'https://max.ru';
+    const username = _botUsername || 'id635009278943_bot';
 
-    if (window.MaxWebApp) {
-        try {
-            window.MaxWebApp.close();
-        } catch(e) {}
+    const urls = [
+        `maxim://chat/bot/${username}`,
+        `https://max.ru/im/bot/${username}`,
+        `tg://resolve?domain=${username}`
+    ];
+
+    if (window.MaxWebApp && window.MaxWebApp.openLink) {
+        window.MaxWebApp.openLink(urls[1]);
+        return;
     }
 
-    window.open(url, '_blank');
+    location.href = urls[0];
 }
