@@ -35,7 +35,7 @@ body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background: rgba(255,255,255,0.55);
+    background: rgba(240,240,240,0.45);
     z-index: 0;
     pointer-events: none;
 }
@@ -45,7 +45,7 @@ body::before {
     max-width: 480px;
     margin: 0 auto;
     min-height: 100dvh;
-    background: transparent;
+    background: transparent !important;
     position: relative;
     z-index: 1;
 }
