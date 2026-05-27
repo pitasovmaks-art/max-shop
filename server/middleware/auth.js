@@ -1,4 +1,4 @@
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'VPNAFQDEKCCG';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '1608';
 
 function requireAdmin(req, res, next) {
     const auth  = req.headers.authorization || '';

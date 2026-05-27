@@ -63,17 +63,26 @@ function _collectVariants() {
 }
 
 /* ─── Auth ──────────────────────────────────────────────── */
-const TOKEN_KEY = 'admin_token';
-function getToken() { return sessionStorage.getItem(TOKEN_KEY) || ''; }
+const TOKEN_KEY     = 'admin_token';
+const AUTH_KEY      = 'adminAuth';
+const AUTH_TIME_KEY = 'adminAuthTime';
+const SESSION_TTL   = 3600000; // 60 минут
+
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
 
 function checkAuth() {
     const app   = document.getElementById('app');
     const login = document.getElementById('loginScreen');
-    if (getToken()) {
+    const auth  = localStorage.getItem(AUTH_KEY);
+    const ts    = parseInt(localStorage.getItem(AUTH_TIME_KEY) || '0', 10);
+    if (auth === 'true' && Date.now() - ts < SESSION_TTL) {
         login.style.display = 'none';
         app.style.display   = '';
         adminInit();
     } else {
+        localStorage.removeItem(AUTH_KEY);
+        localStorage.removeItem(AUTH_TIME_KEY);
+        localStorage.removeItem(TOKEN_KEY);
         app.style.display   = 'none';
         login.style.display = 'flex';
     }
@@ -89,7 +98,9 @@ async function attemptLogin() {
         });
         const data = await r.json();
         if (data.ok) {
-            sessionStorage.setItem(TOKEN_KEY, data.token);
+            localStorage.setItem(TOKEN_KEY, data.token);
+            localStorage.setItem(AUTH_KEY, 'true');
+            localStorage.setItem(AUTH_TIME_KEY, String(Date.now()));
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('app').style.display = '';
             input.value = '';
@@ -135,7 +146,9 @@ function toggleEye() {
 }
 
 function logout() {
-    sessionStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem(AUTH_TIME_KEY);
     document.getElementById('app').style.display   = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('loginInput').value = '';
