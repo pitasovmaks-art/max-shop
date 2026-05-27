@@ -4,47 +4,99 @@ let _subcategories = [];
 let _products      = [];
 
 /* ─── City ──────────────────────────────────────────────── */
-let _city = localStorage.getItem('city') || null; // 'krd' | 'msk' | null
+let _city = localStorage.getItem('city') || null;
+
+const CITIES = [
+    'Абакан','Азов','Александров','Альметьевск','Анапа','Ангарск','Анжеро-Судженск',
+    'Апатиты','Армавир','Арсеньев','Артём','Архангельск','Асбест','Астрахань','Ачинск',
+    'Балаково','Балашиха','Барнаул','Батайск','Белгород','Белово','Белорецк',
+    'Берёзовский','Березники','Бийск','Благовещенск','Братск','Брянск','Бугульма','Бузулук',
+    'Великий Новгород','Верхняя Пышма','Владивосток','Владикавказ','Владимир',
+    'Волгоград','Волгодонск','Волжский','Вологда','Воронеж','Воткинск','Всеволожск',
+    'Гатчина','Геленджик','Глазов','Грозный','Гудермес',
+    'Дербент','Дзержинск','Димитровград','Долгопрудный','Домодедово','Дубна',
+    'Екатеринбург','Елец','Ессентуки',
+    'Железногорск','Жуковский',
+    'Иваново','Ижевск','Иркутск','Ишим',
+    'Йошкар-Ола',
+    'Казань','Калининград','Калуга','Каменск-Уральский','Каменск-Шахтинский',
+    'Камышин','Канск','Каспийск','Кемерово','Кинешма','Киров','Кисловодск',
+    'Ковров','Когалым','Коломна','Комсомольск-на-Амуре','Копейск','Королёв',
+    'Кострома','Краснодар','Красногорск','Красноярск','Кропоткин','Курган','Курск',
+    'Ленинск-Кузнецкий','Лесосибирск','Лобня','Люберцы',
+    'Магадан','Магнитогорск','Майкоп','Махачкала','Мегион','Миасс',
+    'Минеральные Воды','Москва','Мурманск','Муром','Мытищи',
+    'Набережные Челны','Назрань','Нальчик','Находка','Невинномысск',
+    'Нефтекамск','Нефтеюганск','Нижневартовск','Нижнекамск',
+    'Нижний Новгород','Нижний Тагил','Новокузнецк','Новомосковск',
+    'Новороссийск','Новосибирск','Новочеркасск','Новошахтинск','Ногинск','Норильск','Нягань',
+    'Обнинск','Одинцово','Октябрьский','Омск','Орёл','Оренбург','Орехово-Зуево','Орск',
+    'Пенза','Первоуральск','Пермь','Петрозаводск','Петропавловск-Камчатский',
+    'Подольск','Прокопьевск','Псков','Пушкино','Пятигорск',
+    'Раменское','Реутов','Ростов-на-Дону','Рубцовск','Рыбинск','Рязань',
+    'Салават','Самара','Санкт-Петербург','Саранск','Саратов','Севастополь',
+    'Северодвинск','Серов','Серпухов','Сибай','Симферополь','Смоленск',
+    'Сочи','Ставрополь','Старый Оскол','Стерлитамак','Сургут','Сызрань','Сыктывкар',
+    'Таганрог','Тамбов','Тверь','Тихвин','Тихорецк','Тобольск','Тольятти',
+    'Томск','Туапсе','Тула','Тюмень',
+    'Улан-Удэ','Ульяновск','Усолье-Сибирское','Усть-Илимск','Уссурийск','Уфа','Ухта',
+    'Феодосия',
+    'Хабаровск','Хасавюрт','Химки',
+    'Чебоксары','Челябинск','Черкесск','Черногорск','Чита','Череповец',
+    'Шахты',
+    'Электросталь','Элиста','Энгельс',
+    'Южно-Сахалинск','Юрга','Якутск','Ярославль',
+];
 
 function getEffectivePrice(product) {
-    if (_city === 'krd' && product.priceKrd) return product.priceKrd;
-    if (_city === 'msk' && product.priceMsk) return product.priceMsk;
+    if (_city === 'Краснодар' && product.priceKrd) return product.priceKrd;
+    if (_city && product.priceMsk) return product.priceMsk;
     return product.price;
 }
 
-function selectCity(city) {
-    _city = city;
-    localStorage.setItem('city', city);
+function renderCityList(filter) {
+    const list = document.getElementById('city-list');
+    if (!list) return;
+    const q = (filter || '').toLowerCase();
+    const filtered = q ? CITIES.filter(c => c.toLowerCase().includes(q)) : CITIES;
+    list.innerHTML = filtered.length
+        ? filtered.map(city =>
+            `<div onclick="selectCity('${city.replace(/'/g,"\\'")}')\" style="padding:14px 16px;font-size:16px;color:#fff;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.08);">${city}</div>`
+          ).join('')
+        : '<div style="padding:20px 16px;color:rgba(255,255,255,0.5);font-size:14px;">Ничего не найдено</div>';
+}
+
+function filterCities(value) {
+    renderCityList(value);
+}
+
+function selectCity(cityName) {
+    _city = cityName;
+    localStorage.setItem('city', cityName);
     const screen = document.getElementById('city-screen');
     if (screen) screen.style.display = 'none';
     const label = document.getElementById('cityLabel');
-    if (label) label.textContent = city === 'krd' ? 'Краснодар' : 'Москва';
+    if (label) label.textContent = cityName;
     render();
 }
 
 function showCityScreen() {
     const screen = document.getElementById('city-screen');
     if (screen) screen.style.display = 'flex';
+    const search = document.getElementById('city-search');
+    if (search) { search.value = ''; renderCityList(''); }
 }
 
 function detectCity() {
-    const label = document.getElementById('cityLabel');
     if (_city) {
         const screen = document.getElementById('city-screen');
         if (screen) screen.style.display = 'none';
-        if (label) label.textContent = _city === 'krd' ? 'Краснодар' : 'Москва';
+        const label = document.getElementById('cityLabel');
+        if (label) label.textContent = _city;
         return;
     }
-    if (!navigator.geolocation) { showCityScreen(); return; }
-    navigator.geolocation.getCurrentPosition(
-        ({ coords: { latitude: lat, longitude: lon } }) => {
-            if (lat >= 44 && lat <= 46 && lon >= 38 && lon <= 41) { selectCity('krd'); }
-            else if (lat >= 55 && lat <= 56 && lon >= 37 && lon <= 38) { selectCity('msk'); }
-            else { showCityScreen(); }
-        },
-        () => showCityScreen(),
-        { timeout: 5000 }
-    );
+    renderCityList('');
+    showCityScreen();
 }
 
 /* ─── State ─────────────────────────────────────────────── */

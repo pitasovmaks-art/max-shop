@@ -11,12 +11,12 @@
 <body style="background:linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);min-height:100vh;">
 
 <!-- City selection screen -->
-<div id="city-screen" style="position:fixed;inset:0;z-index:2000;background:linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:16px;">
-    <div style="font-family:'Oswald',sans-serif;font-size:30px;font-weight:600;color:#fff;letter-spacing:-.5px;margin-bottom:8px;">Точка Монтажа</div>
-    <h2 style="font-size:19px;font-weight:600;color:#fff;text-align:center;margin:0 0 8px;">Выберите ваш город</h2>
-    <button onclick="selectCity('krd')" style="width:100%;max-width:280px;height:56px;background:#F85800;color:#fff;border:none;border-radius:16px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;">Краснодар</button>
-    <button onclick="selectCity('msk')" style="width:100%;max-width:280px;height:56px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:16px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;backdrop-filter:blur(10px);">Москва</button>
-    <button onclick="selectCity('msk')" style="width:100%;max-width:280px;height:36px;background:transparent;color:rgba(255,255,255,0.55);border:none;font-size:14px;cursor:pointer;font-family:inherit;">Другой город →</button>
+<div id="city-screen" style="position:fixed;inset:0;z-index:2000;background:linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);display:flex;flex-direction:column;padding:48px 24px 0;">
+    <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:600;color:#fff;letter-spacing:-.5px;margin-bottom:8px;">Точка Монтажа</div>
+    <h2 style="font-size:18px;font-weight:600;color:#fff;margin:0 0 16px;">Выберите ваш город</h2>
+    <input id="city-search" type="text" placeholder="Поиск города..." oninput="filterCities(this.value)"
+        style="width:100%;height:44px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:12px;padding:0 16px;font-size:16px;color:#fff;font-family:inherit;outline:none;margin-bottom:12px;box-sizing:border-box;">
+    <div id="city-list" style="flex:1;overflow-y:auto;border-radius:12px;"></div>
 </div>
 
 <div class="app">
