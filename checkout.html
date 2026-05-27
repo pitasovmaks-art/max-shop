@@ -38,11 +38,40 @@
             </div>
         </section>
 
-        <!-- 2. Store selection -->
+        <!-- 2. Delivery method -->
         <section class="section">
-            <h2 class="section__title">Магазин для самовывоза</h2>
-            <div class="stores" id="storeList">
-                <!-- Загружается динамически из /api/stores -->
+            <h2 class="section__title">Способ получения</h2>
+            <div class="delivery-tabs">
+                <button class="delivery-tab delivery-tab--active" id="tab-pickup" onclick="setDelivery('pickup')">🏪 Самовывоз</button>
+                <button class="delivery-tab" id="tab-city" onclick="setDelivery('city')">🚗 По городу</button>
+                <button class="delivery-tab" id="tab-russia" onclick="setDelivery('russia')">📦 По России</button>
+            </div>
+
+            <!-- Pickup: store list -->
+            <div id="delivery-pickup">
+                <div class="stores" id="storeList"></div>
+            </div>
+
+            <!-- City delivery -->
+            <div id="delivery-city" class="hidden">
+                <div class="card" style="margin-top:12px;">
+                    <div class="field" id="fieldAddress">
+                        <label class="field__label" for="inputAddress">Адрес доставки *</label>
+                        <input class="field__input" id="inputAddress" type="text" placeholder="Улица, дом, квартира" oninput="clearError('fieldAddress')">
+                        <span class="field__error"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Russia delivery -->
+            <div id="delivery-russia" class="hidden">
+                <div class="card" style="margin-top:12px;">
+                    <div class="field" id="fieldAddressRussia">
+                        <label class="field__label" for="inputAddressRussia">Адрес доставки *</label>
+                        <input class="field__input" id="inputAddressRussia" type="text" placeholder="Город, улица, дом" oninput="clearError('fieldAddressRussia')">
+                        <span class="field__error"></span>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -141,14 +170,14 @@
         <p class="success-order" id="successOrder">#000000</p>
         <div class="success-card">
             <div class="success-card__row">
-                <span class="success-card__icon">🏪</span>
+                <span class="success-card__icon" id="successIcon2">🏪</span>
                 <div>
-                    <div class="success-card__label">Магазин самовывоза</div>
+                    <div class="success-card__label" id="successLabel">Магазин самовывоза</div>
                     <div class="success-card__value" id="successStore"></div>
                 </div>
             </div>
         </div>
-        <p class="success-note">Мы перезвоним для подтверждения заказа и уточним время, когда товар будет готов к выдаче</p>
+        <p class="success-note" id="successNote">Мы перезвоним для подтверждения заказа и уточним время, когда товар будет готов к выдаче</p>
         <a href="index.html" class="success-btn">Вернуться в каталог</a>
     </div>
 </div>

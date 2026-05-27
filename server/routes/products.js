@@ -4,31 +4,33 @@ const { requireAdmin } = require('../middleware/auth');
 
 function normalize(p) {
     return {
-        id:         p.id,
-        name:       p.name,
-        desc:       p.desc,
-        categoryId: p.category_id,
-        subId:      p.sub_id,
-        price:      p.price,
-        priceKrd:   p.price_krd  || 0,
-        priceMsk:   p.price_msk  || 0,
-        inStock:    p.in_stock   === 1,
-        isService:  p.is_service === 1,
-        priceLabel: p.price_label || undefined,
-        image:      p.image       || undefined,
+        id:            p.id,
+        name:          p.name,
+        desc:          p.desc,
+        categoryId:    p.category_id,
+        subId:         p.sub_id,
+        price:         p.price,
+        priceKrd:      p.price_krd      || 0,
+        priceMsk:      p.price_msk      || 0,
+        priceDelivery: p.price_delivery || 0,
+        inStock:       p.in_stock       === 1,
+        isService:     p.is_service     === 1,
+        priceLabel:    p.price_label    || undefined,
+        image:         p.image          || undefined,
     };
 }
 
 function normalizeVariant(v) {
     return {
-        id:        v.id,
-        productId: v.product_id,
-        label:     v.label,
-        price:     v.price,
-        priceKrd:  v.price_krd || 0,
-        priceMsk:  v.price_msk || 0,
-        isDefault: v.is_default === 1,
-        sortOrder: v.sort_order,
+        id:            v.id,
+        productId:     v.product_id,
+        label:         v.label,
+        price:         v.price,
+        priceKrd:      v.price_krd      || 0,
+        priceMsk:      v.price_msk      || 0,
+        priceDelivery: v.price_delivery || 0,
+        isDefault:     v.is_default     === 1,
+        sortOrder:     v.sort_order,
     };
 }
 
@@ -98,9 +100,9 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
             for (let i = 0; i < variants.length; i++) {
                 const v = variants[i];
                 await client.query(
-                    `INSERT INTO product_variants (product_id,label,price,price_krd,price_msk,is_default,sort_order)
-                     VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-                    [productId, String(v.label).trim(), v.price || 0, v.priceKrd || 0, v.priceMsk || 0, v.isDefault ? 1 : 0, v.sortOrder ?? i]
+                    `INSERT INTO product_variants (product_id,label,price,price_krd,price_msk,price_delivery,is_default,sort_order)
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+                    [productId, String(v.label).trim(), v.price || 0, v.priceKrd || 0, v.priceMsk || 0, v.priceDelivery || 0, v.isDefault ? 1 : 0, v.sortOrder ?? i]
                 );
             }
         });
@@ -114,14 +116,14 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
 
 /* POST /api/products */
 router.post('/', requireAdmin, async (req, res) => {
-    const { name, desc, categoryId, subId, price, priceKrd, priceMsk, inStock, isService, priceLabel, image } = req.body;
+    const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, priceLabel, image } = req.body;
     if (!name) return res.status(400).json({ error: 'name required' });
     try {
         const row = await db.queryOne(
-            `INSERT INTO products (name,"desc",category_id,sub_id,price,price_krd,price_msk,in_stock,is_service,price_label,image)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+            `INSERT INTO products (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,in_stock,is_service,price_label,image)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
             [name, desc || null, categoryId || null, subId || null, price || 0,
-             priceKrd || 0, priceMsk || 0,
+             priceKrd || 0, priceMsk || 0, priceDelivery || 0,
              inStock ? 1 : 0, isService ? 1 : 0, priceLabel || null, image || null]
         );
         const product = normalize(await db.queryOne('SELECT * FROM products WHERE id=$1', [row.id]));
@@ -132,16 +134,16 @@ router.post('/', requireAdmin, async (req, res) => {
 
 /* PUT /api/products/:id */
 router.put('/:id', requireAdmin, async (req, res) => {
-    const { name, desc, categoryId, subId, price, priceKrd, priceMsk, inStock, isService, priceLabel, image } = req.body;
+    const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, priceLabel, image } = req.body;
     try {
         const changed = await db.execute(
             `UPDATE products
              SET name=$1,"desc"=$2,category_id=$3,sub_id=$4,price=$5,
-                 price_krd=$6,price_msk=$7,
-                 in_stock=$8,is_service=$9,price_label=$10,image=$11
-             WHERE id=$12`,
+                 price_krd=$6,price_msk=$7,price_delivery=$8,
+                 in_stock=$9,is_service=$10,price_label=$11,image=$12
+             WHERE id=$13`,
             [name, desc || null, categoryId || null, subId || null, price || 0,
-             priceKrd || 0, priceMsk || 0,
+             priceKrd || 0, priceMsk || 0, priceDelivery || 0,
              inStock ? 1 : 0, isService ? 1 : 0, priceLabel || null, image || null, +req.params.id]
         );
         if (changed === 0) return res.status(404).json({ error: 'Not found' });

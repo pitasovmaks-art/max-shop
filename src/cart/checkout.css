@@ -223,3 +223,29 @@ a      { text-decoration: none; color: inherit; }
 
 /* ─── Variant label in order summary ────────────────────── */
 .order-item__variant { font-size: 12px; color: var(--text-secondary); font-weight: 400; }
+
+/* ─── Delivery tabs ─────────────────────────────────────── */
+.delivery-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.delivery-tab {
+    flex: 1;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: background .15s, color .15s, border-color .15s;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+}
+.delivery-tab:active { opacity: .75; }
+.delivery-tab--active {
+    background: #F85800;
+    border-color: #F85800;
+    color: #FFFFFF;
+}

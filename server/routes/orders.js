@@ -9,7 +9,10 @@ function normalize(o) {
         name:      o.name,
         phone:     o.phone,
         store:     o.store,
-        comment:   o.comment || undefined,
+        delivery:  o.delivery  || 'pickup',
+        address:   o.address   || undefined,
+        city:      o.city      || undefined,
+        comment:   o.comment   || undefined,
         items:     typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
         total:     o.total,
         status:    o.status,
@@ -19,15 +22,15 @@ function normalize(o) {
 
 /* POST /api/orders — public, customers submit */
 router.post('/', async (req, res) => {
-    const { name, phone, store, comment, items, total } = req.body;
+    const { name, phone, store, delivery, address, city, comment, items, total } = req.body;
     if (!name || !phone || !store || !items || total == null) {
         return res.status(400).json({ error: 'Обязательные поля: name, phone, store, items, total' });
     }
     try {
         const row = await db.queryOne(
-            `INSERT INTO orders (name,phone,store,comment,items,total)
-             VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-            [name, phone, store, comment || null, JSON.stringify(items), total]
+            `INSERT INTO orders (name,phone,store,delivery,address,city,comment,items,total)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+            [name, phone, store, delivery || 'pickup', address || null, city || null, comment || null, JSON.stringify(items), total]
         );
         const order = normalize(await db.queryOne('SELECT * FROM orders WHERE id=$1', [row.id]));
         notifyStore(order).catch(e => console.error('[bot] notifyStore:', e.message));

@@ -11,12 +11,13 @@
 <body style="background:linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);min-height:100vh;">
 
 <!-- City selection screen -->
-<div id="city-screen" style="position:fixed;inset:0;z-index:2000;background:linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);display:flex;flex-direction:column;padding:48px 24px 0;">
-    <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:600;color:#fff;letter-spacing:-.5px;margin-bottom:8px;">Точка Монтажа</div>
-    <h2 style="font-size:18px;font-weight:600;color:#fff;margin:0 0 16px;">Выберите ваш город</h2>
-    <input id="city-search" type="text" placeholder="Поиск города..." oninput="filterCities(this.value)"
-        style="width:100%;height:44px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:12px;padding:0 16px;font-size:16px;color:#fff;font-family:inherit;outline:none;margin-bottom:12px;box-sizing:border-box;">
-    <div id="city-list" style="flex:1;overflow-y:auto;border-radius:12px;"></div>
+<div id="city-screen" style="position:fixed;inset:0;z-index:2000;background:linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;">
+    <div style="font-family:'Oswald',sans-serif;font-size:32px;font-weight:600;color:#fff;letter-spacing:-.5px;margin-bottom:8px;text-align:center;">Точка Монтажа</div>
+    <h2 style="font-size:18px;font-weight:600;color:rgba(255,255,255,0.8);margin:0 0 40px;text-align:center;font-weight:400;">Выберите ваш город</h2>
+    <div style="display:flex;flex-direction:column;gap:16px;width:100%;max-width:320px;">
+        <button onclick="selectCity('krd')" style="width:100%;height:64px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:16px;color:#fff;font-size:18px;font-weight:600;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s;">📍 Краснодар</button>
+        <button onclick="selectCity('msk')" style="width:100%;height:64px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:16px;color:#fff;font-size:18px;font-weight:600;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s;">📍 Москва</button>
+    </div>
 </div>
 
 <div class="app">

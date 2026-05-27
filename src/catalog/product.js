@@ -54,10 +54,10 @@ function showToast(msg) {
 function effectivePrice(product, variant) {
     const city = localStorage.getItem('city');
     if (variant) {
-        if (city === 'Краснодар') return variant.priceKrd || variant.price;
+        if (city === 'krd') return variant.priceKrd || variant.price;
         return variant.priceMsk || variant.price;
     }
-    if (city === 'Краснодар') return product.priceKrd || product.price;
+    if (city === 'krd') return product.priceKrd || product.price;
     return product.priceMsk || product.price;
 }
 
@@ -235,16 +235,19 @@ function renderInfo() {
 
 /* ─── Add to cart ───────────────────────────────────────────── */
 function addToCart() {
-    const variant = effectiveVariant();
-    const price   = effectivePrice(_product, variant);
-    const key     = variant ? `${_product.id}_v${variant.id}` : String(_product.id);
+    const variant       = effectiveVariant();
+    const price         = effectivePrice(_product, variant);
+    const priceDelivery = variant
+        ? (variant.priceDelivery || _product.priceDelivery || 0)
+        : (_product.priceDelivery || 0);
+    const key = variant ? `${_product.id}_v${variant.id}` : String(_product.id);
 
     const cart     = getCart();
     const existing = cart.find(i => i.key === key);
     if (existing) {
         existing.qty += 1;
     } else {
-        const item = { key, id: _product.id, name: _product.name, price, qty: 1, categoryId: _product.categoryId };
+        const item = { key, id: _product.id, name: _product.name, price, priceDelivery, qty: 1, categoryId: _product.categoryId };
         if (variant) { item.variantId = variant.id; item.variantLabel = variant.label; }
         cart.push(item);
     }

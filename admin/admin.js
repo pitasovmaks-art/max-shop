@@ -2,7 +2,7 @@
 let _products = [];
 
 /* ─── Variants form state ───────────────────────────────────── */
-let _formVariants = []; // { label, price, priceKrd, priceMsk, isDefault }
+let _formVariants = []; // { label, price, priceKrd, priceMsk, priceDelivery, isDefault }
 
 /* ─── Extra images form state ───────────────────────────────── */
 let _extraImages = []; // { id, productId, url, sortOrder }
@@ -45,6 +45,11 @@ function renderVariantRows() {
                        placeholder="Москва ₽"
                        min="0"
                        oninput="_varField(${i},'priceMsk',+this.value||0)">
+                <input class="ff__input variant-row__price" type="number"
+                       value="${v.priceDelivery || ''}"
+                       placeholder="Доставка РФ ₽"
+                       min="0"
+                       oninput="_varField(${i},'priceDelivery',+this.value||0)">
             </div>
         </div>`).join('');
 }
@@ -53,7 +58,7 @@ function _escAttr(s) { return String(s || '').replace(/"/g, '&quot;').replace(/<
 function _varField(i, field, val) { if (_formVariants[i]) _formVariants[i][field] = val; }
 
 function addVariantRow() {
-    _formVariants.push({ label: '', price: 0, priceKrd: 0, priceMsk: 0, isDefault: _formVariants.length === 0 });
+    _formVariants.push({ label: '', price: 0, priceKrd: 0, priceMsk: 0, priceDelivery: 0, isDefault: _formVariants.length === 0 });
     renderVariantRows();
     const inputs = document.querySelectorAll('.variant-row__label');
     if (inputs.length) inputs[inputs.length - 1].focus();
@@ -73,7 +78,7 @@ function setDefaultVariant(idx) {
 function _collectVariants() {
     return _formVariants
         .filter(v => String(v.label).trim())
-        .map((v, i) => ({ label: String(v.label).trim(), price: v.price || 0, priceKrd: v.priceKrd || 0, priceMsk: v.priceMsk || 0, isDefault: !!v.isDefault, sortOrder: i }));
+        .map((v, i) => ({ label: String(v.label).trim(), price: v.price || 0, priceKrd: v.priceKrd || 0, priceMsk: v.priceMsk || 0, priceDelivery: v.priceDelivery || 0, isDefault: !!v.isDefault, sortOrder: i }));
 }
 
 /* ─── Auth ──────────────────────────────────────────────── */
@@ -589,8 +594,9 @@ function fillForm(p) {
     v('f-desc',        p.desc  || '');
     v('f-price',       p.price);
     v('f-price-label', p.priceLabel || '');
-    v('f-price-krd',   p.priceKrd || 0);
-    v('f-price-msk',   p.priceMsk || 0);
+    v('f-price-krd',      p.priceKrd      || 0);
+    v('f-price-msk',      p.priceMsk      || 0);
+    v('f-price-delivery', p.priceDelivery || 0);
     document.getElementById('f-instock').checked = !!p.inStock;
     document.getElementById('f-service').checked = !!p.isService;
     const catSel = document.getElementById('f-cat');
@@ -601,12 +607,12 @@ function fillForm(p) {
     if (p.image) setPhotoPreview(p.image); else clearPhotoPreview();
     document.querySelectorAll('.ff--error').forEach(el => el.classList.remove('ff--error'));
     document.querySelectorAll('.ff__error').forEach(el => el.textContent = '');
-    _formVariants = (p.variants || []).map(vr => ({ label: vr.label, price: vr.price, priceKrd: vr.priceKrd || 0, priceMsk: vr.priceMsk || 0, isDefault: vr.isDefault }));
+    _formVariants = (p.variants || []).map(vr => ({ label: vr.label, price: vr.price, priceKrd: vr.priceKrd || 0, priceMsk: vr.priceMsk || 0, priceDelivery: vr.priceDelivery || 0, isDefault: vr.isDefault }));
     renderVariantRows();
 }
 
 function clearForm() {
-    ['f-name','f-desc','f-price','f-price-label','f-price-krd','f-price-msk'].forEach(id => v(id, ''));
+    ['f-name','f-desc','f-price','f-price-label','f-price-krd','f-price-msk','f-price-delivery'].forEach(id => v(id, ''));
     v('f-cat', '');
     document.getElementById('f-instock').checked = true;
     document.getElementById('f-service').checked = false;
@@ -666,8 +672,9 @@ async function saveProduct() {
         categoryId: parseInt(document.getElementById('f-cat').value),
         subId:      subVal,
         price:      parseInt(document.getElementById('f-price').value, 10),
-        priceKrd:   parseInt(document.getElementById('f-price-krd').value, 10) || 0,
-        priceMsk:   parseInt(document.getElementById('f-price-msk').value, 10) || 0,
+        priceKrd:      parseInt(document.getElementById('f-price-krd').value, 10)      || 0,
+        priceMsk:      parseInt(document.getElementById('f-price-msk').value, 10)      || 0,
+        priceDelivery: parseInt(document.getElementById('f-price-delivery').value, 10) || 0,
         inStock:    document.getElementById('f-instock').checked,
         isService,
         priceLabel: (isService && document.getElementById('f-price-label').value)

@@ -1,5 +1,6 @@
-/* ─── Stores ────────────────────────────────────────────── */
+/* ─── Stores & delivery ─────────────────────────────────── */
 let _stores = [];
+let _deliveryMethod = 'pickup'; // 'pickup' | 'city' | 'russia'
 
 async function loadAndRenderStores() {
     try {
@@ -41,12 +42,19 @@ function renderStoreList() {
     const list = document.getElementById('storeList');
     if (!list) return;
 
-    if (!_stores.length) {
-        list.innerHTML = '<p style="padding:16px;color:#6B7280;font-size:14px">Нет доступных магазинов</p>';
+    const cityCode = localStorage.getItem('city');
+    const filtered = _stores.filter(s => {
+        if (cityCode === 'krd') return s.city === 'Краснодар';
+        if (cityCode === 'msk') return s.city === 'Москва';
+        return true;
+    });
+
+    if (!filtered.length) {
+        list.innerHTML = '<p style="padding:16px;color:rgba(255,255,255,0.5);font-size:14px">Нет доступных магазинов</p>';
         return;
     }
 
-    list.innerHTML = _stores.map((s, i) => {
+    list.innerHTML = filtered.map((s, i) => {
         const open = s.hours ? isStoreOpen(s.hours) : null;
         const badge = open !== null
             ? `<span style="font-size:11px;font-weight:600;color:${open ? '#22c55e' : '#ef4444'}">${open ? '🟢 Открыто' : '🔴 Закрыто'}</span>`
@@ -66,6 +74,19 @@ function renderStoreList() {
     }).join('');
 
     initStoreCards();
+}
+
+/* ─── Delivery method ───────────────────────────────────── */
+function setDelivery(method) {
+    _deliveryMethod = method;
+
+    ['pickup', 'city', 'russia'].forEach(m => {
+        document.getElementById(`tab-${m}`)?.classList.toggle('delivery-tab--active', m === method);
+        const sec = document.getElementById(`delivery-${m}`);
+        if (sec) sec.classList.toggle('hidden', m !== method);
+    });
+
+    renderSummary();
 }
 
 function escHtml(str) {
@@ -96,10 +117,15 @@ function plural(n, one, few, many) {
 }
 
 /* ─── Render order summary ──────────────────────────────── */
+function itemPrice(item) {
+    if (_deliveryMethod === 'russia') return item.priceDelivery || item.price;
+    return item.price;
+}
+
 function renderSummary() {
-    const cart       = getCart();
-    const total      = cart.reduce((s, i) => s + i.price * i.qty, 0);
-    const totalQty   = cart.reduce((s, i) => s + i.qty, 0);
+    const cart     = getCart();
+    const totalQty = cart.reduce((s, i) => s + i.qty, 0);
+    const total    = cart.reduce((s, i) => s + itemPrice(i) * i.qty, 0);
 
     document.getElementById('orderItems').innerHTML = cart.map(item => `
         <div class="order-item">
@@ -107,7 +133,7 @@ function renderSummary() {
                 ${item.name}${item.variantLabel ? `<span class="order-item__variant"> · ${item.variantLabel}</span>` : ''}
             </span>
             <span class="order-item__qty">× ${item.qty}</span>
-            <span class="order-item__price">${fmt(item.price * item.qty)}</span>
+            <span class="order-item__price">${fmt(itemPrice(item) * item.qty)}</span>
         </div>
     `).join('');
 
@@ -201,6 +227,15 @@ function validate() {
     if (!phone) { showError('fieldPhone', 'Введите номер телефона'); ok = false; }
     else if (getDigits(phone).length < 11) { showError('fieldPhone', 'Введите полный номер телефона'); ok = false; }
 
+    if (_deliveryMethod === 'city') {
+        const addr = document.getElementById('inputAddress').value.trim();
+        if (!addr) { showError('fieldAddress', 'Введите адрес доставки'); ok = false; }
+    }
+    if (_deliveryMethod === 'russia') {
+        const addr = document.getElementById('inputAddressRussia').value.trim();
+        if (!addr) { showError('fieldAddressRussia', 'Введите адрес доставки'); ok = false; }
+    }
+
     if (!document.getElementById('consentCheck')?.checked) {
         document.getElementById('consentWrap')?.classList.add('consent-wrap--error');
         document.getElementById('consentError')?.classList.remove('hidden');
@@ -236,20 +271,33 @@ async function submitOrder() {
     btn.disabled = true;
     btn.textContent = 'Оформляем...';
 
-    const storeId  = getSelectedStore();
-    const store    = _stores.find(s => String(s.id) === String(storeId));
-    const cart     = getCart();
-    const total    = cart.reduce((s, i) => s + i.price * i.qty, 0);
-    const phone    = document.getElementById('inputPhone').value;
-    const name     = document.getElementById('inputName').value.trim();
-    const comment  = (document.getElementById('inputComment')?.value || '').trim();
+    const cart    = getCart();
+    const total   = cart.reduce((s, i) => s + itemPrice(i) * i.qty, 0);
+    const phone   = document.getElementById('inputPhone').value;
+    const name    = document.getElementById('inputName').value.trim();
+    const comment = (document.getElementById('inputComment')?.value || '').trim();
+    const city    = localStorage.getItem('city') || undefined;
 
-    if (!store) {
-        btn.disabled = false;
-        btn.classList.remove('submit-btn--disabled');
-        btn.textContent = 'Подтвердить заказ';
-        alert('Выберите магазин для самовывоза');
-        return;
+    let storeLabel = '';
+    let address    = '';
+
+    if (_deliveryMethod === 'pickup') {
+        const storeId = getSelectedStore();
+        const store   = _stores.find(s => String(s.id) === String(storeId));
+        if (!store) {
+            btn.disabled = false;
+            btn.classList.remove('submit-btn--disabled');
+            btn.textContent = 'Подтвердить заказ';
+            alert('Выберите магазин для самовывоза');
+            return;
+        }
+        storeLabel = `${store.city}, ${store.address}`;
+    } else if (_deliveryMethod === 'city') {
+        address    = document.getElementById('inputAddress').value.trim();
+        storeLabel = city === 'krd' ? 'Краснодар' : city === 'msk' ? 'Москва' : 'Доставка по городу';
+    } else {
+        address    = document.getElementById('inputAddressRussia').value.trim();
+        storeLabel = 'Доставка по России';
     }
 
     try {
@@ -259,12 +307,15 @@ async function submitOrder() {
             body: JSON.stringify({
                 name,
                 phone,
-                store: `${store.city}, ${store.address}`,
-                comment: comment || undefined,
-                items:   cart.map(i => ({
+                store:    storeLabel,
+                delivery: _deliveryMethod,
+                address:  address || undefined,
+                city:     city    || undefined,
+                comment:  comment || undefined,
+                items: cart.map(i => ({
                     id:    i.id,
                     name:  i.name + (i.variantLabel ? ` (${i.variantLabel})` : ''),
-                    price: i.price,
+                    price: itemPrice(i),
                     qty:   i.qty,
                 })),
                 total,
@@ -275,9 +326,20 @@ async function submitOrder() {
         const data = await r.json();
 
         document.getElementById('successOrder').textContent = `Заказ #${data.id}`;
-        document.getElementById('successStore').textContent = `${store.city}, ${store.address}`;
-        document.getElementById('successScreen').classList.remove('hidden');
 
+        const DELIVERY_LABELS = { pickup: 'Магазин самовывоза', city: 'Адрес доставки', russia: 'Адрес доставки' };
+        const DELIVERY_ICONS  = { pickup: '🏪', city: '🚗', russia: '📦' };
+        document.getElementById('successIcon2').textContent  = DELIVERY_ICONS[_deliveryMethod];
+        document.getElementById('successLabel').textContent  = DELIVERY_LABELS[_deliveryMethod];
+        document.getElementById('successStore').textContent  = _deliveryMethod === 'pickup' ? storeLabel : address;
+
+        if (_deliveryMethod === 'pickup') {
+            document.getElementById('successNote').textContent = 'Мы перезвоним для подтверждения заказа и уточним время, когда товар будет готов к выдаче';
+        } else {
+            document.getElementById('successNote').textContent = 'Мы перезвоним для подтверждения заказа и уточнения деталей доставки';
+        }
+
+        document.getElementById('successScreen').classList.remove('hidden');
         localStorage.removeItem('cart');
     } catch (e) {
         console.error('Order error:', e);

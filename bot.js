@@ -204,14 +204,16 @@ async function registerWebhook() {
     });
 }
 
-/* ─── Store manager routing ─────────────────────────────── */
-const STORE_MANAGERS = {
-    'Краснодар — ул. Селезнева':           315827109,
-    'Краснодар, ул. Селезнева, 4/10':      315827109,
-    'Краснодар — ул. Котлярова':           403249437,
-    'Краснодар, ул. Котлярова, 21':        403249437,
-    'Москва — Аллея Первой Маевки':        392912448,
-    'Москва, Аллея Первой Маевки, 15 стр3': 392912448,
+/* ─── City-based manager routing ───────────────────────── */
+const CITY_MANAGERS = {
+    krd: 315827109,
+    msk: 392912448,
+};
+
+const DELIVERY_METHOD_LABELS = {
+    pickup:  'Самовывоз',
+    city:    'Доставка по городу',
+    russia:  'Доставка по России',
 };
 
 /* ─── Notify store manager about new order ──────────────── */
@@ -222,27 +224,41 @@ async function notifyStore(order) {
         `• ${i.name} × ${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} ₽`
     );
 
-    const text = [
+    const delivery = order.delivery || 'pickup';
+    const methodLabel = DELIVERY_METHOD_LABELS[delivery] || delivery;
+
+    const parts = [
         `🛍 Новый заказ!`,
         `👤 Клиент: ${order.name}`,
         `📞 Телефон: ${order.phone}`,
-        `🏪 Магазин: ${order.store}`,
+        `🚚 Способ: ${methodLabel}`,
+    ];
+
+    if (delivery === 'pickup') {
+        parts.push(`🏪 Магазин: ${order.store}`);
+    } else {
+        parts.push(`📍 Адрес доставки: ${order.address || order.store}`);
+    }
+
+    parts.push(
         `📦 Товары:\n${lines.join('\n')}`,
         `💰 Сумма: ${order.total.toLocaleString('ru-RU')} ₽`,
         `💬 Комментарий: ${order.comment || 'нет'}`,
-    ].join('\n');
+    );
 
-    const managerId  = STORE_MANAGERS[order.store];
-    const recipients = managerId ? [managerId] : Object.values(STORE_MANAGERS);
+    const text = parts.join('\n');
 
-    console.log('[bot] notifyStore вызван, магазин:', order.store);
-    console.log('[bot] менеджер:', managerId);
+    const managerId  = CITY_MANAGERS[order.city];
+    const recipients = managerId ? [managerId] : Object.values(CITY_MANAGERS);
+
+    console.log('[bot] notifyStore вызван, city:', order.city, 'delivery:', delivery);
+    console.log('[bot] получатели:', recipients);
 
     for (const chatId of recipients) {
         try {
             const result = await sendMessage(chatId, text);
-            console.log('[bot] уведомление отправлено менеджеру:', chatId);
-            console.log('[bot] ответ API на уведомление:', JSON.stringify(result));
+            console.log('[bot] уведомление отправлено:', chatId);
+            console.log('[bot] ответ API:', JSON.stringify(result));
         } catch (e) {
             console.error(`[bot] Не удалось отправить уведомление chat_id=${chatId}:`, e.message);
         }

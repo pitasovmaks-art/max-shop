@@ -6,83 +6,29 @@ let _products      = [];
 /* ─── City ──────────────────────────────────────────────── */
 let _city = localStorage.getItem('city') || null;
 
-const CITIES = [
-    'Абакан','Азов','Александров','Альметьевск','Анапа','Ангарск','Анжеро-Судженск',
-    'Апатиты','Армавир','Арсеньев','Артём','Архангельск','Асбест','Астрахань','Ачинск',
-    'Балаково','Балашиха','Барнаул','Батайск','Белгород','Белово','Белорецк',
-    'Березники','Берёзовский','Бийск','Биробиджан','Благовещенск','Братск','Брянск','Бугульма','Бузулук',
-    'Великий Новгород','Верхняя Пышма','Владивосток','Владикавказ','Владимир',
-    'Волгоград','Волгодонск','Волжский','Вологда','Воронеж','Воткинск','Всеволожск',
-    'Гатчина','Геленджик','Глазов','Грозный','Гудермес',
-    'Дербент','Дзержинск','Димитровград','Долгопрудный','Домодедово','Дубна',
-    'Евпатория','Екатеринбург','Елец','Ессентуки',
-    'Железногорск','Жуковский',
-    'Иваново','Ижевск','Иркутск','Ишим',
-    'Йошкар-Ола',
-    'Казань','Калининград','Калуга','Каменск-Уральский','Каменск-Шахтинский',
-    'Камышин','Канск','Каспийск','Кемерово','Кинешма','Киров','Кисловодск',
-    'Ковров','Когалым','Коломна','Комсомольск-на-Амуре','Копейск','Королёв',
-    'Кострома','Красногорск','Краснодар','Красноярск','Кропоткин','Курган','Курск',
-    'Ленинск-Кузнецкий','Лесосибирск','Липецк','Лобня','Люберцы',
-    'Магадан','Магнитогорск','Майкоп','Махачкала','Мегион','Миасс',
-    'Минеральные Воды','Мичуринск','Москва','Мурманск','Муром','Мытищи',
-    'Набережные Челны','Назрань','Нальчик','Находка','Невинномысск',
-    'Нефтекамск','Нефтеюганск','Нижневартовск','Нижнекамск',
-    'Нижний Новгород','Нижний Тагил','Новокузнецк','Новомосковск',
-    'Новороссийск','Новосибирск','Новочеркасск','Новошахтинск','Ногинск','Норильск','Ноябрьск','Нягань',
-    'Обнинск','Одинцово','Октябрьский','Омск','Орёл','Оренбург','Орехово-Зуево','Орск',
-    'Пенза','Первоуральск','Пермь','Петрозаводск','Петропавловск-Камчатский',
-    'Подольск','Прокопьевск','Псков','Пушкино','Пятигорск',
-    'Раменское','Реутов','Ростов-на-Дону','Рубцовск','Рыбинск','Рязань',
-    'Салават','Самара','Санкт-Петербург','Саранск','Сарапул','Саратов','Севастополь',
-    'Северодвинск','Серов','Серпухов','Сибай','Симферополь','Смоленск',
-    'Сочи','Ставрополь','Старый Оскол','Стерлитамак','Сургут','Сызрань','Сыктывкар',
-    'Таганрог','Тамбов','Тверь','Тихвин','Тихорецк','Тобольск','Тольятти',
-    'Томск','Туапсе','Тула','Тюмень',
-    'Улан-Удэ','Ульяновск','Усолье-Сибирское','Уссурийск','Усть-Илимск','Уфа','Ухта',
-    'Феодосия',
-    'Хабаровск','Ханты-Мансийск','Хасавюрт','Химки',
-    'Чебоксары','Челябинск','Череповец','Черкесск','Черногорск','Чита',
-    'Шахты',
-    'Электросталь','Элиста','Энгельс',
-    'Южно-Сахалинск','Юрга','Якутск','Ярославль',
-];
+const _24H = 900000; // 15 minutes
 
-const _24H = 900000;
+const CITY_LABELS = { krd: 'Краснодар', msk: 'Москва' };
+
+function cityLabel(code) { return CITY_LABELS[code] || code; }
 
 function getEffectivePrice(product, variant) {
     if (variant) {
-        if (_city === 'Краснодар') return variant.priceKrd || variant.price;
+        if (_city === 'krd') return variant.priceKrd || variant.price;
         return variant.priceMsk || variant.price;
     }
-    if (_city === 'Краснодар') return product.priceKrd || product.price;
+    if (_city === 'krd') return product.priceKrd || product.price;
     return product.priceMsk || product.price;
 }
 
-function renderCityList(filter) {
-    const list = document.getElementById('city-list');
-    if (!list) return;
-    const q = (filter || '').toLowerCase();
-    const filtered = q ? CITIES.filter(c => c.toLowerCase().includes(q)) : CITIES;
-    list.innerHTML = filtered.length
-        ? filtered.map(city =>
-            `<div onclick='selectCity(${JSON.stringify(city)})' style='padding:14px 16px;font-size:16px;color:#fff;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.08);'>${city}</div>`
-          ).join('')
-        : '<div style="padding:20px 16px;color:rgba(255,255,255,0.5);font-size:14px;">Ничего не найдено</div>';
-}
-
-function filterCities(value) {
-    renderCityList(value);
-}
-
-function selectCity(cityName) {
-    _city = cityName;
-    localStorage.setItem('city', cityName);
+function selectCity(cityCode) {
+    _city = cityCode;
+    localStorage.setItem('city', cityCode);
     localStorage.setItem('cityTimestamp', String(Date.now()));
     const screen = document.getElementById('city-screen');
     if (screen) screen.style.display = 'none';
     const label = document.getElementById('cityLabel');
-    if (label) label.textContent = cityName;
+    if (label) label.textContent = cityLabel(cityCode);
     if (_products.length) render();
     else init();
 }
@@ -90,8 +36,6 @@ function selectCity(cityName) {
 function showCityScreen() {
     const screen = document.getElementById('city-screen');
     if (screen) screen.style.display = 'flex';
-    const search = document.getElementById('city-search');
-    if (search) { search.value = ''; renderCityList(''); }
 }
 
 function detectCity() {
@@ -100,7 +44,7 @@ function detectCity() {
         const screen = document.getElementById('city-screen');
         if (screen) screen.style.display = 'none';
         const label = document.getElementById('cityLabel');
-        if (label) label.textContent = _city;
+        if (label) label.textContent = cityLabel(_city);
         return true;
     }
     _city = null;
@@ -174,9 +118,9 @@ function addToCart(productId) {
     const product = _products.find(p => p.id === productId);
     if (!product) return;
 
-    let variantId = null, variantLabel = null, price = getEffectivePrice(product);
+    let variantId = null, variantLabel = null, price = getEffectivePrice(product), priceDelivery = product.priceDelivery || 0;
     const variant = _effectiveVariant(product);
-    if (variant) { variantId = variant.id; variantLabel = variant.label; price = variant.price; }
+    if (variant) { variantId = variant.id; variantLabel = variant.label; price = getEffectivePrice(product, variant); priceDelivery = variant.priceDelivery || product.priceDelivery || 0; }
 
     const key  = variantId != null ? `${productId}_v${variantId}` : String(productId);
     const cart = getCart();
@@ -184,7 +128,7 @@ function addToCart(productId) {
     if (existing) {
         existing.qty += 1;
     } else {
-        const item = { key, id: productId, name: product.name, price, qty: 1, categoryId: product.categoryId };
+        const item = { key, id: productId, name: product.name, price, priceDelivery, qty: 1, categoryId: product.categoryId };
         if (variantId != null) { item.variantId = variantId; item.variantLabel = variantLabel; }
         cart.push(item);
     }

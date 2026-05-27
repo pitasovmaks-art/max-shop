@@ -89,8 +89,10 @@ async function createSchema() {
     `);
     await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS price_krd INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS price_msk INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS price_delivery INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_krd INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_msk INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_delivery INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`
         CREATE TABLE IF NOT EXISTS orders (
             id         SERIAL PRIMARY KEY,
@@ -104,6 +106,9 @@ async function createSchema() {
             created_at TEXT    NOT NULL DEFAULT TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
         )
     `);
+    await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery TEXT NOT NULL DEFAULT 'pickup'`);
+    await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS address TEXT`);
+    await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS city TEXT`);
     await pool.query(`
         CREATE TABLE IF NOT EXISTS stores (
             id         SERIAL  PRIMARY KEY,
