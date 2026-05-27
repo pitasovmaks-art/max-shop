@@ -240,10 +240,11 @@ async function notifyStore(order) {
 
     for (const chatId of recipients) {
         try {
-            await sendMessage(chatId, text, [[
+            const result = await sendMessage(chatId, text, [[
                 { type: 'open_app', text: '📋 Открыть заказы', web_app: `${SHOP_URL}/admin/` },
             ]]);
             console.log('[bot] уведомление отправлено менеджеру:', chatId);
+            console.log('[bot] ответ API на уведомление:', JSON.stringify(result));
         } catch (e) {
             console.error(`[bot] Не удалось отправить уведомление chat_id=${chatId}:`, e.message);
         }
