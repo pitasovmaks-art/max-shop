@@ -151,7 +151,7 @@ a      { text-decoration: none; color: inherit; }
     line-height: 1;
 }
 .qty-btn:active { background: rgba(255,255,255,0.35); transform: scale(.9); }
-.qty-btn--dec { color: #FF8A80; }
+.qty-btn--dec { color: #FF3B30; }
 
 .qty-value {
     width: 36px;
@@ -173,12 +173,12 @@ a      { text-decoration: none; color: inherit; }
     width: 36px; height: 36px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    color: var(--text-secondary);
+    color: #FF3B30;
     flex-shrink: 0;
     transition: color .15s, background .15s;
     margin-top: -2px;
 }
-.remove-btn:active { color: var(--red); background: rgba(239,68,68,.1); }
+.remove-btn:active { color: #FF3B30; background: rgba(255,59,48,.15); }
 
 /* ─── Empty state ───────────────────────────────────────── */
 .empty-state {
