@@ -204,30 +204,35 @@ async function registerWebhook() {
     });
 }
 
-/* ─── Notify admins about new order ────────────────────── */
-async function notifyAdmin(order) {
-    if (!TOKEN) return;
+/* ─── Store manager routing ─────────────────────────────── */
+const STORE_MANAGERS = {
+    'Краснодар — ул. Селезнева':      315827109,
+    'Краснодар — ул. Котлярова':      403249437,
+    'Москва — Аллея Первой Маевки':   392912448,
+};
 
-    const admins = loadAdmins();
-    if (!admins.length) return;
+/* ─── Notify store manager about new order ──────────────── */
+async function notifyStore(order) {
+    if (!TOKEN) return;
 
     const lines = order.items.map(i =>
         `• ${i.name} × ${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} ₽`
     );
 
     const text = [
-        `🛒 *Новый заказ #${order.id}*`,
-        '',
-        lines.join('\n'),
-        '',
-        `💰 Итого: ${order.total.toLocaleString('ru-RU')} ₽`,
-        `👤 ${order.name}`,
-        `📞 ${order.phone}`,
-        `📍 ${order.store}`,
-        order.comment ? `💬 ${order.comment}` : null,
-    ].filter(Boolean).join('\n');
+        `🛍 Новый заказ!`,
+        `👤 Клиент: ${order.name}`,
+        `📞 Телефон: ${order.phone}`,
+        `🏪 Магазин: ${order.store}`,
+        `📦 Товары:\n${lines.join('\n')}`,
+        `💰 Сумма: ${order.total.toLocaleString('ru-RU')} ₽`,
+        `💬 Комментарий: ${order.comment || 'нет'}`,
+    ].join('\n');
 
-    for (const chatId of admins) {
+    const managerId  = STORE_MANAGERS[order.store];
+    const recipients = managerId ? [managerId] : Object.values(STORE_MANAGERS);
+
+    for (const chatId of recipients) {
         try {
             await sendMessage(chatId, text, [[
                 { type: 'open_app', text: '📋 Открыть заказы', web_app: `${SHOP_URL}/admin/` },
@@ -248,4 +253,4 @@ function startBot() {
     registerWebhook();
 }
 
-module.exports = { startBot, notifyAdmin, processUpdate };
+module.exports = { startBot, notifyStore, processUpdate };

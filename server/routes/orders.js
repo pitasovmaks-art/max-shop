@@ -1,7 +1,7 @@
 const router           = require('express').Router();
 const db               = require('../db');
 const { requireAdmin } = require('../middleware/auth');
-const { notifyAdmin }  = require('../../bot');
+const { notifyStore }  = require('../../bot');
 
 function normalize(o) {
     return {
@@ -30,7 +30,7 @@ router.post('/', async (req, res) => {
             [name, phone, store, comment || null, JSON.stringify(items), total]
         );
         const order = normalize(await db.queryOne('SELECT * FROM orders WHERE id=$1', [row.id]));
-        notifyAdmin(order).catch(e => console.error('[bot] notifyAdmin:', e.message));
+        notifyStore(order).catch(e => console.error('[bot] notifyStore:', e.message));
         res.status(201).json({ ok: true, id: order.id });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
