@@ -232,11 +232,15 @@ async function notifyStore(order) {
     const managerId  = STORE_MANAGERS[order.store];
     const recipients = managerId ? [managerId] : Object.values(STORE_MANAGERS);
 
+    console.log('[bot] notifyStore вызван, магазин:', order.store);
+    console.log('[bot] менеджер:', managerId);
+
     for (const chatId of recipients) {
         try {
             await sendMessage(chatId, text, [[
                 { type: 'open_app', text: '📋 Открыть заказы', web_app: `${SHOP_URL}/admin/` },
             ]]);
+            console.log('[bot] уведомление отправлено менеджеру:', chatId);
         } catch (e) {
             console.error(`[bot] Не удалось отправить уведомление chat_id=${chatId}:`, e.message);
         }
