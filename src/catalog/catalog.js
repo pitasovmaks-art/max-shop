@@ -48,7 +48,7 @@ const CITIES = [
     'Южно-Сахалинск','Юрга','Якутск','Ярославль',
 ];
 
-const _24H = 24 * 60 * 60 * 1000;
+const _24H = 900000;
 
 function getEffectivePrice(product) {
     if (_city === 'Краснодар') return product.priceKrd || product.price;
