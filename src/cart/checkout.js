@@ -117,8 +117,7 @@ function getSelectedStoreObj() {
 }
 
 /* ─── Phone mask ────────────────────────────────────────── */
-function handlePhone(input) {
-    const raw = input.value.replace(/\D/g, '');
+function formatPhoneDigits(input, raw) {
     let digits = raw;
     if (digits.startsWith('8')) digits = '7' + digits.slice(1);
     else if (!digits.startsWith('7')) digits = '7' + digits;
@@ -131,6 +130,25 @@ function handlePhone(input) {
     if (digits.length >= 9)  result += '-' + digits.slice(9, 11);
 
     input.value = result;
+}
+
+function handlePhone(input) {
+    const digits = input.value.replace(/\D/g, '');
+    if (!digits) { input.value = ''; return; }
+    formatPhoneDigits(input, digits);
+    clearError('fieldPhone');
+}
+
+function handlePhoneKeydown(input, e) {
+    if (e.key !== 'Backspace') return;
+    e.preventDefault();
+    const digits = input.value.replace(/\D/g, '');
+    if (digits.length <= 1) {
+        input.value = '';
+        clearError('fieldPhone');
+        return;
+    }
+    formatPhoneDigits(input, digits.slice(0, -1));
     clearError('fieldPhone');
 }
 
@@ -235,7 +253,6 @@ async function submitOrder() {
 
         document.getElementById('successOrder').textContent = `Заказ #${data.id}`;
         document.getElementById('successStore').textContent = `${store.city}, ${store.address}`;
-        document.getElementById('successPhone').textContent = phone;
         document.getElementById('successScreen').classList.remove('hidden');
 
         localStorage.removeItem('cart');

@@ -72,6 +72,7 @@
                         placeholder="+7 (___) ___-__-__"
                         autocomplete="tel"
                         oninput="handlePhone(this)"
+                        onkeydown="handlePhoneKeydown(this, event)"
                     >
                     <span class="field__error" id="errorPhone"></span>
                 </div>
@@ -144,14 +145,6 @@
                 <div>
                     <div class="success-card__label">Магазин самовывоза</div>
                     <div class="success-card__value" id="successStore"></div>
-                </div>
-            </div>
-            <div class="success-divider"></div>
-            <div class="success-card__row">
-                <span class="success-card__icon">📞</span>
-                <div>
-                    <div class="success-card__label">Свяжемся с вами</div>
-                    <div class="success-card__value" id="successPhone"></div>
                 </div>
             </div>
         </div>
