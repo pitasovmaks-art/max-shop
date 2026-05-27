@@ -25,6 +25,8 @@ function normalizeVariant(v) {
         productId: v.product_id,
         label:     v.label,
         price:     v.price,
+        priceKrd:  v.price_krd || 0,
+        priceMsk:  v.price_msk || 0,
         isDefault: v.is_default === 1,
         sortOrder: v.sort_order,
     };
@@ -96,9 +98,9 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
             for (let i = 0; i < variants.length; i++) {
                 const v = variants[i];
                 await client.query(
-                    `INSERT INTO product_variants (product_id,label,price,is_default,sort_order)
-                     VALUES ($1,$2,$3,$4,$5)`,
-                    [productId, String(v.label).trim(), v.price || 0, v.isDefault ? 1 : 0, v.sortOrder ?? i]
+                    `INSERT INTO product_variants (product_id,label,price,price_krd,price_msk,is_default,sort_order)
+                     VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+                    [productId, String(v.label).trim(), v.price || 0, v.priceKrd || 0, v.priceMsk || 0, v.isDefault ? 1 : 0, v.sortOrder ?? i]
                 );
             }
         });

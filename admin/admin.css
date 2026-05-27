@@ -976,7 +976,18 @@ a      { text-decoration: none; color: inherit; }
 
 .variant-row {
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.variant-row__top {
+    display: flex;
     align-items: center;
+    gap: 6px;
+}
+
+.variant-row__prices {
+    display: flex;
     gap: 6px;
 }
 
@@ -989,10 +1000,10 @@ a      { text-decoration: none; color: inherit; }
 }
 
 .variant-row__price {
-    width: 90px;
-    flex-shrink: 0;
-    font-size: 14px !important;
-    padding: 8px 10px !important;
+    flex: 1;
+    min-width: 0;
+    font-size: 13px !important;
+    padding: 8px 8px !important;
     height: 38px !important;
 }
 

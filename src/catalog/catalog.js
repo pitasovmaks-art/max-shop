@@ -50,7 +50,11 @@ const CITIES = [
 
 const _24H = 900000;
 
-function getEffectivePrice(product) {
+function getEffectivePrice(product, variant) {
+    if (variant) {
+        if (_city === 'Краснодар') return variant.priceKrd || variant.price;
+        return variant.priceMsk || variant.price;
+    }
     if (_city === 'Краснодар') return product.priceKrd || product.price;
     return product.priceMsk || product.price;
 }
@@ -335,7 +339,7 @@ function render() {
 
         const hasVariants = p.variants && p.variants.length > 0;
         const activeVar   = _effectiveVariant(p);
-        const displayPrice = activeVar ? activeVar.price : getEffectivePrice(p);
+        const displayPrice = getEffectivePrice(p, activeVar);
 
         const variantPills = hasVariants
             ? `<div class="variant-pills">${p.variants.map(vr =>

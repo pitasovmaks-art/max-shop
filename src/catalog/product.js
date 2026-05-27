@@ -50,6 +50,17 @@ function showToast(msg) {
     setTimeout(() => el.classList.add('hidden'), 2400);
 }
 
+/* ─── City-aware price ──────────────────────────────────────── */
+function effectivePrice(product, variant) {
+    const city = localStorage.getItem('city');
+    if (variant) {
+        if (city === 'Краснодар') return variant.priceKrd || variant.price;
+        return variant.priceMsk || variant.price;
+    }
+    if (city === 'Краснодар') return product.priceKrd || product.price;
+    return product.priceMsk || product.price;
+}
+
 /* ─── Variant selection ─────────────────────────────────────── */
 let _selectedVariantId = null;
 
@@ -74,9 +85,8 @@ function updatePrice() {
         el.className = 'product-price product-price--service';
         el.textContent = _product.priceLabel || fmt(_product.price);
     } else {
-        const variant = effectiveVariant();
         el.className = 'product-price';
-        el.textContent = fmt(variant ? variant.price : _product.price);
+        el.textContent = fmt(effectivePrice(_product, effectiveVariant()));
     }
 }
 
@@ -206,7 +216,7 @@ function renderInfo() {
 /* ─── Add to cart ───────────────────────────────────────────── */
 function addToCart() {
     const variant = effectiveVariant();
-    const price   = variant ? variant.price : _product.price;
+    const price   = effectivePrice(_product, variant);
     const key     = variant ? `${_product.id}_v${variant.id}` : String(_product.id);
 
     const cart     = getCart();

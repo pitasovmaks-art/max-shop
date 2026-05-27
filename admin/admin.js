@@ -2,7 +2,7 @@
 let _products = [];
 
 /* ─── Variants form state ───────────────────────────────────── */
-let _formVariants = []; // { label, price, isDefault }
+let _formVariants = []; // { label, price, priceKrd, priceMsk, isDefault }
 
 /* ─── Extra images form state ───────────────────────────────── */
 let _extraImages = []; // { id, productId, url, sortOrder }
@@ -16,22 +16,36 @@ function renderVariantRows() {
     }
     el.innerHTML = _formVariants.map((v, i) => `
         <div class="variant-row" id="vrow-${i}">
-            <input class="ff__input variant-row__label" type="text"
-                   value="${_escAttr(v.label)}"
-                   placeholder="Название (напр. 14 дней)"
-                   oninput="_varField(${i},'label',this.value)">
-            <input class="ff__input variant-row__price" type="number"
-                   value="${v.price || ''}"
-                   placeholder="Цена"
-                   min="0"
-                   oninput="_varField(${i},'price',+this.value||0)">
-            <label class="variant-row__def" title="По умолчанию">
-                <input type="radio" name="f-var-default"
-                       ${v.isDefault ? 'checked' : ''}
-                       onchange="setDefaultVariant(${i})">
-                <span class="vdef-dot"></span>
-            </label>
-            <button type="button" class="variant-row__del" onclick="removeVariantRow(${i})" aria-label="Удалить">×</button>
+            <div class="variant-row__top">
+                <input class="ff__input variant-row__label" type="text"
+                       value="${_escAttr(v.label)}"
+                       placeholder="Название (напр. 14 дней)"
+                       oninput="_varField(${i},'label',this.value)">
+                <label class="variant-row__def" title="По умолчанию">
+                    <input type="radio" name="f-var-default"
+                           ${v.isDefault ? 'checked' : ''}
+                           onchange="setDefaultVariant(${i})">
+                    <span class="vdef-dot"></span>
+                </label>
+                <button type="button" class="variant-row__del" onclick="removeVariantRow(${i})" aria-label="Удалить">×</button>
+            </div>
+            <div class="variant-row__prices">
+                <input class="ff__input variant-row__price" type="number"
+                       value="${v.price || ''}"
+                       placeholder="Базовая ₽"
+                       min="0"
+                       oninput="_varField(${i},'price',+this.value||0)">
+                <input class="ff__input variant-row__price" type="number"
+                       value="${v.priceKrd || ''}"
+                       placeholder="Краснодар ₽"
+                       min="0"
+                       oninput="_varField(${i},'priceKrd',+this.value||0)">
+                <input class="ff__input variant-row__price" type="number"
+                       value="${v.priceMsk || ''}"
+                       placeholder="Москва ₽"
+                       min="0"
+                       oninput="_varField(${i},'priceMsk',+this.value||0)">
+            </div>
         </div>`).join('');
 }
 
@@ -39,7 +53,7 @@ function _escAttr(s) { return String(s || '').replace(/"/g, '&quot;').replace(/<
 function _varField(i, field, val) { if (_formVariants[i]) _formVariants[i][field] = val; }
 
 function addVariantRow() {
-    _formVariants.push({ label: '', price: 0, isDefault: _formVariants.length === 0 });
+    _formVariants.push({ label: '', price: 0, priceKrd: 0, priceMsk: 0, isDefault: _formVariants.length === 0 });
     renderVariantRows();
     const inputs = document.querySelectorAll('.variant-row__label');
     if (inputs.length) inputs[inputs.length - 1].focus();
@@ -59,7 +73,7 @@ function setDefaultVariant(idx) {
 function _collectVariants() {
     return _formVariants
         .filter(v => String(v.label).trim())
-        .map((v, i) => ({ label: String(v.label).trim(), price: v.price || 0, isDefault: !!v.isDefault, sortOrder: i }));
+        .map((v, i) => ({ label: String(v.label).trim(), price: v.price || 0, priceKrd: v.priceKrd || 0, priceMsk: v.priceMsk || 0, isDefault: !!v.isDefault, sortOrder: i }));
 }
 
 /* ─── Auth ──────────────────────────────────────────────── */
@@ -587,7 +601,7 @@ function fillForm(p) {
     if (p.image) setPhotoPreview(p.image); else clearPhotoPreview();
     document.querySelectorAll('.ff--error').forEach(el => el.classList.remove('ff--error'));
     document.querySelectorAll('.ff__error').forEach(el => el.textContent = '');
-    _formVariants = (p.variants || []).map(vr => ({ label: vr.label, price: vr.price, isDefault: vr.isDefault }));
+    _formVariants = (p.variants || []).map(vr => ({ label: vr.label, price: vr.price, priceKrd: vr.priceKrd || 0, priceMsk: vr.priceMsk || 0, isDefault: vr.isDefault }));
     renderVariantRows();
 }
 
