@@ -173,7 +173,7 @@ function renderInfo() {
 
     const descEl = document.getElementById('productDesc');
     if (_product.desc) {
-        descEl.textContent = _product.desc;
+        descEl.innerHTML = (_product.desc || '').replace(/\n/g, '<br>');
         descEl.classList.remove('hidden');
     }
 
