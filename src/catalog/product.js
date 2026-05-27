@@ -90,15 +90,18 @@ function updatePrice() {
     }
 }
 
-/* ─── Gallery arrow ─────────────────────────────────────────── */
+/* ─── Gallery arrows ────────────────────────────────────────── */
 function updateArrow() {
-    const arrow = document.getElementById('galleryArrow');
-    if (!arrow) return;
-    if (_allImages.length > 1 && _currentImgIdx < _allImages.length - 1) {
-        arrow.classList.remove('hidden');
-    } else {
-        arrow.classList.add('hidden');
-    }
+    const prev = document.getElementById('galleryArrowPrev');
+    const next = document.getElementById('galleryArrowNext');
+    if (!prev || !next) return;
+    const multi = _allImages.length > 1;
+    prev.classList.toggle('hidden', !multi || _currentImgIdx === 0);
+    next.classList.toggle('hidden', !multi || _currentImgIdx === _allImages.length - 1);
+}
+
+function prevImage() {
+    if (_currentImgIdx > 0) setMainImage(_currentImgIdx - 1);
 }
 
 function nextImage() {
