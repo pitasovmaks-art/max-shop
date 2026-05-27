@@ -204,7 +204,17 @@ async function registerWebhook() {
     });
 }
 
-/* ─── City-based manager routing ───────────────────────── */
+/* ─── Routing tables ────────────────────────────────────── */
+// For pickup: route by store name to the specific store manager
+const STORE_MANAGERS = {
+    'Краснодар, ул. Селезнева, 4/10':       315827109,
+    'Краснодар — ул. Селезнева':            315827109,
+    'Краснодар, ул. Котлярова, 21':         403249437,
+    'Краснодар — ул. Котлярова':            403249437,
+    'Москва, Аллея Первой Маевки, 15 стр3': 392912448,
+    'Москва — Аллея Первой Маевки':         392912448,
+};
+// For city/russia delivery: route by city code
 const CITY_MANAGERS = {
     krd: 315827109,
     msk: 392912448,
@@ -248,10 +258,15 @@ async function notifyStore(order) {
 
     const text = parts.join('\n');
 
-    const managerId  = CITY_MANAGERS[order.city];
+    let managerId;
+    if (delivery === 'pickup') {
+        managerId = STORE_MANAGERS[order.store];
+    } else {
+        managerId = CITY_MANAGERS[order.city];
+    }
     const recipients = managerId ? [managerId] : Object.values(CITY_MANAGERS);
 
-    console.log('[bot] notifyStore вызван, city:', order.city, 'delivery:', delivery);
+    console.log('[bot] notifyStore вызван, city:', order.city, 'delivery:', delivery, 'store:', order.store);
     console.log('[bot] получатели:', recipients);
 
     for (const chatId of recipients) {
