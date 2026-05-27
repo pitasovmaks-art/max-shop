@@ -48,10 +48,11 @@ const CITIES = [
     'Южно-Сахалинск','Юрга','Якутск','Ярославль',
 ];
 
+const _24H = 24 * 60 * 60 * 1000;
+
 function getEffectivePrice(product) {
-    if (_city === 'Краснодар' && product.priceKrd) return product.priceKrd;
-    if (_city && product.priceMsk) return product.priceMsk;
-    return product.price;
+    if (_city === 'Краснодар') return product.priceKrd || product.price;
+    return product.priceMsk || product.price;
 }
 
 function renderCityList(filter) {
@@ -73,11 +74,13 @@ function filterCities(value) {
 function selectCity(cityName) {
     _city = cityName;
     localStorage.setItem('city', cityName);
+    localStorage.setItem('cityTimestamp', String(Date.now()));
     const screen = document.getElementById('city-screen');
     if (screen) screen.style.display = 'none';
     const label = document.getElementById('cityLabel');
     if (label) label.textContent = cityName;
-    render();
+    if (_products.length) render();
+    else init();
 }
 
 function showCityScreen() {
@@ -88,14 +91,19 @@ function showCityScreen() {
 }
 
 function detectCity() {
-    if (_city) {
+    const ts = parseInt(localStorage.getItem('cityTimestamp') || '0', 10);
+    if (_city && Date.now() - ts < _24H) {
         const screen = document.getElementById('city-screen');
         if (screen) screen.style.display = 'none';
         const label = document.getElementById('cityLabel');
         if (label) label.textContent = _city;
-        return;
+        return true;
     }
+    _city = null;
+    localStorage.removeItem('city');
+    localStorage.removeItem('cityTimestamp');
     showCityScreen();
+    return false;
 }
 
 /* ─── State ─────────────────────────────────────────────── */
@@ -390,8 +398,7 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    detectCity();
-    init();
+    if (detectCity()) init();
 });
 
 /* ─── Support ───────────────────────────────────────────── */
