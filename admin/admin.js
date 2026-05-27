@@ -562,6 +562,8 @@ function fillForm(p) {
     v('f-desc',        p.desc  || '');
     v('f-price',       p.price);
     v('f-price-label', p.priceLabel || '');
+    v('f-price-krd',   p.priceKrd || 0);
+    v('f-price-msk',   p.priceMsk || 0);
     document.getElementById('f-instock').checked = !!p.inStock;
     document.getElementById('f-service').checked = !!p.isService;
     const catSel = document.getElementById('f-cat');
@@ -577,7 +579,7 @@ function fillForm(p) {
 }
 
 function clearForm() {
-    ['f-name','f-desc','f-price','f-price-label'].forEach(id => v(id, ''));
+    ['f-name','f-desc','f-price','f-price-label','f-price-krd','f-price-msk'].forEach(id => v(id, ''));
     v('f-cat', '');
     document.getElementById('f-instock').checked = true;
     document.getElementById('f-service').checked = false;
@@ -637,6 +639,8 @@ async function saveProduct() {
         categoryId: parseInt(document.getElementById('f-cat').value),
         subId:      subVal,
         price:      parseInt(document.getElementById('f-price').value, 10),
+        priceKrd:   parseInt(document.getElementById('f-price-krd').value, 10) || 0,
+        priceMsk:   parseInt(document.getElementById('f-price-msk').value, 10) || 0,
         inStock:    document.getElementById('f-instock').checked,
         isService,
         priceLabel: (isService && document.getElementById('f-price-label').value)

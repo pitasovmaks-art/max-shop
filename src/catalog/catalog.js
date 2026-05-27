@@ -3,6 +3,50 @@ let _categories    = [];
 let _subcategories = [];
 let _products      = [];
 
+/* ─── City ──────────────────────────────────────────────── */
+let _city = localStorage.getItem('city') || null; // 'krd' | 'msk' | null
+
+function getEffectivePrice(product) {
+    if (_city === 'krd' && product.priceKrd) return product.priceKrd;
+    if (_city === 'msk' && product.priceMsk) return product.priceMsk;
+    return product.price;
+}
+
+function selectCity(city) {
+    _city = city;
+    localStorage.setItem('city', city);
+    const screen = document.getElementById('city-screen');
+    if (screen) screen.style.display = 'none';
+    const label = document.getElementById('cityLabel');
+    if (label) label.textContent = city === 'krd' ? 'Краснодар' : 'Москва';
+    render();
+}
+
+function showCityScreen() {
+    const screen = document.getElementById('city-screen');
+    if (screen) screen.style.display = 'flex';
+}
+
+function detectCity() {
+    const label = document.getElementById('cityLabel');
+    if (_city) {
+        const screen = document.getElementById('city-screen');
+        if (screen) screen.style.display = 'none';
+        if (label) label.textContent = _city === 'krd' ? 'Краснодар' : 'Москва';
+        return;
+    }
+    if (!navigator.geolocation) { showCityScreen(); return; }
+    navigator.geolocation.getCurrentPosition(
+        ({ coords: { latitude: lat, longitude: lon } }) => {
+            if (lat >= 44 && lat <= 46 && lon >= 38 && lon <= 41) { selectCity('krd'); }
+            else if (lat >= 55 && lat <= 56 && lon >= 37 && lon <= 38) { selectCity('msk'); }
+            else { showCityScreen(); }
+        },
+        () => showCityScreen(),
+        { timeout: 5000 }
+    );
+}
+
 /* ─── State ─────────────────────────────────────────────── */
 const state = { categoryId: null, subId: null, query: '' };
 let _searchTimer = null;
@@ -67,7 +111,7 @@ function addToCart(productId) {
     const product = _products.find(p => p.id === productId);
     if (!product) return;
 
-    let variantId = null, variantLabel = null, price = product.price;
+    let variantId = null, variantLabel = null, price = getEffectivePrice(product);
     const variant = _effectiveVariant(product);
     if (variant) { variantId = variant.id; variantLabel = variant.label; price = variant.price; }
 
@@ -232,7 +276,7 @@ function render() {
 
         const hasVariants = p.variants && p.variants.length > 0;
         const activeVar   = _effectiveVariant(p);
-        const displayPrice = activeVar ? activeVar.price : p.price;
+        const displayPrice = activeVar ? activeVar.price : getEffectivePrice(p);
 
         const variantPills = hasVariants
             ? `<div class="variant-pills">${p.variants.map(vr =>
@@ -294,7 +338,10 @@ async function init() {
     updateBadges();
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+    detectCity();
+    init();
+});
 
 /* ─── Support ───────────────────────────────────────────── */
 let _botUsername = '';

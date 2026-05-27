@@ -9,6 +9,16 @@
     <script src="https://st.max.ru/js/max-web-app.js"></script>
 </head>
 <body style="background:linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);min-height:100vh;">
+
+<!-- City selection screen -->
+<div id="city-screen" style="position:fixed;inset:0;z-index:2000;background:linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:16px;">
+    <div style="font-family:'Oswald',sans-serif;font-size:30px;font-weight:600;color:#fff;letter-spacing:-.5px;margin-bottom:8px;">Точка Монтажа</div>
+    <h2 style="font-size:19px;font-weight:600;color:#fff;text-align:center;margin:0 0 8px;">Выберите ваш город</h2>
+    <button onclick="selectCity('krd')" style="width:100%;max-width:280px;height:56px;background:#F85800;color:#fff;border:none;border-radius:16px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;">Краснодар</button>
+    <button onclick="selectCity('msk')" style="width:100%;max-width:280px;height:56px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:16px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;backdrop-filter:blur(10px);">Москва</button>
+    <button onclick="selectCity('msk')" style="width:100%;max-width:280px;height:36px;background:transparent;color:rgba(255,255,255,0.55);border:none;font-size:14px;cursor:pointer;font-family:inherit;">Другой город →</button>
+</div>
+
 <div class="app">
 
     <!-- Header -->
@@ -16,6 +26,7 @@
         <div class="header__logo">
             <span class="header__logo-text">Точка Монтажа</span>
         </div>
+        <button id="headerCityBtn" onclick="showCityScreen()" style="display:flex;align-items:center;gap:3px;color:rgba(255,255,255,0.8);font-size:12px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;cursor:pointer;padding:5px 9px;white-space:nowrap;font-family:inherit;flex-shrink:0;">📍 <span id="cityLabel">—</span></button>
         <button class="header__cart" onclick="location.href='cart.html'" aria-label="Корзина">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
