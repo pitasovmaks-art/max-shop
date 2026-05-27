@@ -78,8 +78,8 @@ a      { text-decoration: none; color: inherit; }
 .order-item__price { font-size: 14px; font-weight: 600; color: #FFFFFF; flex-shrink: 0; text-align: right; min-width: 72px; }
 .order-divider { height: 1px; background: rgba(255,255,255,0.2); margin: 0 0; }
 .order-total-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
-.order-total-label { font-size: 15px; font-weight: 600; color: #FFFFFF; }
-.order-total-price { font-size: 17px; font-weight: 700; color: #FFFFFF; }
+.order-total-label { font-size: 15px; font-weight: 700; color: #F85800; }
+.order-total-price { font-size: 17px; font-weight: 700; color: #F85800; }
 
 /* ─── Store cards ───────────────────────────────────────── */
 .stores { display: flex; flex-direction: column; gap: 8px; }
