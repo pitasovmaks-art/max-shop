@@ -19,6 +19,24 @@ const CHECK_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
     <polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 
+function isStoreOpen(hours) {
+    if (!hours) return false;
+    const m = hours.match(/^([А-Яа-я]+)[–\-]([А-Яа-я]+)\s+(\d{1,2}):(\d{2})[–\-](\d{1,2}):(\d{2})/);
+    if (!m) return false;
+    const DAY = { 'Пн': 1, 'Вт': 2, 'Ср': 3, 'Чт': 4, 'Пт': 5, 'Сб': 6, 'Вс': 0 };
+    const dayFrom = DAY[m[1]], dayTo = DAY[m[2]];
+    if (dayFrom === undefined || dayTo === undefined) return false;
+    const fromMin = parseInt(m[3], 10) * 60 + parseInt(m[4], 10);
+    const toMin   = parseInt(m[5], 10) * 60 + parseInt(m[6], 10);
+    // Moscow time (UTC+3)
+    const now = new Date();
+    const msk = new Date(now.getTime() + (now.getTimezoneOffset() + 180) * 60000);
+    const day = msk.getDay();
+    const cur = msk.getHours() * 60 + msk.getMinutes();
+    const inDay = dayFrom <= dayTo ? (day >= dayFrom && day <= dayTo) : (day >= dayFrom || day <= dayTo);
+    return inDay && cur >= fromMin && cur < toMin;
+}
+
 function renderStoreList() {
     const list = document.getElementById('storeList');
     if (!list) return;
@@ -28,19 +46,24 @@ function renderStoreList() {
         return;
     }
 
-    list.innerHTML = _stores.map((s, i) => `
+    list.innerHTML = _stores.map((s, i) => {
+        const open = s.hours ? isStoreOpen(s.hours) : null;
+        const badge = open !== null
+            ? `<span style="font-size:11px;font-weight:600;color:${open ? '#22c55e' : '#ef4444'}">${open ? '🟢 Открыто' : '🔴 Закрыто'}</span>`
+            : '';
+        return `
         <label class="store-card" for="store-${s.id}">
             <input class="store-radio" type="radio" name="store" id="store-${s.id}" value="${s.id}" ${i === 0 ? 'checked' : ''}>
             <div class="store-card__content">
                 <div class="store-card__city">${PIN_SVG}${escHtml(s.city)}</div>
                 <div class="store-card__address">${escHtml(s.address)}</div>
-                ${s.hours      ? `<div class="store-card__hours">${escHtml(s.hours)}</div>` : ''}
+                ${s.hours      ? `<div class="store-card__hours">${escHtml(s.hours)} ${badge}</div>` : ''}
                 ${s.phone      ? `<div class="store-card__hours">📞 ${escHtml(s.phone)}</div>` : ''}
                 ${s.directions ? `<div class="store-card__directions">${escHtml(s.directions)}</div>` : ''}
             </div>
             <div class="store-card__check">${CHECK_SVG}</div>
-        </label>
-    `).join('');
+        </label>`;
+    }).join('');
 
     initStoreCards();
 }

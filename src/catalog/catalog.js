@@ -189,7 +189,6 @@ function addToCart(productId) {
         cart.push(item);
     }
     saveCart(cart);
-    showToast(`${product.name}${variantLabel ? ` (${variantLabel})` : ''} добавлен в корзину`);
 }
 
 function getTotalQty() {

@@ -93,7 +93,26 @@
         }
 
         /* ─── Gallery ───────────────────────────────────────── */
-        .gallery { background: var(--bg-card); }
+        .gallery { background: var(--bg-card); position: relative; }
+
+        .gallery__arrow {
+            position: absolute;
+            right: 12px;
+            top: 132px;
+            width: 36px; height: 36px;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            color: #FFFFFF;
+            font-size: 26px;
+            font-weight: 300;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10;
+            line-height: 1;
+            padding-left: 2px;
+        }
+        .gallery__arrow:active { background: rgba(0,0,0,0.7); }
 
         .gallery__main {
             width: 100%;
@@ -389,6 +408,7 @@
     <!-- Gallery -->
     <div class="gallery">
         <div class="gallery__main" id="galleryMain"></div>
+        <button class="gallery__arrow hidden" id="galleryArrow" onclick="nextImage()">›</button>
         <div class="gallery__dots hidden" id="galleryDots"></div>
         <div class="gallery__strip-wrap hidden" id="galleryStripWrap">
             <div class="gallery__strip" id="galleryStrip"></div>

@@ -90,6 +90,21 @@ function updatePrice() {
     }
 }
 
+/* ─── Gallery arrow ─────────────────────────────────────────── */
+function updateArrow() {
+    const arrow = document.getElementById('galleryArrow');
+    if (!arrow) return;
+    if (_allImages.length > 1 && _currentImgIdx < _allImages.length - 1) {
+        arrow.classList.remove('hidden');
+    } else {
+        arrow.classList.add('hidden');
+    }
+}
+
+function nextImage() {
+    if (_currentImgIdx < _allImages.length - 1) setMainImage(_currentImgIdx + 1);
+}
+
 /* ─── Dots ──────────────────────────────────────────────────── */
 function renderDots() {
     const dotsEl = document.getElementById('galleryDots');
@@ -118,6 +133,7 @@ function renderGallery() {
         }
         wrapEl.classList.add('hidden');
         renderDots();
+        updateArrow();
         return;
     }
 
@@ -149,6 +165,7 @@ function setMainImage(idx) {
         el.classList.toggle('gallery__thumb--active', i === idx);
     });
     renderDots();
+    updateArrow();
 }
 
 /* ─── Swipe ─────────────────────────────────────────────────── */
@@ -229,7 +246,6 @@ function addToCart() {
         cart.push(item);
     }
     saveCart(cart);
-    showToast(`${_product.name}${variant ? ` (${variant.label})` : ''} добавлен в корзину`);
 }
 
 /* ─── Init ──────────────────────────────────────────────────── */
