@@ -85,11 +85,14 @@ function sendMessage(chatId, text, buttons = null) {
 async function handleStart(chatId, userName) {
     addAdmin(chatId);
 
+    const shopUrl = `${SHOP_URL}?tg_id=${chatId}`;
+    console.log('[BOT] ссылка для пользователя:', shopUrl);
+
     await sendMessage(
         chatId,
         `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\nЧем могу помочь?`,
         [[
-            { type: 'open_app', text: '🛒 Открыть магазин', web_app: `${SHOP_URL}?tg_id=${chatId}` },
+            { type: 'open_app', text: '🛒 Открыть магазин', web_app: shopUrl },
         ]]
     );
 }

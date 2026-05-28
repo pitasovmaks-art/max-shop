@@ -371,6 +371,10 @@ async function submitOrder() {
         storeLabel = 'Доставка по России';
     }
 
+    console.log('[CHECKOUT] tgId:', tgId);
+    console.log('[CHECKOUT] URL params:', location.search);
+    console.log('[CHECKOUT] sessionStorage tg_id:', sessionStorage.getItem('tg_id'));
+
     try {
         const r = await fetch('/api/orders', {
             method:  'POST',
