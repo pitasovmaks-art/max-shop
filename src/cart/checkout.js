@@ -76,8 +76,66 @@ function renderStoreList() {
     initStoreCards();
 }
 
+/* ─── Price change modal ────────────────────────────────── */
+function showPriceChangeModal(prevMethod) {
+    const cart    = getCart();
+    const changes = cart.filter(item => {
+        const prev    = _itemPriceFor(item, prevMethod);
+        const newPr   = _itemPriceFor(item, 'russia');
+        return newPr > 0 && newPr !== prev;
+    });
+
+    if (!changes.length) { applyDelivery('russia'); return; }
+
+    const list = document.getElementById('priceChangeList');
+    if (list) {
+        list.innerHTML = changes.map(item => {
+            const prev  = _itemPriceFor(item, prevMethod);
+            const newPr = _itemPriceFor(item, 'russia');
+            const name  = item.name + (item.variantLabel ? ` · ${item.variantLabel}` : '');
+            return `<div class="pchange-row">
+                <span class="pchange-name">${name}</span>
+                <span class="pchange-prices">${fmtStrike(prev)} → <b>${newPr.toLocaleString('ru-RU')} ₽</b></span>
+            </div>`;
+        }).join('');
+    }
+
+    document.getElementById('priceChangeModal')?.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    document.getElementById('priceChangeConfirm')?.addEventListener('click', () => {
+        closePriceModal();
+        applyDelivery('russia');
+    }, { once: true });
+
+    document.getElementById('priceChangeCancel')?.addEventListener('click', () => {
+        closePriceModal();
+        applyDelivery(prevMethod);
+    }, { once: true });
+}
+
+function closePriceModal() {
+    document.getElementById('priceChangeModal')?.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function _itemPriceFor(item, method) {
+    const city = localStorage.getItem('city');
+    if (method === 'russia') return item.priceMskDelivery || item.priceDelivery || item.price;
+    if (city === 'krd') return item.priceKrdPickup || item.priceKrd || item.price;
+    return item.priceMskPickup || item.priceMsk || item.price;
+}
+
 /* ─── Delivery method ───────────────────────────────────── */
 function setDelivery(method) {
+    if (method === 'russia' && _deliveryMethod !== 'russia') {
+        showPriceChangeModal(_deliveryMethod);
+        return;
+    }
+    applyDelivery(method);
+}
+
+function applyDelivery(method) {
     _deliveryMethod = method;
 
     ['pickup', 'city', 'russia'].forEach(m => {
@@ -109,6 +167,8 @@ function getCart() {
 /* ─── Format ────────────────────────────────────────────── */
 function fmt(price) { return price.toLocaleString('ru-RU') + ' ₽'; }
 
+function fmtStrike(price) { return `<s style="opacity:.55">${price.toLocaleString('ru-RU')} ₽</s>`; }
+
 function plural(n, one, few, many) {
     const m10 = n % 10, m100 = n % 100;
     if (m10 === 1 && m100 !== 11) return `${n} ${one}`;
@@ -118,8 +178,10 @@ function plural(n, one, few, many) {
 
 /* ─── Render order summary ──────────────────────────────── */
 function itemPrice(item) {
-    if (_deliveryMethod === 'russia') return item.priceDelivery || item.price;
-    return item.price;
+    const city = localStorage.getItem('city');
+    if (_deliveryMethod === 'russia') return item.priceMskDelivery || item.priceDelivery || item.price;
+    if (city === 'krd') return item.priceKrdPickup || item.priceKrd || item.price;
+    return item.priceMskPickup || item.priceMsk || item.price;
 }
 
 function renderSummary() {
@@ -348,6 +410,69 @@ async function submitOrder() {
         btn.textContent = 'Подтвердить заказ';
         alert('Ошибка при оформлении заказа. Попробуйте ещё раз.');
     }
+}
+
+/* ─── CDEK office search ────────────────────────────────── */
+let _cdekSearchTimer = null;
+let _cdekOffices     = [];
+let _cdekOfficeQuery = '';
+
+function handleCdekCityInput(val) {
+    clearTimeout(_cdekSearchTimer);
+    const list = document.getElementById('cdekOfficesList');
+    if (!val.trim()) {
+        if (list) list.innerHTML = '';
+        return;
+    }
+    _cdekSearchTimer = setTimeout(() => fetchCdekOffices(val.trim()), 600);
+}
+
+async function fetchCdekOffices(cityName) {
+    const list = document.getElementById('cdekOfficesList');
+    if (!list) return;
+    list.innerHTML = '<div class="cdek-loading">Загружаем отделения...</div>';
+    try {
+        const r = await fetch(`/api/cdek/offices?city=${encodeURIComponent(cityName)}`);
+        if (!r.ok) throw new Error(r.status);
+        _cdekOffices = await r.json();
+        _cdekOfficeQuery = '';
+        renderCdekOffices();
+    } catch {
+        list.innerHTML = '<div class="cdek-loading cdek-error">Не удалось загрузить отделения. Введите адрес вручную.</div>';
+    }
+}
+
+function handleCdekOfficeSearch(val) {
+    _cdekOfficeQuery = val.toLowerCase();
+    renderCdekOffices();
+}
+
+function renderCdekOffices() {
+    const list = document.getElementById('cdekOfficesList');
+    if (!list) return;
+    const filtered = _cdekOfficeQuery
+        ? _cdekOffices.filter(o =>
+            (o.name + o.address).toLowerCase().includes(_cdekOfficeQuery))
+        : _cdekOffices;
+
+    if (!filtered.length) {
+        list.innerHTML = '<div class="cdek-loading">Отделения не найдены</div>';
+        return;
+    }
+    list.innerHTML = filtered.map(o => `
+        <button class="cdek-office-item" onclick="selectCdekOffice(${JSON.stringify(o).replace(/"/g,'&quot;')})">
+            <div class="cdek-office-name">${o.name}</div>
+            <div class="cdek-office-addr">${o.address}</div>
+            ${o.work_time ? `<div class="cdek-office-hours">${o.work_time}</div>` : ''}
+        </button>`).join('');
+}
+
+function selectCdekOffice(office) {
+    const addr = `СДЭК: ${office.name}, ${office.address}`;
+    const input = document.getElementById('inputAddressRussia');
+    if (input) { input.value = addr; clearError('fieldAddressRussia'); }
+    document.querySelectorAll('.cdek-office-item').forEach(el => el.classList.remove('cdek-office-item--selected'));
+    event?.currentTarget?.classList.add('cdek-office-item--selected');
 }
 
 /* ─── Redirect if cart empty ────────────────────────────── */

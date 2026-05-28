@@ -22,15 +22,18 @@ function normalize(p) {
 
 function normalizeVariant(v) {
     return {
-        id:            v.id,
-        productId:     v.product_id,
-        label:         v.label,
-        price:         v.price,
-        priceKrd:      v.price_krd      || 0,
-        priceMsk:      v.price_msk      || 0,
-        priceDelivery: v.price_delivery || 0,
-        isDefault:     v.is_default     === 1,
-        sortOrder:     v.sort_order,
+        id:              v.id,
+        productId:       v.product_id,
+        label:           v.label,
+        price:           v.price,
+        priceKrd:        v.price_krd          || 0,
+        priceMsk:        v.price_msk          || 0,
+        priceDelivery:   v.price_delivery     || 0,
+        priceKrdPickup:  v.price_krd_pickup   || 0,
+        priceMskPickup:  v.price_msk_pickup   || 0,
+        priceMskDelivery:v.price_msk_delivery || 0,
+        isDefault:       v.is_default         === 1,
+        sortOrder:       v.sort_order,
     };
 }
 
@@ -100,9 +103,14 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
             for (let i = 0; i < variants.length; i++) {
                 const v = variants[i];
                 await client.query(
-                    `INSERT INTO product_variants (product_id,label,price,price_krd,price_msk,price_delivery,is_default,sort_order)
-                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-                    [productId, String(v.label).trim(), v.price || 0, v.priceKrd || 0, v.priceMsk || 0, v.priceDelivery || 0, v.isDefault ? 1 : 0, v.sortOrder ?? i]
+                    `INSERT INTO product_variants
+                     (product_id,label,price,price_krd,price_msk,price_delivery,
+                      price_krd_pickup,price_msk_pickup,price_msk_delivery,is_default,sort_order)
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+                    [productId, String(v.label).trim(),
+                     v.price || 0, v.priceKrd || 0, v.priceMsk || 0, v.priceDelivery || 0,
+                     v.priceKrdPickup || 0, v.priceMskPickup || 0, v.priceMskDelivery || 0,
+                     v.isDefault ? 1 : 0, v.sortOrder ?? i]
                 );
             }
         });

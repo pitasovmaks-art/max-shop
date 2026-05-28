@@ -249,3 +249,36 @@ a      { text-decoration: none; color: inherit; }
     border-color: #F85800;
     color: #FFFFFF;
 }
+
+/* ─── Price change modal items ──────────────────────────── */
+.pchange-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 14px;
+}
+.pchange-row:last-child { border-bottom: none; }
+.pchange-name { flex: 1; opacity: .9; }
+.pchange-prices { flex-shrink: 0; text-align: right; }
+
+/* ─── CDEK section ──────────────────────────────────────── */
+.cdek-section { display: flex; flex-direction: column; gap: 0; }
+.cdek-section__label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+.cdek-offices-list { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.cdek-offices-list::-webkit-scrollbar { width: 4px; }
+.cdek-offices-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 4px; }
+.cdek-loading { padding: 12px; font-size: 13px; opacity: .6; text-align: center; }
+.cdek-error { color: #ff7070; }
+.cdek-office-item {
+    width: 100%; text-align: left; background: rgba(255,255,255,0.07); border: 1px solid transparent;
+    border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: background .12s, border-color .12s;
+    -webkit-tap-highlight-color: transparent;
+}
+.cdek-office-item:active, .cdek-office-item--selected { background: rgba(248,88,0,0.18); border-color: #F85800; }
+.cdek-office-name { font-size: 14px; font-weight: 600; color: #FFFFFF; margin-bottom: 2px; }
+.cdek-office-addr { font-size: 13px; color: rgba(255,255,255,.65); margin-bottom: 2px; }
+.cdek-office-hours { font-size: 12px; color: rgba(255,255,255,.45); }
+.cdek-office-search { margin-top: 4px; }

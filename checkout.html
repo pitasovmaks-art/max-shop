@@ -65,10 +65,28 @@
 
             <!-- Russia delivery -->
             <div id="delivery-russia" class="hidden">
+                <!-- CDEK office picker -->
                 <div class="card" style="margin-top:12px;">
+                    <div class="cdek-section">
+                        <div class="cdek-section__label">Найти отделение СДЭК</div>
+                        <input class="field__input" id="cdekCityInput" type="text"
+                            placeholder="Введите город (напр. Москва)"
+                            oninput="handleCdekCityInput(this.value)"
+                            autocomplete="off" style="margin-bottom:8px;">
+                        <input class="field__input cdek-office-search" id="cdekOfficeSearch" type="text"
+                            placeholder="Поиск по отделениям..."
+                            oninput="handleCdekOfficeSearch(this.value)"
+                            autocomplete="off" style="margin-bottom:8px;display:none;">
+                        <div id="cdekOfficesList" class="cdek-offices-list"></div>
+                    </div>
+                </div>
+                <!-- Address field -->
+                <div class="card" style="margin-top:8px;">
                     <div class="field" id="fieldAddressRussia">
                         <label class="field__label" for="inputAddressRussia">Адрес доставки *</label>
-                        <input class="field__input" id="inputAddressRussia" type="text" placeholder="Город, улица, дом" oninput="clearError('fieldAddressRussia')">
+                        <input class="field__input" id="inputAddressRussia" type="text"
+                            placeholder="Выберите отделение выше или введите вручную"
+                            oninput="clearError('fieldAddressRussia')">
                         <span class="field__error"></span>
                     </div>
                 </div>
@@ -182,7 +200,27 @@
     </div>
 </div>
 
+<!-- Price change modal -->
+<div id="priceChangeModal" class="hidden" style="position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);">
+    <div style="width:100%;max-width:400px;background:rgba(30,30,50,0.92);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:24px;color:#fff;">
+        <h3 style="font-size:18px;font-weight:700;margin:0 0 8px;">Изменение цены</h3>
+        <p style="font-size:14px;opacity:.75;margin:0 0 16px;">При доставке по России цена товара изменяется</p>
+        <div id="priceChangeList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;max-height:240px;overflow-y:auto;"></div>
+        <div style="display:flex;gap:10px;">
+            <button id="priceChangeConfirm" style="flex:1;height:48px;background:#F85800;border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;">Подтвердить</button>
+            <button id="priceChangeCancel" style="flex:1;height:48px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:14px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">Вернуться</button>
+        </div>
+    </div>
+</div>
+
 <script src="src/cart/checkout.js"></script>
 <script src="src/cookie.js"></script>
+<script>
+/* Show CDEK office search input after offices load */
+document.getElementById('cdekCityInput')?.addEventListener('input', function() {
+    const s = document.getElementById('cdekOfficeSearch');
+    if (s) s.style.display = this.value.trim() ? '' : 'none';
+});
+</script>
 </body>
 </html>

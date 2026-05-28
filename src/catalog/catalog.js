@@ -1,34 +1,105 @@
-/* ─── In-memory cache (filled at startup) ───────────────── */
+/* ─── In-memory cache (filled at startup) ───────────────────── */
 let _categories    = [];
 let _subcategories = [];
 let _products      = [];
 
-/* ─── City ──────────────────────────────────────────────── */
+/* ─── City ──────────────────────────────────────────────────── */
 let _city = localStorage.getItem('city') || null;
 
 const _24H = 900000; // 15 minutes
 
-const CITY_LABELS = { krd: 'Краснодар', msk: 'Москва' };
+/* Краснодарский край → krd pricing */
+const KRD_CITIES = new Set([
+    'Краснодар', 'Сочи', 'Новороссийск', 'Армавир', 'Анапа', 'Геленджик', 'Туапсе',
+    'Тихорецк', 'Кропоткин', 'Темрюк', 'Лабинск', 'Славянск-на-Кубани', 'Белореченск',
+    'Ейск', 'Тимашевск', 'Апшеронск', 'Горячий Ключ', 'Абинск', 'Гулькевичи',
+    'Курганинск', 'Новокубанск', 'Каневская', 'Усть-Лабинск',
+]);
 
-function cityLabel(code) { return CITY_LABELS[code] || code; }
+/* Полный список городов РФ (алфавитный порядок) */
+const ALL_CITIES = [
+    'Абакан','Абинск','Агрыз','Азов','Алейск','Александров','Алексин','Альметьевск',
+    'Амурск','Анапа','Ангарск','Апатиты','Апшеронск','Арзамас','Армавир','Арсеньев',
+    'Артём','Архангельск','Асбест','Астрахань','Ачинск',
+    'Балаково','Балашиха','Балашов','Барнаул','Батайск','Белгород','Белово','Белорецк',
+    'Белореченск','Березники','Бийск','Биробиджан','Благовещенск','Бор','Братск','Брянск',
+    'Бузулук',
+    'Великий Новгород','Великие Луки','Видное','Владивосток','Владикавказ','Владимир',
+    'Волгоград','Волжский','Вологда','Воркута','Воронеж','Воткинск',
+    'Геленджик','Горно-Алтайск','Горячий Ключ','Грозный','Губкин','Гулькевичи',
+    'Дербент','Димитровград','Дмитров','Домодедово','Дубна','Дзержинск',
+    'Ейск','Екатеринбург','Елец','Электросталь','Элиста','Энгельс',
+    'Железногорск','Жигулёвск','Жуковский',
+    'Иваново','Ижевск','Иркутск','Искитим',
+    'Йошкар-Ола',
+    'Казань','Калининград','Калуга','Каменск-Уральский','Каменск-Шахтинский',
+    'Каневская','Канск','Кемерово','Кинешма','Киров','Кирово-Чепецк','Кисловодск',
+    'Коломна','Комсомольск-на-Амуре','Копейск','Кострома','Краснодар','Краснокаменск',
+    'Краснотурьинск','Красноярск','Кропоткин','Курганинск','Курган','Курск',
+    'Лабинск','Лениногорск','Липецк','Лыткарино',
+    'Магнитогорск','Майкоп','Махачкала','Миасс','Москва','Мурманск','Мытищи',
+    'Набережные Челны','Нальчик','Находка','Нефтекамск','Нефтеюганск',
+    'Нижневартовск','Нижний Новгород','Нижний Тагил','Нижнекамск',
+    'Новокубанск','Новокузнецк','Новороссийск','Новосибирск','Новочеркасск',
+    'Новочебоксарск','Новый Уренгой','Ногинск','Норильск','Ноябрьск',
+    'Обнинск','Одинцово','Омск','Оренбург','Орёл','Орск',
+    'Пенза','Первоуральск','Пермь','Петрозаводск','Петропавловск-Камчатский',
+    'Подольск','Прокопьевск','Псков',
+    'Ростов-на-Дону','Рубцовск','Рязань',
+    'Самара','Санкт-Петербург','Саранск','Сарапул','Саратов','Северодвинск',
+    'Северск','Сергиев Посад','Серпухов','Симферополь','Славянск-на-Кубани',
+    'Смоленск','Сочи','Старый Оскол','Ставрополь','Стерлитамак','Сургут',
+    'Сызрань','Сыктывкар',
+    'Тамбов','Тверь','Темрюк','Тимашевск','Тихорецк','Тольятти','Томск',
+    'Туапсе','Тула','Тюмень',
+    'Улан-Удэ','Ульяновск','Усть-Илимск','Усть-Лабинск','Уфа','Ухта',
+    'Хабаровск','Хасавюрт','Химки',
+    'Чебоксары','Челябинск','Череповец','Черкесск','Чита',
+    'Шахты','Щёлково',
+    'Южно-Сахалинск','Якутск','Ярославль',
+].sort((a, b) => a.localeCompare(b, 'ru'));
 
-function getEffectivePrice(product, variant) {
-    if (variant) {
-        if (_city === 'krd') return variant.priceKrd || variant.price;
-        return variant.priceMsk || variant.price;
-    }
-    if (_city === 'krd') return product.priceKrd || product.price;
-    return product.priceMsk || product.price;
+function cityLabel() {
+    return localStorage.getItem('cityName') || ((_city === 'krd') ? 'Краснодар' : (_city === 'msk') ? 'Москва' : _city || '—');
 }
 
-function selectCity(cityCode) {
+/* ─── Price logic ──────────────────────────────────────────── */
+function getEffectivePrice(variant, city, deliveryType) {
+    if (!variant) return 0;
+    const isKrd = city === 'krd';
+    const isRussiaDelivery = deliveryType === 'russia';
+    if (isKrd) return variant.priceKrdPickup || 0;
+    if (isRussiaDelivery) return variant.priceMskDelivery || 0;
+    return variant.priceMskPickup || 0;
+}
+
+/* ─── City screen ──────────────────────────────────────────── */
+function renderCityList(query) {
+    const inner = document.getElementById('cityListInner');
+    if (!inner) return;
+    const q = (query || '').trim().toLowerCase();
+    const filtered = q ? ALL_CITIES.filter(c => c.toLowerCase().includes(q)) : ALL_CITIES;
+    inner.innerHTML = filtered.map(city =>
+        `<button class="city-list-btn" onclick="selectCityByName('${city.replace(/'/g,"\\'")}')">📍 ${city}</button>`
+    ).join('');
+}
+
+function filterCityList(val) { renderCityList(val); }
+
+function selectCityByName(cityName) {
+    const code = KRD_CITIES.has(cityName) ? 'krd' : 'msk';
+    selectCity(code, cityName);
+}
+
+function selectCity(cityCode, cityName) {
     _city = cityCode;
     localStorage.setItem('city', cityCode);
     localStorage.setItem('cityTimestamp', String(Date.now()));
+    if (cityName) localStorage.setItem('cityName', cityName);
     const screen = document.getElementById('city-screen');
     if (screen) screen.style.display = 'none';
     const label = document.getElementById('cityLabel');
-    if (label) label.textContent = cityLabel(cityCode);
+    if (label) label.textContent = cityLabel();
     if (_products.length) render();
     else init();
 }
@@ -36,6 +107,8 @@ function selectCity(cityCode) {
 function showCityScreen() {
     const screen = document.getElementById('city-screen');
     if (screen) screen.style.display = 'flex';
+    const search = document.getElementById('citySearchInput');
+    if (search) { search.value = ''; renderCityList(''); setTimeout(() => search.focus(), 100); }
 }
 
 function detectCity() {
@@ -44,28 +117,29 @@ function detectCity() {
         const screen = document.getElementById('city-screen');
         if (screen) screen.style.display = 'none';
         const label = document.getElementById('cityLabel');
-        if (label) label.textContent = cityLabel(_city);
+        if (label) label.textContent = cityLabel();
         return true;
     }
     _city = null;
     localStorage.removeItem('city');
     localStorage.removeItem('cityTimestamp');
+    localStorage.removeItem('cityName');
     showCityScreen();
     return false;
 }
 
-/* ─── State ─────────────────────────────────────────────── */
+/* ─── State ─────────────────────────────────────────────────── */
 const state = { categoryId: null, subId: null, query: '' };
 let _searchTimer = null;
 
-/* ─── API ────────────────────────────────────────────────── */
+/* ─── API ────────────────────────────────────────────────────── */
 async function apiFetch(path) {
     const r = await fetch(path);
     if (!r.ok) throw new Error(`${r.status} ${path}`);
     return r.json();
 }
 
-/* ─── Lookup helpers ────────────────────────────────────── */
+/* ─── Lookup helpers ────────────────────────────────────────── */
 function catById(id) {
     return _categories.find(c => c.id === id) || { id, name: 'Без категории', icon: '📦', color: 3 };
 }
@@ -74,7 +148,7 @@ function subById(id) {
     return _subcategories.find(s => s.id === id) || null;
 }
 
-/* ─── Variant selection state ───────────────────────────── */
+/* ─── Variant selection state ───────────────────────────────── */
 const _selectedVariants = {}; // { [productId]: variantId }
 
 function _effectiveVariant(product) {
@@ -96,11 +170,11 @@ function selectVariant(productId, variantId) {
     const variant  = product && product.variants.find(v => v.id === variantId);
     if (variant) {
         const priceEl = card.querySelector('.product-card__price');
-        if (priceEl) priceEl.textContent = fmt(variant.price);
+        if (priceEl) priceEl.textContent = fmt(getEffectivePrice(variant, _city));
     }
 }
 
-/* ─── Cart (localStorage) ───────────────────────────────── */
+/* ─── Cart (localStorage) ───────────────────────────────────── */
 function getCart() {
     try {
         const cart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -118,18 +192,34 @@ function addToCart(productId) {
     const product = _products.find(p => p.id === productId);
     if (!product) return;
 
-    let variantId = null, variantLabel = null, price = getEffectivePrice(product), priceDelivery = product.priceDelivery || 0;
+    const city    = _city || localStorage.getItem('city');
     const variant = _effectiveVariant(product);
-    if (variant) { variantId = variant.id; variantLabel = variant.label; price = getEffectivePrice(product, variant); priceDelivery = variant.priceDelivery || product.priceDelivery || 0; }
 
-    const key  = variantId != null ? `${productId}_v${variantId}` : String(productId);
+    let priceKrdPickup, priceMskPickup, priceMskDelivery;
+    if (variant) {
+        priceKrdPickup   = variant.priceKrdPickup   || 0;
+        priceMskPickup   = variant.priceMskPickup   || 0;
+        priceMskDelivery = variant.priceMskDelivery || 0;
+    } else {
+        priceKrdPickup   = product.priceKrd      || product.price || 0;
+        priceMskPickup   = product.priceMsk      || product.price || 0;
+        priceMskDelivery = product.priceDelivery || product.price || 0;
+    }
+    const price = city === 'krd' ? priceKrdPickup : priceMskPickup;
+
+    const key  = variant ? `${productId}_v${variant.id}` : String(productId);
     const cart = getCart();
     const existing = cart.find(i => i.key === key);
     if (existing) {
         existing.qty += 1;
     } else {
-        const item = { key, id: productId, name: product.name, price, priceDelivery, qty: 1, categoryId: product.categoryId };
-        if (variantId != null) { item.variantId = variantId; item.variantLabel = variantLabel; }
+        const item = {
+            key, id: productId, name: product.name,
+            price, priceKrdPickup, priceMskPickup, priceMskDelivery,
+            priceDelivery: priceMskDelivery,
+            qty: 1, categoryId: product.categoryId,
+        };
+        if (variant) { item.variantId = variant.id; item.variantLabel = variant.label; }
         cart.push(item);
     }
     saveCart(cart);
@@ -154,12 +244,12 @@ function updateBadges() {
     }
 }
 
-/* ─── Product page navigation ───────────────────────────── */
+/* ─── Product page navigation ───────────────────────────────── */
 function openProduct(id) {
     location.href = `src/catalog/product.html?id=${id}`;
 }
 
-/* ─── Toast ─────────────────────────────────────────────── */
+/* ─── Toast ─────────────────────────────────────────────────── */
 function showToast(msg) {
     const el = document.getElementById('toast');
     el.textContent = msg;
@@ -167,7 +257,7 @@ function showToast(msg) {
     setTimeout(() => el.classList.add('hidden'), 2400);
 }
 
-/* ─── Category filters ──────────────────────────────────── */
+/* ─── Category filters ──────────────────────────────────────── */
 function renderCategoryFilters() {
     const el = document.getElementById('categories');
     if (!el) return;
@@ -177,7 +267,7 @@ function renderCategoryFilters() {
         ).join('');
 }
 
-/* ─── Subcategory filters ───────────────────────────────── */
+/* ─── Subcategory filters ───────────────────────────────────── */
 function renderSubFilters() {
     const subScroll = document.getElementById('subScroll');
     const subsEl    = document.getElementById('subcategories');
@@ -195,7 +285,7 @@ function renderSubFilters() {
         ).join('');
 }
 
-/* ─── Filter setters ────────────────────────────────────── */
+/* ─── Filter setters ────────────────────────────────────────── */
 function setCategory(id) {
     state.categoryId = id;
     state.subId      = null;
@@ -210,7 +300,7 @@ function setSub(id) {
     render();
 }
 
-/* ─── Search ────────────────────────────────────────────── */
+/* ─── Search ────────────────────────────────────────────────── */
 function handleSearch() {
     const input = document.getElementById('searchInput');
     state.query = input.value.trim().toLowerCase();
@@ -226,7 +316,7 @@ function clearSearch() {
     render();
 }
 
-/* ─── Filter products ───────────────────────────────────── */
+/* ─── Filter products ───────────────────────────────────────── */
 function getFiltered() {
     return _products.filter(p => {
         if (state.categoryId !== null && p.categoryId !== state.categoryId) return false;
@@ -241,7 +331,7 @@ function getFiltered() {
     });
 }
 
-/* ─── Helpers ───────────────────────────────────────────── */
+/* ─── Helpers ───────────────────────────────────────────────── */
 function fmt(price) { return price.toLocaleString('ru-RU') + ' ₽'; }
 
 function plural(n, one, few, many) {
@@ -251,7 +341,7 @@ function plural(n, one, few, many) {
     return `${n} ${many}`;
 }
 
-/* ─── Render ────────────────────────────────────────────── */
+/* ─── Render ────────────────────────────────────────────────── */
 function render() {
     const list  = getFiltered();
     const grid  = document.getElementById('productsGrid');
@@ -282,7 +372,7 @@ function render() {
 
         const hasVariants = p.variants && p.variants.length > 0;
         const activeVar   = _effectiveVariant(p);
-        const displayPrice = getEffectivePrice(p, activeVar);
+        const displayPrice = getEffectivePrice(activeVar, _city);
 
         const variantPills = hasVariants
             ? `<div class="variant-pills">${p.variants.map(vr =>
@@ -325,7 +415,7 @@ function render() {
     }).join('');
 }
 
-/* ─── Init ──────────────────────────────────────────────── */
+/* ─── Init ──────────────────────────────────────────────────── */
 async function init() {
     try {
         [_categories, _subcategories, _products] = await Promise.all([
@@ -345,10 +435,11 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    renderCityList('');
     if (detectCity()) init();
 });
 
-/* ─── Support ───────────────────────────────────────────── */
+/* ─── Support ───────────────────────────────────────────────── */
 let _botUsername = '';
 
 fetch('/api/config')
@@ -358,7 +449,6 @@ fetch('/api/config')
 
 function openSupport() {
     const username = _botUsername || 'id635009278943_bot';
-
     if (window.WebApp && window.WebApp.openLink) {
         window.WebApp.openLink(`https://max.ru/${username}`);
     } else {

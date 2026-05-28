@@ -2,7 +2,7 @@
 let _products = [];
 
 /* ─── Variants form state ───────────────────────────────────── */
-let _formVariants = []; // { label, price, priceKrd, priceMsk, priceDelivery, isDefault }
+let _formVariants = []; // { label, priceKrdPickup, priceMskPickup, priceMskDelivery, isDefault }
 
 /* ─── Extra images form state ───────────────────────────────── */
 let _extraImages = []; // { id, productId, url, sortOrder }
@@ -31,25 +31,20 @@ function renderVariantRows() {
             </div>
             <div class="variant-row__prices">
                 <input class="ff__input variant-row__price" type="number"
-                       value="${v.price || ''}"
-                       placeholder="Базовая ₽"
+                       value="${v.priceKrdPickup || ''}"
+                       placeholder="Краснодар, самовывоз ₽"
                        min="0"
-                       oninput="_varField(${i},'price',+this.value||0)">
+                       oninput="_varField(${i},'priceKrdPickup',+this.value||0)">
                 <input class="ff__input variant-row__price" type="number"
-                       value="${v.priceKrd || ''}"
-                       placeholder="Краснодар ₽"
+                       value="${v.priceMskPickup || ''}"
+                       placeholder="Москва, самовывоз ₽"
                        min="0"
-                       oninput="_varField(${i},'priceKrd',+this.value||0)">
+                       oninput="_varField(${i},'priceMskPickup',+this.value||0)">
                 <input class="ff__input variant-row__price" type="number"
-                       value="${v.priceMsk || ''}"
-                       placeholder="Москва ₽"
+                       value="${v.priceMskDelivery || ''}"
+                       placeholder="Москва, доставка по России ₽"
                        min="0"
-                       oninput="_varField(${i},'priceMsk',+this.value||0)">
-                <input class="ff__input variant-row__price" type="number"
-                       value="${v.priceDelivery || ''}"
-                       placeholder="Доставка РФ ₽"
-                       min="0"
-                       oninput="_varField(${i},'priceDelivery',+this.value||0)">
+                       oninput="_varField(${i},'priceMskDelivery',+this.value||0)">
             </div>
         </div>`).join('');
 }
@@ -58,7 +53,7 @@ function _escAttr(s) { return String(s || '').replace(/"/g, '&quot;').replace(/<
 function _varField(i, field, val) { if (_formVariants[i]) _formVariants[i][field] = val; }
 
 function addVariantRow() {
-    _formVariants.push({ label: '', price: 0, priceKrd: 0, priceMsk: 0, priceDelivery: 0, isDefault: _formVariants.length === 0 });
+    _formVariants.push({ label: '', priceKrdPickup: 0, priceMskPickup: 0, priceMskDelivery: 0, isDefault: _formVariants.length === 0 });
     renderVariantRows();
     const inputs = document.querySelectorAll('.variant-row__label');
     if (inputs.length) inputs[inputs.length - 1].focus();
@@ -78,7 +73,18 @@ function setDefaultVariant(idx) {
 function _collectVariants() {
     return _formVariants
         .filter(v => String(v.label).trim())
-        .map((v, i) => ({ label: String(v.label).trim(), price: v.price || 0, priceKrd: v.priceKrd || 0, priceMsk: v.priceMsk || 0, priceDelivery: v.priceDelivery || 0, isDefault: !!v.isDefault, sortOrder: i }));
+        .map((v, i) => ({
+            label:           String(v.label).trim(),
+            price:           0,
+            priceKrd:        0,
+            priceMsk:        0,
+            priceDelivery:   0,
+            priceKrdPickup:  v.priceKrdPickup  || 0,
+            priceMskPickup:  v.priceMskPickup  || 0,
+            priceMskDelivery:v.priceMskDelivery|| 0,
+            isDefault:       !!v.isDefault,
+            sortOrder:       i,
+        }));
 }
 
 /* ─── Auth ──────────────────────────────────────────────── */
@@ -607,12 +613,20 @@ function fillForm(p) {
     if (p.image) setPhotoPreview(p.image); else clearPhotoPreview();
     document.querySelectorAll('.ff--error').forEach(el => el.classList.remove('ff--error'));
     document.querySelectorAll('.ff__error').forEach(el => el.textContent = '');
-    _formVariants = (p.variants || []).map(vr => ({ label: vr.label, price: vr.price, priceKrd: vr.priceKrd || 0, priceMsk: vr.priceMsk || 0, priceDelivery: vr.priceDelivery || 0, isDefault: vr.isDefault }));
+    _formVariants = (p.variants || []).map(vr => ({
+        label:           vr.label,
+        priceKrdPickup:  vr.priceKrdPickup  || 0,
+        priceMskPickup:  vr.priceMskPickup  || 0,
+        priceMskDelivery:vr.priceMskDelivery|| 0,
+        isDefault:       vr.isDefault,
+    }));
     renderVariantRows();
 }
 
 function clearForm() {
-    ['f-name','f-desc','f-price','f-price-label','f-price-krd','f-price-msk','f-price-delivery'].forEach(id => v(id, ''));
+    ['f-name','f-desc','f-price','f-price-label','f-price-krd','f-price-msk','f-price-delivery'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
     v('f-cat', '');
     document.getElementById('f-instock').checked = true;
     document.getElementById('f-service').checked = false;
@@ -752,50 +766,101 @@ const ORDER_STATUSES = {
     cancelled:  { label: 'Отменён',   cls: 'order-status--cancelled' },
 };
 
+const DELIVERY_LABELS_ADM = { pickup: 'Самовывоз', city: 'По городу', russia: 'По России' };
+
+let _allOrders    = [];
+let _orderFilter  = { store: '', status: '', delivery: '' };
+
+function renderOrderFilters() {
+    const el = document.getElementById('orderFilters');
+    if (!el) return;
+    const stores = [...new Set(_allOrders.map(o => o.store).filter(Boolean))].sort();
+    el.innerHTML = `
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 4px;">
+            <select class="order-filter-sel" onchange="_oFilter('store',this.value)">
+                <option value="">Все магазины</option>
+                ${stores.map(s => `<option value="${s}" ${_orderFilter.store===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+            <select class="order-filter-sel" onchange="_oFilter('status',this.value)">
+                <option value="">Все статусы</option>
+                ${Object.entries(ORDER_STATUSES).map(([k,v]) =>
+                    `<option value="${k}" ${_orderFilter.status===k?'selected':''}>${v.label}</option>`
+                ).join('')}
+            </select>
+            <select class="order-filter-sel" onchange="_oFilter('delivery',this.value)">
+                <option value="">Все способы</option>
+                ${Object.entries(DELIVERY_LABELS_ADM).map(([k,v]) =>
+                    `<option value="${k}" ${_orderFilter.delivery===k?'selected':''}>${v}</option>`
+                ).join('')}
+            </select>
+        </div>`;
+}
+
+function _oFilter(key, val) {
+    _orderFilter[key] = val;
+    renderOrderList();
+}
+
+function renderOrderList() {
+    const el = document.getElementById('ordersListInner');
+    if (!el) return;
+    let orders = _allOrders;
+    if (_orderFilter.store)    orders = orders.filter(o => o.store    === _orderFilter.store);
+    if (_orderFilter.status)   orders = orders.filter(o => o.status   === _orderFilter.status);
+    if (_orderFilter.delivery) orders = orders.filter(o => o.delivery === _orderFilter.delivery);
+
+    if (!orders.length) {
+        el.innerHTML = `<div class="empty-state">
+            <div class="empty-state__icon">📋</div>
+            <p class="empty-state__title">Нет заказов</p>
+            <p class="empty-state__sub">По выбранным фильтрам заказов нет</p>
+        </div>`;
+        return;
+    }
+
+    el.innerHTML = orders.map(o => {
+        const st      = ORDER_STATUSES[o.status] || { label: o.status, cls: '' };
+        const dlLabel = DELIVERY_LABELS_ADM[o.delivery] || o.delivery || '';
+        const date    = new Date(o.createdAt).toLocaleString('ru-RU', {
+            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+        });
+        const itemsText = o.items.map(i => `${i.name} × ${i.qty}`).join(', ');
+        const options   = Object.entries(ORDER_STATUSES).map(([key, val]) =>
+            `<option value="${key}" ${o.status === key ? 'selected' : ''}>${val.label}</option>`
+        ).join('');
+
+        return `
+        <div class="order-card">
+            <div class="order-card__header">
+                <span class="order-card__num">Заказ #${o.id}</span>
+                <span class="order-status ${st.cls}">${st.label}</span>
+            </div>
+            <div class="order-card__meta">
+                <span class="order-card__client">${o.name} · ${o.phone}</span>
+                <span class="order-card__date">${date}</span>
+            </div>
+            <div class="order-card__store">&#128205; ${o.store}${dlLabel ? ` <span style="opacity:.6;font-size:12px">(${dlLabel})</span>` : ''}</div>
+            <div class="order-card__items">${itemsText}</div>
+            ${o.comment ? `<div class="order-card__comment">&#128172; ${o.comment}</div>` : ''}
+            <div class="order-card__footer">
+                <span class="order-card__total">${fmt(o.total)}</span>
+                <select class="order-status-select" onchange="updateOrderStatus(${o.id},this.value)">${options}</select>
+            </div>
+        </div>`;
+    }).join('');
+}
+
 async function renderOrders() {
-    const el = document.getElementById('ordersList');
-    el.innerHTML = '<div style="padding:24px;text-align:center;color:var(--gray)">Загрузка...</div>';
+    const wrapper = document.getElementById('ordersList');
+    wrapper.innerHTML = `<div id="orderFilters"></div><div id="ordersListInner"><div style="padding:24px;text-align:center;color:var(--gray)">Загрузка...</div></div>`;
     try {
         const orders = await apiAdmin('/api/orders');
-        if (!orders || !orders.length) {
-            el.innerHTML = `<div class="empty-state">
-                <div class="empty-state__icon">📋</div>
-                <p class="empty-state__title">Нет заказов</p>
-                <p class="empty-state__sub">Заказы появятся после оформления покупателями</p>
-            </div>`;
-            return;
-        }
-        el.innerHTML = orders.map(o => {
-            const st   = ORDER_STATUSES[o.status] || { label: o.status, cls: '' };
-            const date = new Date(o.createdAt).toLocaleString('ru-RU', {
-                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-            });
-            const itemsText = o.items.map(i => `${i.name} × ${i.qty}`).join(', ');
-            const options   = Object.entries(ORDER_STATUSES).map(([key, val]) =>
-                `<option value="${key}" ${o.status === key ? 'selected' : ''}>${val.label}</option>`
-            ).join('');
-
-            return `
-            <div class="order-card">
-                <div class="order-card__header">
-                    <span class="order-card__num">Заказ #${o.id}</span>
-                    <span class="order-status ${st.cls}">${st.label}</span>
-                </div>
-                <div class="order-card__meta">
-                    <span class="order-card__client">${o.name} · ${o.phone}</span>
-                    <span class="order-card__date">${date}</span>
-                </div>
-                <div class="order-card__store">📍 ${o.store}</div>
-                <div class="order-card__items">${itemsText}</div>
-                ${o.comment ? `<div class="order-card__comment">💬 ${o.comment}</div>` : ''}
-                <div class="order-card__footer">
-                    <span class="order-card__total">${fmt(o.total)}</span>
-                    <select class="order-status-select" onchange="updateOrderStatus(${o.id},this.value)">${options}</select>
-                </div>
-            </div>`;
-        }).join('');
+        _allOrders = orders || [];
+        renderOrderFilters();
+        renderOrderList();
     } catch {
-        el.innerHTML = '<div style="padding:24px;text-align:center;color:#FF3B30">Ошибка загрузки заказов</div>';
+        document.getElementById('ordersListInner').innerHTML =
+            '<div style="padding:24px;text-align:center;color:#FF3B30">Ошибка загрузки заказов</div>';
     }
 }
 

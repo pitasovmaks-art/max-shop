@@ -51,14 +51,11 @@ function showToast(msg) {
 }
 
 /* ─── City-aware price ──────────────────────────────────────── */
-function effectivePrice(product, variant) {
+function effectivePrice(variant) {
+    if (!variant) return 0;
     const city = localStorage.getItem('city');
-    if (variant) {
-        if (city === 'krd') return variant.priceKrd || variant.price;
-        return variant.priceMsk || variant.price;
-    }
-    if (city === 'krd') return product.priceKrd || product.price;
-    return product.priceMsk || product.price;
+    if (city === 'krd') return variant.priceKrdPickup || 0;
+    return variant.priceMskPickup || 0;
 }
 
 /* ─── Variant selection ─────────────────────────────────────── */
@@ -86,7 +83,7 @@ function updatePrice() {
         el.textContent = _product.priceLabel || fmt(_product.price);
     } else {
         el.className = 'product-price';
-        el.textContent = fmt(effectivePrice(_product, effectiveVariant()));
+        el.textContent = fmt(effectivePrice(effectiveVariant()));
     }
 }
 
@@ -235,19 +232,34 @@ function renderInfo() {
 
 /* ─── Add to cart ───────────────────────────────────────────── */
 function addToCart() {
-    const variant       = effectiveVariant();
-    const price         = effectivePrice(_product, variant);
-    const priceDelivery = variant
-        ? (variant.priceDelivery || _product.priceDelivery || 0)
-        : (_product.priceDelivery || 0);
-    const key = variant ? `${_product.id}_v${variant.id}` : String(_product.id);
+    const variant = effectiveVariant();
+    const city    = localStorage.getItem('city');
+    const isKrd   = city === 'krd';
+
+    let priceKrdPickup, priceMskPickup, priceMskDelivery;
+    if (variant) {
+        priceKrdPickup   = variant.priceKrdPickup   || 0;
+        priceMskPickup   = variant.priceMskPickup   || 0;
+        priceMskDelivery = variant.priceMskDelivery || 0;
+    } else {
+        priceKrdPickup   = _product.priceKrd      || _product.price || 0;
+        priceMskPickup   = _product.priceMsk      || _product.price || 0;
+        priceMskDelivery = _product.priceDelivery || _product.price || 0;
+    }
+    const price = isKrd ? priceKrdPickup : priceMskPickup;
+    const key   = variant ? `${_product.id}_v${variant.id}` : String(_product.id);
 
     const cart     = getCart();
     const existing = cart.find(i => i.key === key);
     if (existing) {
         existing.qty += 1;
     } else {
-        const item = { key, id: _product.id, name: _product.name, price, priceDelivery, qty: 1, categoryId: _product.categoryId };
+        const item = {
+            key, id: _product.id, name: _product.name,
+            price, priceKrdPickup, priceMskPickup, priceMskDelivery,
+            priceDelivery: priceMskDelivery,
+            qty: 1, categoryId: _product.categoryId,
+        };
         if (variant) { item.variantId = variant.id; item.variantLabel = variant.label; }
         cart.push(item);
     }
