@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Точка Монтажа — Мои заказы</title>
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d4a3e 40%, #4a3728 100%);
+            background-attachment: fixed;
+            color: #FFFFFF;
+            min-height: 100dvh;
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button { cursor: pointer; border: none; background: none; font: inherit; }
+        a { text-decoration: none; color: inherit; }
+        .hidden { display: none !important; }
+
+        .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding-bottom: 80px; }
+
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center;
+            height: 56px; padding: 0 8px 0 4px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d4a3e 40%, #4a3728 100%);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.2);
+        }
+        .header__back {
+            width: 44px; height: 44px; display: flex; align-items: center;
+            justify-content: center; border-radius: 50%; color: #FFFFFF; flex-shrink: 0;
+        }
+        .header__back:active { background: rgba(255,255,255,.12); }
+        .header__title {
+            flex: 1; font-size: 17px; font-weight: 700; letter-spacing: -.3px; color: #FFFFFF;
+        }
+
+        .content { padding: 16px 12px 24px; display: flex; flex-direction: column; gap: 12px; }
+
+        .order-card {
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .order-card__header {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .order-card__num { font-size: 16px; font-weight: 700; }
+        .order-card__date { font-size: 12px; opacity: .55; }
+        .order-badge {
+            font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 10px;
+        }
+        .badge-new       { background: rgba(255,255,255,.15); color: rgba(255,255,255,.7); }
+        .badge-in_progress { background: rgba(77,158,255,.2); color: #4D9EFF; }
+        .badge-shipped   { background: rgba(248,88,0,.2);    color: #F85800; }
+        .badge-completed { background: rgba(52,199,89,.2);   color: #34C759; }
+        .badge-cancelled { background: rgba(239,68,68,.2);   color: #EF4444; }
+
+        .order-card__items { font-size: 13px; opacity: .75; line-height: 1.5; }
+        .order-card__store { font-size: 13px; opacity: .65; }
+        .order-card__total { font-size: 17px; font-weight: 700; color: #F85800; }
+
+        .track-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            height: 40px; background: rgba(248,88,0,0.2); border: 1px solid rgba(248,88,0,0.4);
+            border-radius: 12px; color: #F85800; font-size: 14px; font-weight: 600;
+            width: 100%; text-decoration: none;
+        }
+        .track-btn:active { background: rgba(248,88,0,0.35); }
+
+        .empty-state {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 80px 24px; gap: 12px; text-align: center;
+        }
+        .empty-state__icon { font-size: 56px; }
+        .empty-state__title { font-size: 18px; font-weight: 700; }
+        .empty-state__sub { font-size: 14px; opacity: .6; }
+        .empty-state__btn {
+            margin-top: 8px; padding: 12px 28px; background: #F85800;
+            color: #FFFFFF; border-radius: 14px; font-size: 15px; font-weight: 700;
+        }
+
+        .loading { text-align: center; padding: 60px 24px; font-size: 14px; opacity: .6; }
+
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 480px; height: 64px;
+            background: linear-gradient(135deg, #4a3728 0%, #2d4a3e 60%, #1a1a2e 100%);
+            box-shadow: 0 -1px 8px rgba(0,0,0,0.2);
+            display: flex; align-items: center; justify-content: space-around;
+            z-index: 100; padding-bottom: env(safe-area-inset-bottom);
+        }
+        .nav-item {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 3px; height: 100%;
+            color: rgba(255,255,255,0.5); font-size: 11px;
+        }
+        .nav-item.active { color: #FFFFFF; }
+        .nav-item:active { opacity: .7; }
+        .nav-icon-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+        .nav-badge {
+            position: absolute; top: -6px; right: -8px;
+            min-width: 17px; height: 17px; background: #F85800; color: #FFFFFF;
+            font-size: 10px; font-weight: 700; border-radius: 9px; padding: 0 4px;
+            display: flex; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <header class="header">
+        <button class="header__back" onclick="history.length>1?history.back():location.href='../../index.html'" aria-label="Назад">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <span class="header__title">Мои заказы</span>
+    </header>
+
+    <div class="content" id="content">
+        <div class="loading" id="loading">Загружаем заказы...</div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="../../index.html" class="nav-item" id="navCatalog">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="2" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>Каталог</span>
+        </a>
+        <a href="../../cart.html" class="nav-item" id="navCart">
+            <div class="nav-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
+                    <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="nav-badge hidden" id="navBadge">0</span>
+            </div>
+            <span>Корзина</span>
+        </a>
+        <a href="orders.html" class="nav-item active" id="navOrders">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="2"/>
+                <line x1="9" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="9" y1="16" x2="13" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Заказы</span>
+        </a>
+        <button class="nav-item" onclick="openSupport()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Поддержка</span>
+        </button>
+    </nav>
+</div>
+
+<script src="orders.js"></script>
+</body>
+</html>

@@ -345,6 +345,7 @@ async function submitOrder() {
     const name    = document.getElementById('inputName').value.trim();
     const comment = (document.getElementById('inputComment')?.value || '').trim();
     const city    = localStorage.getItem('city') || undefined;
+    const tgId    = new URLSearchParams(location.search).get('tg_id') || undefined;
 
     let storeLabel = '';
     let address    = '';
@@ -379,6 +380,7 @@ async function submitOrder() {
                 delivery: _deliveryMethod,
                 address:  address || undefined,
                 city:     city    || undefined,
+                tgId:     tgId     || undefined,
                 comment:  comment || undefined,
                 items: cart.map(i => ({
                     id:    i.id,

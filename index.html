@@ -121,27 +121,46 @@
             </svg>
             <span>Каталог</span>
         </a>
-        <a href="cart.html" class="nav-item" id="navCart">
+        <a href="cart.html" class="nav-item">
             <div class="nav-icon-wrap">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                     <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
-                    <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <span class="nav-badge hidden" id="navBadge">0</span>
+                <span class="cart-badge hidden" id="cartBadge">0</span>
             </div>
             <span>Корзина</span>
         </a>
-        <a href="#" class="nav-item" id="navSupport" onclick="openSupport()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        <a href="src/orders/orders.html" class="nav-item" id="navOrders">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="2"/>
+                <line x1="9" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="9" y1="16" x2="13" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Заказы</span>
+        </a>
+        <button class="nav-item" onclick="openSupport()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span>Поддержка</span>
-        </a>
+        </button>
     </nav>
 
 </div>
 <script src="src/catalog/catalog.js"></script>
 <script src="src/cookie.js"></script>
+<script>
+(function() {
+    const tgId = new URLSearchParams(location.search).get('tg_id');
+    if (!tgId) return;
+    const navOrders = document.getElementById('navOrders');
+    if (navOrders) navOrders.href = 'src/orders/orders.html?tg_id=' + tgId;
+    const navCart = document.querySelector('.nav-item[href="cart.html"]');
+    if (navCart) navCart.href = 'cart.html?tg_id=' + tgId;
+})();
+</script>
 </body>
 </html>

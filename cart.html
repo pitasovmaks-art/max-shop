@@ -85,10 +85,39 @@
             </div>
             <span>Корзина</span>
         </a>
+        <a href="src/orders/orders.html" class="nav-item" id="navOrders">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="2"/>
+                <line x1="9" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="9" y1="16" x2="13" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Заказы</span>
+        </a>
+        <button class="nav-item" onclick="openCartSupport()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Поддержка</span>
+        </button>
     </nav>
 
 </div>
 <script src="src/cart/cart.js"></script>
 <script src="src/cookie.js"></script>
+<script>
+(function() {
+    const tgId = new URLSearchParams(location.search).get('tg_id');
+    if (!tgId) return;
+    const navOrders = document.getElementById('navOrders');
+    if (navOrders) navOrders.href = 'src/orders/orders.html?tg_id=' + tgId;
+})();
+let _cartBotUsername = '';
+fetch('/api/config').then(r=>r.json()).then(cfg=>{ _cartBotUsername = cfg.botUsername||''; }).catch(()=>{});
+function openCartSupport() {
+    const url = 'https://max.ru/' + (_cartBotUsername || 'id635009278943_bot');
+    if (window.WebApp?.openLink) window.WebApp.openLink(url); else window.location.href = url;
+}
+</script>
 </body>
 </html>

@@ -1144,4 +1144,40 @@ a      { text-decoration: none; color: inherit; }
 .variant-block--krd { background: rgba(50,100,60,.13); border-color: rgba(80,160,90,.3); }
 .variant-block--msk { background: rgba(50,60,100,.13); border-color: rgba(80,90,160,.3); }
 .variant-block .ff__label { font-size: 11px; }
+
+/* ─── Tracking number ────────────────────────────────────── */
+.order-card__tracking {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0 4px;
+    align-items: center;
+}
+.tracking-input {
+    flex: 1;
+    height: 36px;
+    background: #252525;
+    border: 1.5px solid #333333;
+    border-radius: 8px;
+    color: #FFFFFF;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 0 10px;
+    outline: none;
+}
+.tracking-input:focus { border-color: #F85800; }
+.tracking-btn {
+    height: 36px;
+    padding: 0 12px;
+    background: #F85800;
+    color: #FFFFFF;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+}
+.tracking-btn:active { opacity: .8; }
+.order-status--shipped { background: rgba(248,88,0,.15); color: #F85800; }
 .variant-block .ff__hint { font-size: 11px; }

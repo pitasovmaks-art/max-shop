@@ -89,7 +89,7 @@ async function handleStart(chatId, userName) {
         chatId,
         `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\nЧем могу помочь?`,
         [[
-            { type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL },
+            { type: 'open_app', text: '🛒 Открыть магазин', web_app: `${SHOP_URL}?tg_id=${chatId}` },
         ]]
     );
 }
@@ -280,6 +280,30 @@ async function notifyStore(order) {
     }
 }
 
+/* ─── Notify customer about order status change ─────────── */
+async function notifyCustomer(tgId, orderId, status, trackingNumber) {
+    if (!TOKEN || !tgId) return;
+    let text;
+    if (trackingNumber) {
+        text = `📬 Ваш заказ №${orderId} отправлен! Трек-номер СДЭК: ${trackingNumber}\nОтследить: https://www.cdek.ru/ru/tracking?order_id=${trackingNumber}`;
+    } else {
+        const msgs = {
+            in_progress: `🔧 Ваш заказ №${orderId} принят в работу.`,
+            shipped:     `📦 Ваш заказ №${orderId} отправлен! Ожидайте доставку.`,
+            completed:   `✅ Ваш заказ №${orderId} выполнен! Спасибо за покупку в Точке Монтажа.`,
+            cancelled:   `❌ Ваш заказ №${orderId} отменён. Свяжитесь с нами для уточнения.`,
+        };
+        text = msgs[status];
+        if (!text) return;
+    }
+    try {
+        await sendMessage(+tgId, text);
+        console.log(`[bot] notifyCustomer: tg_id=${tgId} orderId=${orderId} status=${status}`);
+    } catch (e) {
+        console.error('[bot] notifyCustomer error:', e.message);
+    }
+}
+
 /* ─── Start bot ─────────────────────────────────────────── */
 function startBot() {
     if (!TOKEN) {
@@ -290,4 +314,4 @@ function startBot() {
     registerWebhook();
 }
 
-module.exports = { startBot, notifyStore, processUpdate };
+module.exports = { startBot, notifyStore, processUpdate, notifyCustomer };

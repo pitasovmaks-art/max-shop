@@ -814,10 +814,11 @@ async function deleteProduct(id) {
 
 /* ─── Orders ────────────────────────────────────────────── */
 const ORDER_STATUSES = {
-    new:        { label: 'Новый',     cls: 'order-status--new' },
-    processing: { label: 'В работе',  cls: 'order-status--processing' },
-    done:       { label: 'Выполнен',  cls: 'order-status--done' },
-    cancelled:  { label: 'Отменён',   cls: 'order-status--cancelled' },
+    new:         { label: 'Новый',     cls: 'order-status--new' },
+    in_progress: { label: 'В работе',  cls: 'order-status--processing' },
+    shipped:     { label: 'Отправлен', cls: 'order-status--shipped' },
+    completed:   { label: 'Выполнен',  cls: 'order-status--done' },
+    cancelled:   { label: 'Отменён',   cls: 'order-status--cancelled' },
 };
 
 const DELIVERY_LABELS_ADM = { pickup: 'Самовывоз', city: 'По городу', russia: 'По России' };
@@ -897,6 +898,12 @@ function renderOrderList() {
             <div class="order-card__store">&#128205; ${o.store}${dlLabel ? ` <span style="opacity:.6;font-size:12px">(${dlLabel})</span>` : ''}</div>
             <div class="order-card__items">${itemsText}</div>
             ${o.comment ? `<div class="order-card__comment">&#128172; ${o.comment}</div>` : ''}
+            ${o.delivery === 'russia' ? `
+            <div class="order-card__tracking">
+                <input class="tracking-input" id="tracking-${o.id}"
+                       value="${o.trackingNumber || ''}" placeholder="Трек-номер СДЭК...">
+                <button class="tracking-btn" onclick="saveTracking(${o.id})">&#128228; Отправить</button>
+            </div>` : ''}
             <div class="order-card__footer">
                 <span class="order-card__total">${fmt(o.total)}</span>
                 <select class="order-status-select" onchange="updateOrderStatus(${o.id},this.value)">${options}</select>
@@ -925,6 +932,19 @@ async function updateOrderStatus(id, status) {
         showToast('✓ Статус обновлён');
     } catch {
         showToast('Ошибка обновления статуса');
+    }
+}
+
+async function saveTracking(id) {
+    const input = document.getElementById(`tracking-${id}`);
+    const trackingNumber = input?.value?.trim();
+    if (!trackingNumber) { showToast('Введите трек-номер'); return; }
+    try {
+        await apiAdmin(`/api/orders/${id}/tracking`, 'PUT', { tracking_number: trackingNumber });
+        showToast('✓ Трек-номер отправлен клиенту');
+        renderOrders();
+    } catch {
+        showToast('Ошибка сохранения трек-номера');
     }
 }
 
