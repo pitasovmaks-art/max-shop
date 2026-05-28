@@ -2,6 +2,10 @@ const _urlTgId = new URLSearchParams(location.search).get('tg_id');
 if (_urlTgId) sessionStorage.setItem('tg_id', _urlTgId);
 const _tgId = _urlTgId || sessionStorage.getItem('tg_id') || '';
 
+console.log('[ORDERS] tg_id из URL:', new URLSearchParams(location.search).get('tg_id'));
+console.log('[ORDERS] tg_id из sessionStorage:', sessionStorage.getItem('tg_id'));
+console.log('[ORDERS] итоговый tg_id:', _tgId);
+
 const STATUS_CONFIG = {
     new:         { label: 'Новый',     cls: 'badge-new' },
     in_progress: { label: 'В работе',  cls: 'badge-in_progress' },
