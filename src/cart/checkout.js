@@ -144,6 +144,8 @@ function applyDelivery(method) {
         if (sec) sec.classList.toggle('hidden', m !== method);
     });
 
+    if (method === 'russia') loadCdekOfficesForCurrentCity();
+
     renderSummary();
 }
 
@@ -413,18 +415,13 @@ async function submitOrder() {
 }
 
 /* ─── CDEK office search ────────────────────────────────── */
-let _cdekSearchTimer = null;
 let _cdekOffices     = [];
 let _cdekOfficeQuery = '';
 
-function handleCdekCityInput(val) {
-    clearTimeout(_cdekSearchTimer);
-    const list = document.getElementById('cdekOfficesList');
-    if (!val.trim()) {
-        if (list) list.innerHTML = '';
-        return;
-    }
-    _cdekSearchTimer = setTimeout(() => fetchCdekOffices(val.trim()), 600);
+async function loadCdekOfficesForCurrentCity() {
+    const cityName = localStorage.getItem('cityName')
+        || (localStorage.getItem('city') === 'krd' ? 'Краснодар' : 'Москва');
+    await fetchCdekOffices(cityName);
 }
 
 async function fetchCdekOffices(cityName) {

@@ -68,15 +68,11 @@
                 <!-- CDEK office picker -->
                 <div class="card" style="margin-top:12px;">
                     <div class="cdek-section">
-                        <div class="cdek-section__label">Найти отделение СДЭК</div>
-                        <input class="field__input" id="cdekCityInput" type="text"
-                            placeholder="Введите город (напр. Москва)"
-                            oninput="handleCdekCityInput(this.value)"
-                            autocomplete="off" style="margin-bottom:8px;">
+                        <div class="cdek-section__label">Отделение СДЭК</div>
                         <input class="field__input cdek-office-search" id="cdekOfficeSearch" type="text"
                             placeholder="Поиск по отделениям..."
                             oninput="handleCdekOfficeSearch(this.value)"
-                            autocomplete="off" style="margin-bottom:8px;display:none;">
+                            autocomplete="off" style="margin-bottom:8px;">
                         <div id="cdekOfficesList" class="cdek-offices-list"></div>
                     </div>
                 </div>
@@ -215,12 +211,5 @@
 
 <script src="src/cart/checkout.js"></script>
 <script src="src/cookie.js"></script>
-<script>
-/* Show CDEK office search input after offices load */
-document.getElementById('cdekCityInput')?.addEventListener('input', function() {
-    const s = document.getElementById('cdekOfficeSearch');
-    if (s) s.style.display = this.value.trim() ? '' : 'none';
-});
-</script>
 </body>
 </html>

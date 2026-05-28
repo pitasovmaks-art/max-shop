@@ -828,7 +828,8 @@ let _orderFilter  = { store: '', status: '', delivery: '' };
 function renderOrderFilters() {
     const el = document.getElementById('orderFilters');
     if (!el) return;
-    const stores = [...new Set(_allOrders.map(o => o.store).filter(Boolean))].sort();
+    const stores = [...new Set(_allOrders.map(o => o.store).filter(Boolean))].sort()
+        .filter(s => s.includes(','));
     el.innerHTML = `
         <div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 4px;">
             <select class="order-filter-sel" onchange="_oFilter('store',this.value)">
