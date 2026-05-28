@@ -1,6 +1,7 @@
 /* ─── Stores & delivery ─────────────────────────────────── */
 let _stores = [];
 let _deliveryMethod = 'pickup'; // 'pickup' | 'city' | 'russia'
+let _selectedCdekAddress = '';
 
 async function loadAndRenderStores() {
     try {
@@ -296,8 +297,11 @@ function validate() {
         if (!addr) { showError('fieldAddress', 'Введите адрес доставки'); ok = false; }
     }
     if (_deliveryMethod === 'russia') {
-        const addr = document.getElementById('inputAddressRussia').value.trim();
-        if (!addr) { showError('fieldAddressRussia', 'Введите адрес доставки'); ok = false; }
+        if (!_selectedCdekAddress) {
+            const err = document.getElementById('cdekError');
+            if (err) err.classList.remove('hidden');
+            ok = false;
+        }
     }
 
     if (!document.getElementById('consentCheck')?.checked) {
@@ -360,7 +364,7 @@ async function submitOrder() {
         address    = document.getElementById('inputAddress').value.trim();
         storeLabel = city === 'krd' ? 'Краснодар' : city === 'msk' ? 'Москва' : 'Доставка по городу';
     } else {
-        address    = document.getElementById('inputAddressRussia').value.trim();
+        address    = _selectedCdekAddress;
         storeLabel = 'Доставка по России';
     }
 
@@ -433,6 +437,7 @@ async function fetchCdekOffices(cityName) {
         if (!r.ok) throw new Error(r.status);
         _cdekOffices = await r.json();
         _cdekOfficeQuery = '';
+        _selectedCdekAddress = '';
         renderCdekOffices();
     } catch {
         list.innerHTML = '<div class="cdek-loading cdek-error">Не удалось загрузить отделения. Введите адрес вручную.</div>';
@@ -456,20 +461,23 @@ function renderCdekOffices() {
         list.innerHTML = '<div class="cdek-loading">Отделения не найдены</div>';
         return;
     }
-    list.innerHTML = filtered.map(o => `
-        <button class="cdek-office-item" onclick="selectCdekOffice(${JSON.stringify(o).replace(/"/g,'&quot;')})">
+    list.innerHTML = filtered.map(o => {
+        const data = JSON.stringify(o).replace(/"/g, '&quot;');
+        const isSelected = _selectedCdekAddress === `СДЭК: ${o.name}, ${o.address}`;
+        return `<button class="cdek-office-item${isSelected ? ' cdek-office-item--selected' : ''}" onclick="selectCdekOffice(${data},this)">
             <div class="cdek-office-name">${o.name}</div>
             <div class="cdek-office-addr">${o.address}</div>
             ${o.work_time ? `<div class="cdek-office-hours">${o.work_time}</div>` : ''}
-        </button>`).join('');
+        </button>`;
+    }).join('');
 }
 
-function selectCdekOffice(office) {
-    const addr = `СДЭК: ${office.name}, ${office.address}`;
-    const input = document.getElementById('inputAddressRussia');
-    if (input) { input.value = addr; clearError('fieldAddressRussia'); }
+function selectCdekOffice(office, btn) {
+    _selectedCdekAddress = `СДЭК: ${office.name}, ${office.address}`;
     document.querySelectorAll('.cdek-office-item').forEach(el => el.classList.remove('cdek-office-item--selected'));
-    event?.currentTarget?.classList.add('cdek-office-item--selected');
+    if (btn) btn.classList.add('cdek-office-item--selected');
+    const err = document.getElementById('cdekError');
+    if (err) err.classList.add('hidden');
 }
 
 /* ─── Redirect if cart empty ────────────────────────────── */

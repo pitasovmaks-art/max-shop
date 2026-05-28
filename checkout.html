@@ -65,25 +65,15 @@
 
             <!-- Russia delivery -->
             <div id="delivery-russia" class="hidden">
-                <!-- CDEK office picker -->
                 <div class="card" style="margin-top:12px;">
                     <div class="cdek-section">
-                        <div class="cdek-section__label">Отделение СДЭК</div>
+                        <div class="cdek-section__label">Выберите отделение СДЭК</div>
                         <input class="field__input cdek-office-search" id="cdekOfficeSearch" type="text"
-                            placeholder="Поиск по отделениям..."
+                            placeholder="Поиск отделения..."
                             oninput="handleCdekOfficeSearch(this.value)"
                             autocomplete="off" style="margin-bottom:8px;">
                         <div id="cdekOfficesList" class="cdek-offices-list"></div>
-                    </div>
-                </div>
-                <!-- Address field -->
-                <div class="card" style="margin-top:8px;">
-                    <div class="field" id="fieldAddressRussia">
-                        <label class="field__label" for="inputAddressRussia">Адрес доставки *</label>
-                        <input class="field__input" id="inputAddressRussia" type="text"
-                            placeholder="Выберите отделение выше или введите вручную"
-                            oninput="clearError('fieldAddressRussia')">
-                        <span class="field__error"></span>
+                        <div id="cdekError" class="cdek-error-msg hidden">Выберите отделение СДЭК</div>
                     </div>
                 </div>
             </div>

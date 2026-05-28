@@ -282,3 +282,11 @@ a      { text-decoration: none; color: inherit; }
 .cdek-office-addr { font-size: 13px; color: rgba(255,255,255,.65); margin-bottom: 2px; }
 .cdek-office-hours { font-size: 12px; color: rgba(255,255,255,.45); }
 .cdek-office-search { margin-top: 4px; }
+
+/* ─── CDEK error message ─────────────────────────────────── */
+.cdek-error-msg {
+    font-size: 13px;
+    color: #ff7070;
+    padding: 6px 2px 2px;
+    font-weight: 500;
+}
