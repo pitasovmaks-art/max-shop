@@ -345,7 +345,9 @@ async function submitOrder() {
     const name    = document.getElementById('inputName').value.trim();
     const comment = (document.getElementById('inputComment')?.value || '').trim();
     const city    = localStorage.getItem('city') || undefined;
-    const tgId    = new URLSearchParams(location.search).get('tg_id') || undefined;
+    const tgId    = new URLSearchParams(location.search).get('tg_id')
+                    || sessionStorage.getItem('tg_id')
+                    || undefined;
 
     let storeLabel = '';
     let address    = '';

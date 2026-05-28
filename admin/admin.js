@@ -898,7 +898,7 @@ function renderOrderList() {
             <div class="order-card__store">&#128205; ${o.store}${dlLabel ? ` <span style="opacity:.6;font-size:12px">(${dlLabel})</span>` : ''}</div>
             <div class="order-card__items">${itemsText}</div>
             ${o.comment ? `<div class="order-card__comment">&#128172; ${o.comment}</div>` : ''}
-            ${o.delivery === 'russia' ? `
+            ${(o.delivery === 'russia' || o.deliveryType === 'russia' || (o.delivery !== 'pickup' && o.delivery !== 'city')) ? `
             <div class="order-card__tracking">
                 <input class="tracking-input" id="tracking-${o.id}"
                        value="${o.trackingNumber || ''}" placeholder="Введите трек-номер СДЭК...">

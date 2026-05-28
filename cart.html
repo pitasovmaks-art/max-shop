@@ -58,7 +58,7 @@
                 <span>🏪 Самовывоз из 3 магазинов</span>
             </div>
         </div>
-        <button class="checkout-btn" onclick="location.href='checkout.html'">
+        <button class="checkout-btn" onclick="(function(){const t=new URLSearchParams(location.search).get('tg_id')||sessionStorage.getItem('tg_id');location.href=t?'checkout.html?tg_id='+t:'checkout.html';})()">
             Оформить заказ
         </button>
     </div>
