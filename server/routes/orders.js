@@ -103,7 +103,7 @@ router.put('/:id/tracking', requireAdmin, async (req, res) => {
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         const o = await db.queryOne('SELECT tg_id, id FROM orders WHERE id=$1', [+req.params.id]);
         if (o?.tg_id) {
-            notifyCustomer(o.tg_id, o.id, 'shipped', tracking_number)
+            notifyCustomer(o.tg_id, o.id, 'tracking', tracking_number)
                 .catch(e => console.error('[bot] notify tracking:', e.message));
         }
         res.json({ ok: true });

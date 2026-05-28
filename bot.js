@@ -86,7 +86,7 @@ async function handleStart(chatId, userName) {
     addAdmin(chatId);
 
     const shopUrl = `${SHOP_URL}?tg_id=${chatId}`;
-    console.log('[BOT] ссылка для пользователя:', shopUrl);
+    console.log('[BOT] ссылка:', SHOP_URL + '?tg_id=' + chatId);
 
     await sendMessage(
         chatId,
@@ -284,11 +284,13 @@ async function notifyStore(order) {
 }
 
 /* ─── Notify customer about order status change ─────────── */
-async function notifyCustomer(tgId, orderId, status, trackingNumber) {
+async function notifyCustomer(tgId, orderId, status, extra) {
     if (!TOKEN || !tgId) return;
     let text;
-    if (trackingNumber) {
-        text = `📬 Ваш заказ №${orderId} отправлен! Трек-номер СДЭК: ${trackingNumber}\nОтследить: https://www.cdek.ru/ru/tracking?order_id=${trackingNumber}`;
+    if (status === 'tracking') {
+        text = `📬 Ваш заказ №${orderId} отправлен!\nТрек-номер СДЭК: ${extra}\nОтследить: https://www.cdek.ru/ru/tracking?order_id=${extra}`;
+    } else if (extra) {
+        text = `📬 Ваш заказ №${orderId} отправлен! Трек-номер СДЭК: ${extra}\nОтследить: https://www.cdek.ru/ru/tracking?order_id=${extra}`;
     } else {
         const msgs = {
             in_progress: `🔧 Ваш заказ №${orderId} принят в работу.`,
