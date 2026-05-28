@@ -284,25 +284,23 @@
         /* ─── Toast ─────────────────────────────────────────── */
         .toast {
             position: fixed;
-            bottom: calc(var(--nav-h) + 82px);
-            left: 50%; transform: translateX(-50%);
-            background: var(--bg-secondary);
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(10px);
             color: #FFFFFF;
-            font-size: 14px;
-            font-weight: 500;
             padding: 10px 20px;
             border-radius: 20px;
-            white-space: nowrap;
-            z-index: 200;
-            animation: fadeInOut 2.4s ease forwards;
+            font-size: 14px;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
             pointer-events: none;
-            border: 1px solid var(--border);
+            white-space: nowrap;
         }
-        @keyframes fadeInOut {
-            0%   { opacity: 0; transform: translateX(-50%) translateY(8px); }
-            12%  { opacity: 1; transform: translateX(-50%) translateY(0); }
-            75%  { opacity: 1; }
-            100% { opacity: 0; }
+        .toast.show {
+            opacity: 1;
         }
 
         /* ─── Bottom nav ─────────────────────────────────────── */
@@ -414,7 +412,7 @@
 </div>
 
 <!-- Toast -->
-<div class="toast hidden" id="toast"></div>
+<div class="toast" id="toast"></div>
 
 <!-- Bottom nav -->
 <nav class="bottom-nav">

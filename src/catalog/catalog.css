@@ -357,25 +357,23 @@ a      { text-decoration: none; color: inherit; }
 /* ─── Toast ─────────────────────────────────────────────── */
 .toast {
     position: fixed;
-    bottom: calc(var(--nav-h) + 12px);
-    left: 50%; transform: translateX(-50%);
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    font-size: 14px;
-    font-weight: 500;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(10px);
+    color: #FFFFFF;
     padding: 10px 20px;
     border-radius: 20px;
-    white-space: nowrap;
-    z-index: 200;
-    animation: fadeInOut 2.2s ease forwards;
+    font-size: 14px;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
     pointer-events: none;
-    border: 1px solid var(--border);
+    white-space: nowrap;
 }
-@keyframes fadeInOut {
-    0%   { opacity:0; transform: translateX(-50%) translateY(8px); }
-    15%  { opacity:1; transform: translateX(-50%) translateY(0); }
-    75%  { opacity:1; }
-    100% { opacity:0; }
+.toast.show {
+    opacity: 1;
 }
 
 /* ─── Bottom navigation ─────────────────────────────────── */

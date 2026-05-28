@@ -43,11 +43,17 @@ function updateBadges() {
 /* ─── Helpers ───────────────────────────────────────────────── */
 function fmt(price) { return price.toLocaleString('ru-RU') + ' ₽'; }
 
-function showToast(msg) {
-    const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.classList.remove('hidden');
-    setTimeout(() => el.classList.add('hidden'), 2400);
+function showToast(message) {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
 }
 
 /* ─── City-aware price ──────────────────────────────────────── */
@@ -260,6 +266,7 @@ function addToCart() {
         cart.push(item);
     }
     saveCart(cart);
+    showToast('✓ Добавлено в корзину');
 }
 
 /* ─── Init ──────────────────────────────────────────────────── */
