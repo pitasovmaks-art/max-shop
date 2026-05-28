@@ -1,4 +1,6 @@
-const _tgId = new URLSearchParams(location.search).get('tg_id') || '';
+const _urlTgId = new URLSearchParams(location.search).get('tg_id');
+if (_urlTgId) sessionStorage.setItem('tg_id', _urlTgId);
+const _tgId = _urlTgId || sessionStorage.getItem('tg_id') || '';
 
 const STATUS_CONFIG = {
     new:         { label: 'Новый',     cls: 'badge-new' },
@@ -54,12 +56,7 @@ async function init() {
     const content = document.getElementById('content');
 
     if (!_tgId) {
-        content.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state__icon">🔒</div>
-                <p class="empty-state__title">Откройте через бота</p>
-                <p class="empty-state__sub">Для просмотра заказов откройте магазин из бота Точка Монтажа</p>
-            </div>`;
+        renderOrders([]);
         return;
     }
 

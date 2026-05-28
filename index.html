@@ -154,11 +154,12 @@
 <script src="src/cookie.js"></script>
 <script>
 (function() {
-    const tgId = new URLSearchParams(location.search).get('tg_id');
+    const tgId = new URLSearchParams(location.search).get('tg_id') || sessionStorage.getItem('tg_id');
     if (!tgId) return;
+    sessionStorage.setItem('tg_id', tgId);
     const navOrders = document.getElementById('navOrders');
     if (navOrders) navOrders.href = 'src/orders/orders.html?tg_id=' + tgId;
-    const navCart = document.querySelector('.nav-item[href="cart.html"]');
+    const navCart = document.querySelector('a.nav-item[href="cart.html"]');
     if (navCart) navCart.href = 'cart.html?tg_id=' + tgId;
 })();
 </script>

@@ -901,7 +901,7 @@ function renderOrderList() {
             ${o.delivery === 'russia' ? `
             <div class="order-card__tracking">
                 <input class="tracking-input" id="tracking-${o.id}"
-                       value="${o.trackingNumber || ''}" placeholder="Трек-номер СДЭК...">
+                       value="${o.trackingNumber || ''}" placeholder="Введите трек-номер СДЭК...">
                 <button class="tracking-btn" onclick="saveTracking(${o.id})">&#128228; Отправить</button>
             </div>` : ''}
             <div class="order-card__footer">

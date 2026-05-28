@@ -810,9 +810,11 @@ a      { text-decoration: none; color: inherit; }
 
 .order-card {
     background: var(--white);
-    border-radius: var(--radius);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
     box-shadow: var(--card-shadow);
-    padding: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -827,7 +829,7 @@ a      { text-decoration: none; color: inherit; }
 .order-card__num {
     font-size: 15px;
     font-weight: 700;
-    color: var(--dark);
+    color: #F85800;
 }
 
 .order-status {
