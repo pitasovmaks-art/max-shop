@@ -942,11 +942,13 @@ async function saveTracking(id) {
     const trackingNumber = input?.value?.trim();
     if (!trackingNumber) { showToast('Введите трек-номер'); return; }
     try {
-        await apiAdmin(`/api/orders/${id}/tracking`, 'PUT', { tracking_number: trackingNumber });
+        const result = await apiAdmin(`/api/orders/${id}/tracking`, 'PUT', { tracking_number: trackingNumber });
+        console.log('[TRACKING] ответ сервера:', result);
         showToast('✓ Трек-номер отправлен клиенту');
         renderOrders();
-    } catch {
-        showToast('Ошибка сохранения трек-номера');
+    } catch(e) {
+        console.error('[TRACKING] ошибка:', e.message);
+        showToast('Ошибка: ' + e.message);
     }
 }
 
