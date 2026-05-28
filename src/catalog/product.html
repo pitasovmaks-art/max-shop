@@ -171,12 +171,17 @@
 
         /* ─── Gallery dots ───────────────────────────────────── */
         .gallery__dots {
+            position: absolute;
+            bottom: 10px;
+            left: 0; right: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 6px;
-            padding: 8px 0 6px;
-            background: var(--bg-card);
+            padding: 0;
+            background: transparent;
+            z-index: 5;
+            pointer-events: none;
         }
         .gallery__dot {
             width: 6px; height: 6px;
