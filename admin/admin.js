@@ -1,90 +1,143 @@
 /* ─── Global cache (products; categories/subs in categories.js) */
 let _products = [];
 
-/* ─── Variants form state ───────────────────────────────────── */
-let _formVariants = []; // { label, priceKrdPickup, priceMskPickup, priceMskDelivery, isDefault }
+/* ─── Variants form state (two blocks: KRD and MSK) ─────────── */
+let _formVariantsKrd = []; // { label, priceKrdPickup, isDefault }
+let _formVariantsMsk = []; // { label, priceMskPickup, priceMskDelivery, isDefault }
 
 /* ─── Extra images form state ───────────────────────────────── */
 let _extraImages = []; // { id, productId, url, sortOrder }
 
-function renderVariantRows() {
-    const el = document.getElementById('variant-rows');
+function _escAttr(s) { return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+function _varFieldKrd(i, field, val) { if (_formVariantsKrd[i]) _formVariantsKrd[i][field] = val; }
+function _varFieldMsk(i, field, val) { if (_formVariantsMsk[i]) _formVariantsMsk[i][field] = val; }
+
+function renderVariantRowsKrd() {
+    const el = document.getElementById('variant-rows-krd');
     if (!el) return;
-    if (!_formVariants.length) {
-        el.innerHTML = '<div class="variant-empty">Нет вариантов — товар добавляется одним вариантом</div>';
+    if (!_formVariantsKrd.length) {
+        el.innerHTML = '<div class="variant-empty">Нет вариантов для Краснодарского края</div>';
         return;
     }
-    el.innerHTML = _formVariants.map((v, i) => `
-        <div class="variant-row" id="vrow-${i}">
+    el.innerHTML = _formVariantsKrd.map((v, i) => `
+        <div class="variant-row" id="vrow-krd-${i}">
             <div class="variant-row__top">
                 <input class="ff__input variant-row__label" type="text"
                        value="${_escAttr(v.label)}"
                        placeholder="Название (напр. 14 дней)"
-                       oninput="_varField(${i},'label',this.value)">
+                       oninput="_varFieldKrd(${i},'label',this.value)">
                 <label class="variant-row__def" title="По умолчанию">
-                    <input type="radio" name="f-var-default"
+                    <input type="radio" name="f-var-default-krd"
                            ${v.isDefault ? 'checked' : ''}
-                           onchange="setDefaultVariant(${i})">
+                           onchange="setDefaultVariantKrd(${i})">
                     <span class="vdef-dot"></span>
                 </label>
-                <button type="button" class="variant-row__del" onclick="removeVariantRow(${i})" aria-label="Удалить">×</button>
+                <button type="button" class="variant-row__del" onclick="removeVariantRowKrd(${i})" aria-label="Удалить">×</button>
             </div>
             <div class="variant-row__prices">
                 <input class="ff__input variant-row__price" type="number"
                        value="${v.priceKrdPickup || ''}"
-                       placeholder="Краснодар, самовывоз ₽"
+                       placeholder="Цена самовывоз (₽)"
                        min="0"
-                       oninput="_varField(${i},'priceKrdPickup',+this.value||0)">
-                <input class="ff__input variant-row__price" type="number"
-                       value="${v.priceMskPickup || ''}"
-                       placeholder="Москва, самовывоз ₽"
-                       min="0"
-                       oninput="_varField(${i},'priceMskPickup',+this.value||0)">
-                <input class="ff__input variant-row__price" type="number"
-                       value="${v.priceMskDelivery || ''}"
-                       placeholder="Москва, доставка по России ₽"
-                       min="0"
-                       oninput="_varField(${i},'priceMskDelivery',+this.value||0)">
+                       oninput="_varFieldKrd(${i},'priceKrdPickup',+this.value||0)">
             </div>
         </div>`).join('');
 }
 
-function _escAttr(s) { return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
-function _varField(i, field, val) { if (_formVariants[i]) _formVariants[i][field] = val; }
+function renderVariantRowsMsk() {
+    const el = document.getElementById('variant-rows-msk');
+    if (!el) return;
+    if (!_formVariantsMsk.length) {
+        el.innerHTML = '<div class="variant-empty">Нет вариантов для других городов</div>';
+        return;
+    }
+    el.innerHTML = _formVariantsMsk.map((v, i) => `
+        <div class="variant-row" id="vrow-msk-${i}">
+            <div class="variant-row__top">
+                <input class="ff__input variant-row__label" type="text"
+                       value="${_escAttr(v.label)}"
+                       placeholder="Название (напр. 14 дней)"
+                       oninput="_varFieldMsk(${i},'label',this.value)">
+                <label class="variant-row__def" title="По умолчанию">
+                    <input type="radio" name="f-var-default-msk"
+                           ${v.isDefault ? 'checked' : ''}
+                           onchange="setDefaultVariantMsk(${i})">
+                    <span class="vdef-dot"></span>
+                </label>
+                <button type="button" class="variant-row__del" onclick="removeVariantRowMsk(${i})" aria-label="Удалить">×</button>
+            </div>
+            <div class="variant-row__prices">
+                <input class="ff__input variant-row__price" type="number"
+                       value="${v.priceMskPickup || ''}"
+                       placeholder="Самовывоз (₽)"
+                       min="0"
+                       oninput="_varFieldMsk(${i},'priceMskPickup',+this.value||0)">
+                <input class="ff__input variant-row__price" type="number"
+                       value="${v.priceMskDelivery || ''}"
+                       placeholder="Доставка по России (₽)"
+                       min="0"
+                       oninput="_varFieldMsk(${i},'priceMskDelivery',+this.value||0)">
+            </div>
+        </div>`).join('');
+}
 
-function addVariantRow() {
-    _formVariants.push({ label: '', priceKrdPickup: 0, priceMskPickup: 0, priceMskDelivery: 0, isDefault: _formVariants.length === 0 });
-    renderVariantRows();
-    const inputs = document.querySelectorAll('.variant-row__label');
+function addVariantRowKrd() {
+    _formVariantsKrd.push({ label: '', priceKrdPickup: 0, isDefault: _formVariantsKrd.length === 0 });
+    renderVariantRowsKrd();
+    const inputs = document.querySelectorAll('#variant-rows-krd .variant-row__label');
     if (inputs.length) inputs[inputs.length - 1].focus();
 }
 
-function removeVariantRow(idx) {
-    const wasDefault = _formVariants[idx]?.isDefault;
-    _formVariants.splice(idx, 1);
-    if (wasDefault && _formVariants.length) _formVariants[0].isDefault = true;
-    renderVariantRows();
+function addVariantRowMsk() {
+    _formVariantsMsk.push({ label: '', priceMskPickup: 0, priceMskDelivery: 0, isDefault: _formVariantsMsk.length === 0 });
+    renderVariantRowsMsk();
+    const inputs = document.querySelectorAll('#variant-rows-msk .variant-row__label');
+    if (inputs.length) inputs[inputs.length - 1].focus();
 }
 
-function setDefaultVariant(idx) {
-    _formVariants.forEach((v, i) => { v.isDefault = i === idx; });
+function removeVariantRowKrd(idx) {
+    const wasDefault = _formVariantsKrd[idx]?.isDefault;
+    _formVariantsKrd.splice(idx, 1);
+    if (wasDefault && _formVariantsKrd.length) _formVariantsKrd[0].isDefault = true;
+    renderVariantRowsKrd();
 }
+
+function removeVariantRowMsk(idx) {
+    const wasDefault = _formVariantsMsk[idx]?.isDefault;
+    _formVariantsMsk.splice(idx, 1);
+    if (wasDefault && _formVariantsMsk.length) _formVariantsMsk[0].isDefault = true;
+    renderVariantRowsMsk();
+}
+
+function setDefaultVariantKrd(idx) { _formVariantsKrd.forEach((v, i) => { v.isDefault = i === idx; }); }
+function setDefaultVariantMsk(idx) { _formVariantsMsk.forEach((v, i) => { v.isDefault = i === idx; }); }
 
 function _collectVariants() {
-    return _formVariants
+    const krd = _formVariantsKrd
         .filter(v => String(v.label).trim())
         .map((v, i) => ({
             label:           String(v.label).trim(),
-            price:           0,
-            priceKrd:        0,
-            priceMsk:        0,
-            priceDelivery:   0,
-            priceKrdPickup:  v.priceKrdPickup  || 0,
-            priceMskPickup:  v.priceMskPickup  || 0,
-            priceMskDelivery:v.priceMskDelivery|| 0,
+            price:           0, priceKrd: 0, priceMsk: 0, priceDelivery: 0,
+            priceKrdPickup:  v.priceKrdPickup || 0,
+            priceMskPickup:  0,
+            priceMskDelivery:0,
+            isKrd:           true,
             isDefault:       !!v.isDefault,
             sortOrder:       i,
         }));
+    const msk = _formVariantsMsk
+        .filter(v => String(v.label).trim())
+        .map((v, i) => ({
+            label:           String(v.label).trim(),
+            price:           0, priceKrd: 0, priceMsk: 0, priceDelivery: 0,
+            priceKrdPickup:  0,
+            priceMskPickup:  v.priceMskPickup  || 0,
+            priceMskDelivery:v.priceMskDelivery|| 0,
+            isKrd:           false,
+            isDefault:       !!v.isDefault,
+            sortOrder:       i,
+        }));
+    return [...krd, ...msk];
 }
 
 /* ─── Auth ──────────────────────────────────────────────── */
@@ -597,12 +650,8 @@ function handleOverlayClick(e) {
 /* ─── Fill / clear form ─────────────────────────────────── */
 function fillForm(p) {
     v('f-name',        p.name);
-    v('f-desc',        p.desc  || '');
-    v('f-price',       p.price);
+    v('f-desc',        p.desc || '');
     v('f-price-label', p.priceLabel || '');
-    v('f-price-krd',      p.priceKrd      || 0);
-    v('f-price-msk',      p.priceMsk      || 0);
-    v('f-price-delivery', p.priceDelivery || 0);
     document.getElementById('f-instock').checked = !!p.inStock;
     document.getElementById('f-service').checked = !!p.isService;
     const catSel = document.getElementById('f-cat');
@@ -613,18 +662,23 @@ function fillForm(p) {
     if (p.image) setPhotoPreview(p.image); else clearPhotoPreview();
     document.querySelectorAll('.ff--error').forEach(el => el.classList.remove('ff--error'));
     document.querySelectorAll('.ff__error').forEach(el => el.textContent = '');
-    _formVariants = (p.variants || []).map(vr => ({
+    _formVariantsKrd = (p.variants || []).filter(vr => vr.isKrd).map(vr => ({
+        label:          vr.label,
+        priceKrdPickup: vr.priceKrdPickup || 0,
+        isDefault:      vr.isDefault,
+    }));
+    _formVariantsMsk = (p.variants || []).filter(vr => !vr.isKrd).map(vr => ({
         label:           vr.label,
-        priceKrdPickup:  vr.priceKrdPickup  || 0,
         priceMskPickup:  vr.priceMskPickup  || 0,
         priceMskDelivery:vr.priceMskDelivery|| 0,
         isDefault:       vr.isDefault,
     }));
-    renderVariantRows();
+    renderVariantRowsKrd();
+    renderVariantRowsMsk();
 }
 
 function clearForm() {
-    ['f-name','f-desc','f-price','f-price-label','f-price-krd','f-price-msk','f-price-delivery'].forEach(id => {
+    ['f-name','f-desc','f-price-label'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
     });
     v('f-cat', '');
@@ -635,8 +689,10 @@ function clearForm() {
     clearPhotoPreview();
     document.querySelectorAll('.ff--error').forEach(el => el.classList.remove('ff--error'));
     document.querySelectorAll('.ff__error').forEach(el => el.textContent = '');
-    _formVariants = [];
-    renderVariantRows();
+    _formVariantsKrd = [];
+    _formVariantsMsk = [];
+    renderVariantRowsKrd();
+    renderVariantRowsMsk();
     _extraImages = [];
     renderExtraImages();
 }
@@ -666,8 +722,6 @@ function validateForm() {
     if (!name) { setFE('ff-name', 'Введите название'); ok = false; }
     else if (name.length < 2) { setFE('ff-name', 'Слишком короткое название'); ok = false; }
     if (!document.getElementById('f-cat').value) { setFE('ff-cat', 'Выберите категорию'); ok = false; }
-    const price = document.getElementById('f-price').value;
-    if (!price || isNaN(+price) || +price < 0) { setFE('ff-price', 'Введите корректную цену'); ok = false; }
     return ok;
 }
 
@@ -681,19 +735,19 @@ async function saveProduct() {
     const subVal     = subVisible ? parseInt(document.getElementById('f-sub').value) || null : null;
 
     const product = {
-        name:       document.getElementById('f-name').value.trim(),
-        desc:       document.getElementById('f-desc').value.trim() || null,
-        categoryId: parseInt(document.getElementById('f-cat').value),
-        subId:      subVal,
-        price:      parseInt(document.getElementById('f-price').value, 10),
-        priceKrd:      parseInt(document.getElementById('f-price-krd').value, 10)      || 0,
-        priceMsk:      parseInt(document.getElementById('f-price-msk').value, 10)      || 0,
-        priceDelivery: parseInt(document.getElementById('f-price-delivery').value, 10) || 0,
-        inStock:    document.getElementById('f-instock').checked,
+        name:          document.getElementById('f-name').value.trim(),
+        desc:          document.getElementById('f-desc').value.trim() || null,
+        categoryId:    parseInt(document.getElementById('f-cat').value),
+        subId:         subVal,
+        price:         0,
+        priceKrd:      0,
+        priceMsk:      0,
+        priceDelivery: 0,
+        inStock:       document.getElementById('f-instock').checked,
         isService,
-        priceLabel: (isService && document.getElementById('f-price-label').value)
-                        ? document.getElementById('f-price-label').value : null,
-        image:      currentPhotoBase64 || null,
+        priceLabel:    (isService && document.getElementById('f-price-label').value)
+                           ? document.getElementById('f-price-label').value : null,
+        image:         currentPhotoBase64 || null,
     };
 
     const btn = document.querySelector('#formOverlay .save-btn');

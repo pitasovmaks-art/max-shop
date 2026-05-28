@@ -569,6 +569,9 @@ a      { text-decoration: none; color: inherit; }
     line-height: 1.5;
     resize: vertical;
     min-height: 80px;
+    font-size: 17px;
+    border: none;
+    background: transparent;
 }
 
 .ff__select {
@@ -1131,3 +1134,14 @@ a      { text-decoration: none; color: inherit; }
     min-width: 100px;
 }
 .order-filter-sel:focus { border-color: #F85800; }
+
+/* ─── Variant blocks ─────────────────────────────────────── */
+.variant-block {
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid #2A2A2A;
+}
+.variant-block--krd { background: rgba(50,100,60,.13); border-color: rgba(80,160,90,.3); }
+.variant-block--msk { background: rgba(50,60,100,.13); border-color: rgba(80,90,160,.3); }
+.variant-block .ff__label { font-size: 11px; }
+.variant-block .ff__hint { font-size: 11px; }

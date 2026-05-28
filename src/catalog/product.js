@@ -61,11 +61,18 @@ function effectivePrice(variant) {
 /* ─── Variant selection ─────────────────────────────────────── */
 let _selectedVariantId = null;
 
+function _cityVariants(variants) {
+    const city = localStorage.getItem('city');
+    if (!variants || !variants.length) return [];
+    if (city === 'krd') return variants.filter(v => v.isKrd && v.priceKrdPickup > 0);
+    return variants.filter(v => !v.isKrd && (v.priceMskPickup > 0 || v.priceMskDelivery > 0));
+}
+
 function effectiveVariant() {
-    if (!_product || !_product.variants || !_product.variants.length) return null;
-    return _product.variants.find(v => v.id === _selectedVariantId)
-        || _product.variants.find(v => v.isDefault)
-        || _product.variants[0];
+    if (!_product?.variants?.length) return null;
+    const cv = _cityVariants(_product.variants);
+    if (!cv.length) return null;
+    return cv.find(v => v.id === _selectedVariantId) || cv.find(v => v.isDefault) || cv[0];
 }
 
 function selectVariant(variantId) {
@@ -77,13 +84,18 @@ function selectVariant(variantId) {
 }
 
 function updatePrice() {
-    const el = document.getElementById('productPrice');
+    const el   = document.getElementById('productPrice');
+    const city = localStorage.getItem('city');
     if (_product.isService) {
         el.className = 'product-price product-price--service';
         el.textContent = _product.priceLabel || fmt(_product.price);
     } else {
         el.className = 'product-price';
-        el.textContent = fmt(effectivePrice(effectiveVariant()));
+        const ev = effectiveVariant();
+        const price = ev
+            ? effectivePrice(ev)
+            : (city === 'krd' ? (_product.priceKrd || _product.price || 0) : (_product.priceMsk || _product.price || 0));
+        el.textContent = fmt(price);
     }
 }
 
@@ -206,10 +218,11 @@ function renderInfo() {
 
     const varSection = document.getElementById('variantSection');
     const pillsEl    = document.getElementById('variantPills');
-    if (_product.variants && _product.variants.length) {
-        const def = _product.variants.find(v => v.isDefault) || _product.variants[0];
+    const cityVars   = _cityVariants(_product.variants || []);
+    if (cityVars.length) {
+        const def = cityVars.find(v => v.isDefault) || cityVars[0];
         _selectedVariantId = def.id;
-        pillsEl.innerHTML = _product.variants.map(v => `
+        pillsEl.innerHTML = cityVars.map(v => `
             <button class="variant-pill${v.id === _selectedVariantId ? ' variant-pill--active' : ''}"
                     data-vid="${v.id}"
                     onclick="selectVariant(${v.id})">${v.label}</button>`

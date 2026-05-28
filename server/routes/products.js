@@ -32,6 +32,7 @@ function normalizeVariant(v) {
         priceKrdPickup:  v.price_krd_pickup   || 0,
         priceMskPickup:  v.price_msk_pickup   || 0,
         priceMskDelivery:v.price_msk_delivery || 0,
+        isKrd:           v.is_krd             === 1,
         isDefault:       v.is_default         === 1,
         sortOrder:       v.sort_order,
     };
@@ -105,12 +106,12 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
                 await client.query(
                     `INSERT INTO product_variants
                      (product_id,label,price,price_krd,price_msk,price_delivery,
-                      price_krd_pickup,price_msk_pickup,price_msk_delivery,is_default,sort_order)
-                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+                      price_krd_pickup,price_msk_pickup,price_msk_delivery,is_krd,is_default,sort_order)
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
                     [productId, String(v.label).trim(),
                      v.price || 0, v.priceKrd || 0, v.priceMsk || 0, v.priceDelivery || 0,
                      v.priceKrdPickup || 0, v.priceMskPickup || 0, v.priceMskDelivery || 0,
-                     v.isDefault ? 1 : 0, v.sortOrder ?? i]
+                     v.isKrd ? 1 : 0, v.isDefault ? 1 : 0, v.sortOrder ?? i]
                 );
             }
         });

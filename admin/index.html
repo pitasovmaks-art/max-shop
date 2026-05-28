@@ -265,35 +265,10 @@
                 <textarea class="ff__input ff__textarea" id="f-desc" rows="4" placeholder="Краткое описание товара" style="resize: vertical; min-height: 80px;"></textarea>
             </div>
 
-            <!-- Price -->
-            <div class="ff" id="ff-price">
-                <label class="ff__label" for="f-price">Цена (₽) *</label>
-                <input class="ff__input" id="f-price" type="number" min="0" placeholder="0" oninput="clearFE('ff-price')">
-                <span class="ff__error" id="fe-price"></span>
-            </div>
-
             <!-- Price label (services only) -->
             <div class="ff hidden" id="ff-price-label">
                 <label class="ff__label" for="f-price-label">Подпись к цене</label>
                 <input class="ff__input" id="f-price-label" type="text" placeholder="от 1 500 ₽">
-            </div>
-
-            <!-- Price Краснодар -->
-            <div class="ff" id="ff-price-krd">
-                <label class="ff__label" for="f-price-krd">Цена Краснодар (₽)</label>
-                <input class="ff__input" id="f-price-krd" type="number" min="0" placeholder="0 — использовать основную">
-            </div>
-
-            <!-- Price Москва -->
-            <div class="ff" id="ff-price-msk">
-                <label class="ff__label" for="f-price-msk">Цена Москва (₽)</label>
-                <input class="ff__input" id="f-price-msk" type="number" min="0" placeholder="0 — использовать основную">
-            </div>
-
-            <!-- Price доставка по России -->
-            <div class="ff" id="ff-price-delivery">
-                <label class="ff__label" for="f-price-delivery">Цена с доставкой по России (₽)</label>
-                <input class="ff__input" id="f-price-delivery" type="number" min="0" placeholder="0 — доставка по России недоступна">
             </div>
 
             <!-- Toggles -->
@@ -314,19 +289,35 @@
                 </div>
             </div>
 
-            <!-- Variants -->
-            <div class="ff" id="ff-variants">
+            <!-- Variants: Краснодар и КК -->
+            <div class="ff variant-block variant-block--krd" id="ff-variants-krd">
                 <div class="ff__label-row">
-                    <span class="ff__label">Варианты товара</span>
-                    <span class="ff__hint">Гарантия, комплектация или любые опции с разной ценой</span>
+                    <span class="ff__label">Краснодар и Краснодарский край</span>
+                    <span class="ff__hint">Самовывоз, доставка по городу</span>
                 </div>
-                <div class="variant-rows" id="variant-rows"></div>
-                <button type="button" class="add-variant-btn" onclick="addVariantRow()">
+                <div class="variant-rows" id="variant-rows-krd"></div>
+                <button type="button" class="add-variant-btn" onclick="addVariantRowKrd()">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                         <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
                         <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
                     </svg>
-                    Добавить вариант
+                    Добавить вариант (КРД)
+                </button>
+            </div>
+
+            <!-- Variants: Все остальные города -->
+            <div class="ff variant-block variant-block--msk" id="ff-variants-msk">
+                <div class="ff__label-row">
+                    <span class="ff__label">Все остальные города</span>
+                    <span class="ff__hint">Самовывоз и доставка по России (СДЭК)</span>
+                </div>
+                <div class="variant-rows" id="variant-rows-msk"></div>
+                <button type="button" class="add-variant-btn" onclick="addVariantRowMsk()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                    Добавить вариант (МСК/РФ)
                 </button>
             </div>
 

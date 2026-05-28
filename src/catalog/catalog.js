@@ -151,12 +151,18 @@ function subById(id) {
 /* ─── Variant selection state ───────────────────────────────── */
 const _selectedVariants = {}; // { [productId]: variantId }
 
+function _cityVariants(variants) {
+    if (!variants || !variants.length) return [];
+    if (_city === 'krd') return variants.filter(v => v.isKrd && v.priceKrdPickup > 0);
+    return variants.filter(v => !v.isKrd && (v.priceMskPickup > 0 || v.priceMskDelivery > 0));
+}
+
 function _effectiveVariant(product) {
     if (!product.variants || !product.variants.length) return null;
+    const cv = _cityVariants(product.variants);
+    if (!cv.length) return null;
     const selId = _selectedVariants[product.id];
-    return selId
-        ? product.variants.find(v => v.id === selId) || null
-        : product.variants.find(v => v.isDefault) || product.variants[0];
+    return selId ? (cv.find(v => v.id === selId) || cv[0]) : (cv.find(v => v.isDefault) || cv[0]);
 }
 
 function selectVariant(productId, variantId) {
@@ -370,12 +376,14 @@ function render() {
         const subBadge = sub
             ? `<span class="product-card__badge-brand">${sub.name}</span>` : '';
 
-        const hasVariants = p.variants && p.variants.length > 0;
-        const activeVar   = _effectiveVariant(p);
-        const displayPrice = getEffectivePrice(activeVar, _city);
+        const cityVars  = _cityVariants(p.variants || []);
+        const activeVar = _effectiveVariant(p);
+        const displayPrice = activeVar
+            ? getEffectivePrice(activeVar, _city)
+            : (_city === 'krd' ? (p.priceKrd || p.price || 0) : (p.priceMsk || p.price || 0));
 
-        const variantPills = hasVariants
-            ? `<div class="variant-pills">${p.variants.map(vr =>
+        const variantPills = cityVars.length
+            ? `<div class="variant-pills">${cityVars.map(vr =>
                 `<button class="variant-pill${activeVar && vr.id === activeVar.id ? ' variant-pill--active' : ''}"
                     data-vid="${vr.id}"
                     onclick="event.stopPropagation();selectVariant(${p.id},${vr.id})">${vr.label}</button>`
