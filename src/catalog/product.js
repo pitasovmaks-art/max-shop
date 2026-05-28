@@ -117,20 +117,6 @@ function nextImage() {
     if (_currentImgIdx < _allImages.length - 1) setMainImage(_currentImgIdx + 1);
 }
 
-/* ─── Dots ──────────────────────────────────────────────────── */
-function renderDots() {
-    const dotsEl = document.getElementById('galleryDots');
-    if (!dotsEl) return;
-    if (_allImages.length <= 1) {
-        dotsEl.classList.add('hidden');
-        return;
-    }
-    dotsEl.classList.remove('hidden');
-    dotsEl.innerHTML = _allImages.map((_, i) =>
-        `<div class="gallery__dot${i === _currentImgIdx ? ' gallery__dot--active' : ''}"></div>`
-    ).join('');
-}
-
 /* ─── Gallery ───────────────────────────────────────────────── */
 function renderGallery() {
     const mainEl  = document.getElementById('galleryMain');
@@ -144,7 +130,6 @@ function renderGallery() {
             mainEl.innerHTML += '<span class="badge-out">Нет в наличии</span>';
         }
         wrapEl.classList.add('hidden');
-        renderDots();
         updateArrow();
         return;
     }
@@ -162,7 +147,6 @@ function renderGallery() {
         wrapEl.classList.add('hidden');
     }
 
-    renderDots();
 }
 
 function setMainImage(idx) {
@@ -176,7 +160,6 @@ function setMainImage(idx) {
     document.querySelectorAll('.gallery__thumb').forEach((el, i) => {
         el.classList.toggle('gallery__thumb--active', i === idx);
     });
-    renderDots();
     updateArrow();
 }
 

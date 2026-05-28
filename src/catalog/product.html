@@ -169,33 +169,7 @@
         .gallery__thumb--active { border-color: #FFFFFF; }
         .gallery__thumb:active { opacity: .75; }
 
-        /* ─── Gallery dots ───────────────────────────────────── */
-        .gallery__dots {
-            position: absolute;
-            bottom: 10px;
-            left: 0; right: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 6px;
-            padding: 0;
-            background: transparent;
-            z-index: 5;
-            pointer-events: none;
-        }
-        .gallery__dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: #3A3A3A;
-            transition: background .2s, transform .2s;
-            flex-shrink: 0;
-        }
-        .gallery__dot--active {
-            background: #FFFFFF;
-            transform: scale(1.4);
-        }
-
-        /* ─── Product info ───────────────────────────────────── */
+/* ─── Product info ───────────────────────────────────── */
         .product-info {
             background: rgba(255,255,255,0.35);
             backdrop-filter: blur(20px);
@@ -414,8 +388,7 @@
         <div class="gallery__main" id="galleryMain"></div>
         <button class="gallery__arrow gallery__arrow--prev hidden" id="galleryArrowPrev" onclick="prevImage()">‹</button>
         <button class="gallery__arrow gallery__arrow--next hidden" id="galleryArrowNext" onclick="nextImage()">›</button>
-        <div class="gallery__dots hidden" id="galleryDots"></div>
-        <div class="gallery__strip-wrap hidden" id="galleryStripWrap">
+<div class="gallery__strip-wrap hidden" id="galleryStripWrap">
             <div class="gallery__strip" id="galleryStrip"></div>
         </div>
     </div>
