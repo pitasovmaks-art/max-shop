@@ -13,6 +13,14 @@ function getTgId() {
     const urlParam = new URLSearchParams(location.search).get('tg_id');
     if (urlParam) { saveTgId(urlParam); return urlParam; }
 
+    const startapp = new URLSearchParams(location.search).get('startapp');
+    if (startapp && startapp.startsWith('tg_id_')) {
+        const idFromStartapp = startapp.replace('tg_id_', '');
+        console.log('[tgid] tg_id from startapp:', idFromStartapp);
+        saveTgId(idFromStartapp);
+        return idFromStartapp;
+    }
+
     try {
         console.log('[tgid] WebApp.initData:', window.WebApp?.initData);
         if (window.WebApp && window.WebApp.initData) {

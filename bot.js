@@ -97,7 +97,7 @@ function sendMessage(chatId, text, buttons = null) {
 async function handleStart(chatId, userName) {
     addAdmin(chatId);
 
-    const shopUrl = `${SHOP_URL}?tg_id=${chatId}`;
+    const shopUrl = `${SHOP_URL}?tg_id=${chatId}&startapp=tg_id_${chatId}`;
     await sendMessage(
         chatId,
         `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\nЧем могу помочь?`,
@@ -164,7 +164,7 @@ async function processUpdate(update) {
             await sendMessage(
                 chatId,
                 'Спасибо за обращение! Я передал ваш вопрос нашим специалистам. В ближайшее время с вами свяжутся. 🙏',
-                [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: `${SHOP_URL}?tg_id=${chatId}` }]]
+                [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: `${SHOP_URL}?tg_id=${chatId}&startapp=tg_id_${chatId}` }]]
             );
             for (const adminId of admins) {
                 await sendMessage(
