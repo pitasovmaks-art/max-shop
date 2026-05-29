@@ -98,8 +98,6 @@ async function handleStart(chatId, userName) {
     addAdmin(chatId);
 
     const shopUrl = `${SHOP_URL}?tg_id=${chatId}`;
-    console.log('[BOT] ссылка:', SHOP_URL + '?tg_id=' + chatId);
-
     await sendMessage(
         chatId,
         `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\nЧем могу помочь?`,
@@ -126,9 +124,6 @@ async function processUpdate(update) {
         const msg        = update.message;
         const text       = msg?.body?.text || '';
         const chatId     = msg?.recipient?.chat_id ?? msg?.sender?.user_id;
-        console.log('[BOT] update:', JSON.stringify(update, null, 2));
-        console.log('[BOT] text:', text, '| chatId:', chatId);
-        console.log('[BOT] сырой текст:', JSON.stringify(text), '| chatId:', chatId);
         const senderName = msg?.sender?.name || 'Пользователь';
 
         if (!chatId) return;
@@ -143,7 +138,6 @@ async function processUpdate(update) {
         if (text.trim().toLowerCase() === '/myid') {
             await sendMessage(chatId, `Ваш ID: ${chatId}`);
             console.log('[BOT] /myid запрошен, chatId:', chatId);
-            console.log('[BOT] /myid full update:', JSON.stringify(update, null, 2));
             return;
         }
 
