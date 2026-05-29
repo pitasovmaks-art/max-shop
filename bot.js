@@ -55,8 +55,20 @@ function request(method, endpoint, body = null, query = {}) {
             let raw = '';
             res.on('data', chunk => raw += chunk);
             res.on('end', () => {
-                try { resolve(JSON.parse(raw)); }
-                catch { resolve(raw); }
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (res.statusCode >= 400) {
+                        reject(new Error(`API ${res.statusCode}: ${JSON.stringify(parsed)}`));
+                    } else {
+                        resolve(parsed);
+                    }
+                } catch {
+                    if (res.statusCode >= 400) {
+                        reject(new Error(`API ${res.statusCode}: ${raw}`));
+                    } else {
+                        resolve(raw);
+                    }
+                }
             });
         });
 
@@ -302,10 +314,10 @@ async function notifyCustomer(tgId, orderId, status, extra) {
         if (!text) return;
     }
     try {
-        await sendMessage(+tgId, text);
-        console.log(`[bot] notifyCustomer: tg_id=${tgId} orderId=${orderId} status=${status}`);
+        const result = await sendMessage(+tgId, text);
+        console.log(`[bot] notifyCustomer OK: tg_id=${tgId} orderId=${orderId} status=${status}`, result);
     } catch (e) {
-        console.error('[bot] notifyCustomer error:', e.message);
+        console.error(`[bot] notifyCustomer FAIL: tg_id=${tgId} orderId=${orderId} status=${status}`, e.message);
     }
 }
 
