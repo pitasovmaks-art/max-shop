@@ -143,6 +143,7 @@ async function processUpdate(update) {
         if (text.trim().toLowerCase() === '/myid') {
             await sendMessage(chatId, `Ваш ID: ${chatId}`);
             console.log('[BOT] /myid запрошен, chatId:', chatId);
+            console.log('[BOT] /myid full update:', JSON.stringify(update, null, 2));
             return;
         }
 
