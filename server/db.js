@@ -116,6 +116,13 @@ async function createSchema() {
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tg_id TEXT`);
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT`);
     await pool.query(`
+        CREATE TABLE IF NOT EXISTS user_map (
+            user_id    BIGINT PRIMARY KEY,
+            chat_id    BIGINT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS stores (
             id         SERIAL  PRIMARY KEY,
             name       TEXT    NOT NULL,

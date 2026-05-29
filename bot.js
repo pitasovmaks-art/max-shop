@@ -127,9 +127,22 @@ async function processUpdate(update) {
         const msg        = update.message;
         const text       = msg?.body?.text || '';
         const chatId     = msg?.recipient?.chat_id ?? msg?.sender?.user_id;
+        const userId     = msg?.sender?.user_id;
         const senderName = msg?.sender?.name || 'Пользователь';
 
         if (!chatId) return;
+
+        // Сохраняем маппинг userId → chatId
+        if (userId && chatId && userId !== chatId) {
+            const base = process.env.WEBHOOK_URL
+                ? process.env.WEBHOOK_URL.replace('/webhook', '')
+                : 'http://localhost:3000';
+            fetch(`${base}/api/users/map`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ userId, chatId }),
+            }).catch(e => console.error('[bot] user_map save error:', e.message));
+        }
 
         if (text === '/start' || text.startsWith('/start ')) {
             const userName = msg?.sender?.name || '';
@@ -311,11 +324,33 @@ async function notifyCustomer(tgId, orderId, status, extra) {
         text = msgs[status];
         if (!text) return;
     }
+    const trySend = async (id) => {
+        const result = await sendMessage(+id, text);
+        console.log(`[bot] notifyCustomer OK: tg_id=${tgId} chat=${id} orderId=${orderId} status=${status}`, result);
+    };
+
     try {
-        const result = await sendMessage(+tgId, text);
-        console.log(`[bot] notifyCustomer OK: tg_id=${tgId} orderId=${orderId} status=${status}`, result);
+        await trySend(tgId);
     } catch (e) {
-        console.error(`[bot] notifyCustomer FAIL: tg_id=${tgId} orderId=${orderId} status=${status}`, e.message);
+        console.error(`[bot] notifyCustomer FAIL first try: tg_id=${tgId}`, e.message);
+        // Пробуем найти chat_id через user_map
+        try {
+            const base = process.env.WEBHOOK_URL
+                ? process.env.WEBHOOK_URL.replace('/webhook', '')
+                : 'http://localhost:3000';
+            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            if (r.ok) {
+                const data = await r.json();
+                if (data.chatId && data.chatId !== String(tgId)) {
+                    console.log(`[bot] notifyCustomer retry with chatId=${data.chatId}`);
+                    await trySend(data.chatId);
+                    return;
+                }
+            }
+        } catch (e2) {
+            console.error(`[bot] notifyCustomer user_map lookup failed:`, e2.message);
+        }
+        console.error(`[bot] notifyCustomer FAIL final: tg_id=${tgId} orderId=${orderId}`, e.message);
     }
 }
 
