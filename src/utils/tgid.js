@@ -6,6 +6,8 @@ function saveTgId(id) {
 }
 
 function getTgId() {
+    console.log('[tgid] window.WebApp keys:', window.WebApp ? Object.keys(window.WebApp) : 'нет SDK');
+    console.log('[tgid] window.WebApp full:', JSON.stringify(window.WebApp));
     console.log('[tgid] URL tg_id:', new URLSearchParams(location.search).get('tg_id'));
 
     const urlParam = new URLSearchParams(location.search).get('tg_id');
