@@ -3,6 +3,14 @@ const db               = require('../db');
 const { requireAdmin } = require('../middleware/auth');
 const { notifyStore, notifyCustomer } = require('../../bot');
 
+/* TEMP: диагностика — удалить после проверки */
+router.get('/debug/recent', requireAdmin, async (req, res) => {
+    const rows = await db.query(
+        'SELECT id, name, tg_id, delivery, status, tracking_number FROM orders ORDER BY id DESC LIMIT 10'
+    );
+    res.json(rows);
+});
+
 function normalize(o) {
     return {
         id:             o.id,
