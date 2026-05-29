@@ -1,11 +1,12 @@
 const _tgId = getTgId() || '';
 
 const STATUS_CONFIG = {
-    new:         { label: 'Новый',     cls: 'badge-new' },
-    in_progress: { label: 'В работе',  cls: 'badge-in_progress' },
-    shipped:     { label: 'Отправлен', cls: 'badge-shipped' },
-    completed:   { label: 'Выполнен',  cls: 'badge-completed' },
-    cancelled:   { label: 'Отменён',   cls: 'badge-cancelled' },
+    new:         { label: 'Новый',           cls: 'badge-new' },
+    in_progress: { label: 'В работе',        cls: 'badge-in_progress' },
+    ready:       { label: 'Готов к выдаче',  cls: 'badge-shipped' },
+    shipped:     { label: 'Отправлен',       cls: 'badge-shipped' },
+    completed:   { label: 'Получен',         cls: 'badge-completed' },
+    cancelled:   { label: 'Отменён',         cls: 'badge-cancelled' },
 };
 
 function fmt(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
@@ -44,8 +45,11 @@ function renderOrders(orders) {
             <div class="order-card__date">${date}</div>
             <div class="order-card__items">${itemsText}</div>
             <div class="order-card__store">📍 ${o.store}</div>
-            <div class="order-card__total">${fmt(o.total)}</div>
+            ${o.delivery === 'russia' && o.address ? `<div class="order-card__address">📦 Пункт СДЭК: ${o.address}</div>` : ''}
+            ${o.delivery === 'city'   && o.address ? `<div class="order-card__address">🚗 Адрес доставки: ${o.address}</div>` : ''}
+            ${o.trackingNumber ? `<div class="order-card__tracking">🔖 Трек-номер: ${o.trackingNumber}</div>` : ''}
             ${trackBtn}
+            <div class="order-card__total">${fmt(o.total)}</div>
         </div>`;
     }).join('');
 }

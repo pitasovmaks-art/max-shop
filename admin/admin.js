@@ -814,11 +814,36 @@ async function deleteProduct(id) {
 
 /* ─── Orders ────────────────────────────────────────────── */
 const ORDER_STATUSES = {
-    new:         { label: 'Новый',     cls: 'order-status--new' },
-    in_progress: { label: 'В работе',  cls: 'order-status--processing' },
-    shipped:     { label: 'Отправлен', cls: 'order-status--shipped' },
-    completed:   { label: 'Выполнен',  cls: 'order-status--done' },
-    cancelled:   { label: 'Отменён',   cls: 'order-status--cancelled' },
+    new:         { label: 'Новый',          cls: 'order-status--new' },
+    in_progress: { label: 'В работе',       cls: 'order-status--processing' },
+    ready:       { label: 'Готов к выдаче', cls: 'order-status--shipped' },
+    shipped:     { label: 'Отправлен',      cls: 'order-status--shipped' },
+    completed:   { label: 'Получен',        cls: 'order-status--done' },
+    cancelled:   { label: 'Отменён',        cls: 'order-status--cancelled' },
+};
+
+const ORDER_STATUSES_BY_DELIVERY = {
+    pickup: [
+        { key: 'new',         label: 'Новый' },
+        { key: 'in_progress', label: 'В работе' },
+        { key: 'ready',       label: 'Готов к выдаче' },
+        { key: 'completed',   label: 'Получен' },
+        { key: 'cancelled',   label: 'Отменён' },
+    ],
+    city: [
+        { key: 'new',         label: 'Новый' },
+        { key: 'in_progress', label: 'В работе' },
+        { key: 'shipped',     label: 'Отправлен' },
+        { key: 'completed',   label: 'Получен' },
+        { key: 'cancelled',   label: 'Отменён' },
+    ],
+    russia: [
+        { key: 'new',         label: 'Новый' },
+        { key: 'in_progress', label: 'В работе' },
+        { key: 'shipped',     label: 'Отправлен' },
+        { key: 'completed',   label: 'Получен' },
+        { key: 'cancelled',   label: 'Отменён' },
+    ],
 };
 
 const DELIVERY_LABELS_ADM = { pickup: 'Самовывоз', city: 'По городу', russia: 'По России' };
@@ -881,8 +906,9 @@ function renderOrderList() {
             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
         });
         const itemsText = o.items.map(i => `${i.name} × ${i.qty}`).join(', ');
-        const options   = Object.entries(ORDER_STATUSES).map(([key, val]) =>
-            `<option value="${key}" ${o.status === key ? 'selected' : ''}>${val.label}</option>`
+        const statusList = ORDER_STATUSES_BY_DELIVERY[o.delivery] || ORDER_STATUSES_BY_DELIVERY.russia;
+        const options   = statusList.map(s =>
+            `<option value="${s.key}" ${o.status === s.key ? 'selected' : ''}>${s.label}</option>`
         ).join('');
 
         return `

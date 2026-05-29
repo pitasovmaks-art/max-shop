@@ -320,6 +320,7 @@ async function notifyCustomer(tgId, orderId, status, extra) {
     } else {
         const msgs = {
             in_progress: `🔧 Ваш заказ №${orderId} принят в работу.`,
+            ready:       `✅ Ваш заказ №${orderId} готов к выдаче! Ожидаем вас в магазине.`,
             shipped:     `📦 Ваш заказ №${orderId} отправлен! Ожидайте доставку.`,
             completed:   `✅ Ваш заказ №${orderId} выполнен! Спасибо за покупку в Точке Монтажа.`,
             cancelled:   `❌ Ваш заказ №${orderId} отменён. Свяжитесь с нами для уточнения.`,

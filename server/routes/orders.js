@@ -74,7 +74,7 @@ router.get('/:id', requireAdmin, async (req, res) => {
 /* PUT /api/orders/:id/status — admin only */
 router.put('/:id/status', requireAdmin, async (req, res) => {
     const { status } = req.body;
-    const allowed = ['new', 'in_progress', 'shipped', 'completed', 'cancelled'];
+    const allowed = ['new', 'in_progress', 'ready', 'shipped', 'completed', 'cancelled'];
     if (!allowed.includes(status)) return res.status(400).json({ error: 'Invalid status' });
     try {
         const changed = await db.execute(
