@@ -6,15 +6,20 @@ function saveTgId(id) {
 }
 
 function getTgId() {
+    console.log('[tgid] URL tg_id:', new URLSearchParams(location.search).get('tg_id'));
+
     const urlParam = new URLSearchParams(location.search).get('tg_id');
     if (urlParam) { saveTgId(urlParam); return urlParam; }
 
     try {
+        console.log('[tgid] WebApp.initData:', window.WebApp?.initData);
         if (window.WebApp && window.WebApp.initData) {
             const params = new URLSearchParams(window.WebApp.initData);
             const userStr = params.get('user');
+            console.log('[tgid] parsed user:', userStr);
             if (userStr) {
                 const user = JSON.parse(userStr);
+                console.log('[tgid] tg_id from SDK:', user?.id);
                 if (user && user.id) { saveTgId(user.id); return String(user.id); }
             }
         }
