@@ -123,6 +123,7 @@ async function processUpdate(update) {
 
     // Входящее текстовое сообщение
     if (type === 'message_created') {
+        console.log('[BOT] raw update:', JSON.stringify(update));
         const msg        = update.message;
         const text       = msg?.body?.text || '';
         const chatId     = msg?.recipient?.chat_id ?? msg?.sender?.user_id;
