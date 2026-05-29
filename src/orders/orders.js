@@ -1,15 +1,4 @@
-const _urlTgId = new URLSearchParams(location.search).get('tg_id');
-if (_urlTgId) {
-    sessionStorage.setItem('tg_id', _urlTgId);
-    localStorage.setItem('tg_id', _urlTgId);
-    localStorage.setItem('tg_id_ts', Date.now().toString());
-}
-const _lsTgId = (() => {
-    const v = localStorage.getItem('tg_id');
-    const ts = parseInt(localStorage.getItem('tg_id_ts') || '0');
-    return v && (Date.now() - ts < 86400000) ? v : null;
-})();
-const _tgId = _urlTgId || sessionStorage.getItem('tg_id') || _lsTgId || '';
+const _tgId = getTgId() || '';
 
 const STATUS_CONFIG = {
     new:         { label: 'Новый',     cls: 'badge-new' },

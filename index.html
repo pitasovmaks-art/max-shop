@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="src/catalog/catalog.css">
     <link rel="stylesheet" href="src/cookie.css">
     <script src="https://st.max.ru/js/max-web-app.js"></script>
+    <script src="/src/utils/tgid.js"></script>
 </head>
 <body style="background:linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);min-height:100vh;">
 
@@ -154,9 +155,8 @@
 <script src="src/cookie.js"></script>
 <script>
 (function() {
-    const tgId = new URLSearchParams(location.search).get('tg_id') || sessionStorage.getItem('tg_id');
+    const tgId = getTgId();
     if (!tgId) return;
-    sessionStorage.setItem('tg_id', tgId);
     const navOrders = document.getElementById('navOrders');
     if (navOrders) navOrders.href = 'src/orders/orders.html?tg_id=' + tgId;
     const navCart = document.querySelector('a.nav-item[href="cart.html"]');
