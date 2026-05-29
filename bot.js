@@ -122,7 +122,6 @@ async function processUpdate(update) {
 
     // Входящее текстовое сообщение
     if (type === 'message_created') {
-        console.log('[BOT] raw update:', JSON.stringify(update));
         const msg        = update.message;
         const text       = msg?.body?.text || '';
         const chatId     = msg?.recipient?.chat_id ?? msg?.sender?.user_id;
@@ -130,6 +129,7 @@ async function processUpdate(update) {
         const senderName = msg?.sender?.name || 'Пользователь';
 
         if (!chatId) return;
+        if (msg?.sender?.is_bot) return;
 
         // Сохраняем маппинг userId → chatId
         if (userId && chatId && userId !== chatId) {
@@ -185,6 +185,7 @@ async function processUpdate(update) {
                 console.error('[bot] fallback reply error:', e.message);
             }
             for (const adminId of admins) {
+                if (adminId === chatId) continue;
                 await sendMessage(
                     adminId,
                     `📩 *Обращение в поддержку*\nОт: ${senderName} (ID: ${chatId})\nСообщение: ${text}\n\nОтветить: /reply ${chatId} ваш текст`
