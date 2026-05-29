@@ -165,8 +165,8 @@ async function processUpdate(update) {
         if (!isAdmin) {
             await sendMessage(
                 chatId,
-                'Спасибо за обращение! Я передал ваш вопрос нашим специалистам. В ближайшее время с вами свяжутся. 🙏',
-                [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: `${SHOP_URL}?tg_id=${chatId}&startapp=tg_id_${chatId}` }]]
+                '👋 Добро пожаловать в *Точку Монтажа*!\n\nНажмите кнопку ниже чтобы открыть магазин:',
+                [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: `${SHOP_URL}?tg_id=${chatId}` }]]
             );
             for (const adminId of admins) {
                 await sendMessage(
