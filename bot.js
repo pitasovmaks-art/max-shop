@@ -97,13 +97,12 @@ function sendMessage(chatId, text, buttons = null) {
 async function handleStart(chatId, userName) {
     addAdmin(chatId);
 
-    const shopUrl = `${SHOP_URL}?tg_id=${chatId}&startapp=tg_id_${chatId}`;
-    console.log('[bot] handleStart: chatId=', chatId, 'shopUrl=', shopUrl);
+    console.log('[bot] handleStart: chatId=', chatId);
     await sendMessage(
         chatId,
         `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\nЧем могу помочь?`,
         [[
-            { type: 'open_app', text: '🛒 Открыть магазин', web_app: shopUrl },
+            { type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL },
         ]]
     );
 }
@@ -177,11 +176,15 @@ async function processUpdate(update) {
         const admins = loadAdmins();
         const isAdmin = admins.includes(chatId);
         if (!isAdmin) {
-            await sendMessage(
-                chatId,
-                '👋 Добро пожаловать в *Точку Монтажа*!\n\nНажмите кнопку ниже чтобы открыть магазин:',
-                [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: `${SHOP_URL}?tg_id=${chatId}` }]]
-            );
+            try {
+                await sendMessage(
+                    chatId,
+                    '👋 Добро пожаловать в *Точку Монтажа*!\n\nНажмите кнопку ниже чтобы открыть магазин:',
+                    [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL }]]
+                );
+            } catch (e) {
+                console.error('[bot] fallback reply error:', e.message);
+            }
             for (const adminId of admins) {
                 await sendMessage(
                     adminId,
