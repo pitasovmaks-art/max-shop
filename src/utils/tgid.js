@@ -20,35 +20,6 @@ function getTgId() {
         return idFromStartapp;
     }
 
-    try {
-        if (window.WebApp?.initDataUnsafe) {
-            const unsafe = window.WebApp.initDataUnsafe;
-            // start_param из payload кнопки — это chat_id переданный ботом
-            if (unsafe.start_param) {
-                console.log('[tgid] from start_param:', unsafe.start_param);
-                saveTgId(unsafe.start_param);
-                return String(unsafe.start_param);
-            }
-            // user.id как запасной вариант
-            if (unsafe.user?.id) {
-                console.log('[tgid] from user.id:', unsafe.user.id);
-                saveTgId(unsafe.user.id);
-                return String(unsafe.user.id);
-            }
-        }
-        if (window.WebApp?.initData) {
-            const params = new URLSearchParams(window.WebApp.initData);
-            const userStr = params.get('user');
-            if (userStr) {
-                const user = JSON.parse(userStr);
-                if (user?.id) {
-                    saveTgId(user.id);
-                    return String(user.id);
-                }
-            }
-        }
-    } catch(e) { console.error('[tgid] SDK error:', e); }
-
     const session = sessionStorage.getItem('tg_id');
     if (session) return session;
 
