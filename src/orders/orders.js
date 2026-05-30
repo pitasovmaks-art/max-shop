@@ -24,7 +24,7 @@ function renderOrders(orders) {
         return;
     }
 
-    content.innerHTML = orders.map(o => {
+    content.innerHTML = `<div style="color:rgba(255,255,255,0.5);padding:8px 16px;font-size:12px">ID: ${_tgId || 'нет'}</div>` + orders.map(o => {
         const st   = STATUS_CONFIG[o.status] || { label: o.status, cls: 'badge-new' };
         const date = new Date(o.createdAt).toLocaleString('ru-RU', {
             day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
@@ -56,9 +56,9 @@ function renderOrders(orders) {
 
 async function init() {
     const content = document.getElementById('content');
-    content.innerHTML = `<div style="color:white;padding:20px">tg_id: ${_tgId || 'НЕТ'}</div>`;
 
     if (!_tgId) {
+        content.innerHTML = '<div style="color:rgba(255,255,255,0.5);padding:8px 16px;font-size:12px">ID: нет</div>';
         renderOrders([]);
         return;
     }
