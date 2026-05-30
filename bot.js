@@ -170,19 +170,21 @@ async function processUpdate(update) {
             return;
         }
 
-        // Fallback — пересылаем сообщение админам, пользователю отвечаем автоматически
+        // Отправляем кнопку открытия магазина всем
+        try {
+            await sendMessage(
+                chatId,
+                '👋 Спасибо за сообщение! Нажмите кнопку ниже чтобы открыть магазин:',
+                [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL, payload: String(chatId) }]]
+            );
+        } catch (e) {
+            console.error('[bot] fallback reply error:', e.message);
+        }
+
+        // Пересылаем сообщение админам если отправитель не администратор
         const admins = loadAdmins();
         const isAdmin = admins.includes(chatId);
         if (!isAdmin) {
-            try {
-                await sendMessage(
-                    chatId,
-                    '👋 Спасибо за сообщение! Нажмите кнопку ниже чтобы открыть магазин:',
-                    [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL, payload: String(chatId) }]]
-                );
-            } catch (e) {
-                console.error('[bot] fallback reply error:', e.message);
-            }
             for (const adminId of admins) {
                 if (adminId === chatId) continue;
                 await sendMessage(
