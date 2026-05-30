@@ -30,6 +30,21 @@ router.get('/chat', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+/* POST /api/users/support-map — save userId→chatId for support bot */
+router.post('/support-map', async (req, res) => {
+    const { userId, chatId } = req.body;
+    if (!userId || !chatId) return res.status(400).json({ error: 'userId and chatId required' });
+    try {
+        await db.execute(
+            `INSERT INTO user_map_support (user_id, chat_id)
+             VALUES ($1, $2)
+             ON CONFLICT (user_id) DO UPDATE SET chat_id = $2`,
+            [BigInt(userId).toString(), BigInt(chatId).toString()]
+        );
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 /* DELETE /api/users/map/:userId — remove mapping (admin only) */
 router.delete('/map/:userId', require('../middleware/auth').requireAdmin, async (req, res) => {
     try {

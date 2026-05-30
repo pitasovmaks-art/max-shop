@@ -123,6 +123,13 @@ async function createSchema() {
         )
     `);
     await pool.query(`
+        CREATE TABLE IF NOT EXISTS user_map_support (
+            user_id    BIGINT PRIMARY KEY,
+            chat_id    BIGINT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS stores (
             id         SERIAL  PRIMARY KEY,
             name       TEXT    NOT NULL,
