@@ -20,6 +20,9 @@ app.use((req, res, next) => {
     next();
 });
 
+app.get('/health',  (req, res) => res.status(200).send('OK'));
+app.get('/healthz', (req, res) => res.status(200).send('OK'));
+
 app.use(express.static(path.join(__dirname, '..')));
 
 app.get('/api/config', (req, res) => {
@@ -35,9 +38,6 @@ app.post('/webhook-support', express.json(), (req, res) => {
     res.sendStatus(200);
     require('../bot-support').processUpdate(req.body).catch(console.error);
 });
-
-app.get('/health',  (req, res) => res.status(200).send('OK'));
-app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
 app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/upload',        require('./routes/upload'));
