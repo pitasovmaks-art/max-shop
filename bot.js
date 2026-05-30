@@ -100,7 +100,8 @@ async function handleStart(chatId, userName) {
     console.log('[bot] handleStart: chatId=', chatId);
     await sendMessage(
         chatId,
-        `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\n✉️ Вы подписаны на уведомления о статусе заказов.`
+        `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\n✉️ Нажмите кнопку ниже чтобы открыть магазин и получать уведомления о заказах:`,
+        [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL, payload: String(chatId) }]]
     );
 }
 
@@ -176,7 +177,8 @@ async function processUpdate(update) {
             try {
                 await sendMessage(
                     chatId,
-                    '👋 Спасибо за сообщение! Вы подписаны на уведомления о статусе ваших заказов.'
+                    '👋 Спасибо за сообщение! Нажмите кнопку ниже чтобы открыть магазин:',
+                    [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL, payload: String(chatId) }]]
                 );
             } catch (e) {
                 console.error('[bot] fallback reply error:', e.message);
