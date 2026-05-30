@@ -98,7 +98,11 @@ async function handleStart(chatId, userName) {
     addAdmin(chatId);
 
     console.log('[bot] handleStart: chatId=', chatId);
-    await sendMessage(chatId, `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\n✉️ Вы подписаны на уведомления о статусе заказов.`);
+    await sendMessage(
+        chatId,
+        `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\n✉️ Вы подписаны на уведомления о статусе заказов.`,
+        [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL, payload: String(chatId) }]]
+    );
 }
 
 /* ─── Process one update ────────────────────────────────── */
@@ -166,9 +170,13 @@ async function processUpdate(update) {
             return;
         }
 
-        // Отвечаем всем текстом
+        // Отвечаем всем с кнопкой открытия магазина
         try {
-            await sendMessage(chatId, '👋 Спасибо за сообщение! Вы подписаны на уведомления о статусе ваших заказов.');
+            await sendMessage(
+                chatId,
+                '👋 Спасибо за сообщение! Вы подписаны на уведомления о статусе ваших заказов.',
+                [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: SHOP_URL, payload: String(chatId) }]]
+            );
         } catch (e) {
             console.error('[bot] fallback reply error:', e.message);
         }
