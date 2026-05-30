@@ -31,6 +31,9 @@ app.post('/webhook', express.json(), (req, res) => {
     require('../bot').processUpdate(req.body).catch(console.error);
 });
 
+app.get('/health',  (req, res) => res.status(200).send('OK'));
+app.get('/healthz', (req, res) => res.status(200).send('OK'));
+
 app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/upload',        require('./routes/upload'));
 app.use('/api/products',      require('./routes/products'));
