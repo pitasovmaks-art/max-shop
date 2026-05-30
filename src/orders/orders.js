@@ -111,4 +111,14 @@ document.addEventListener('DOMContentLoaded', () => {
     updateNavLinks();
     updateCartBadge();
     init();
+
+    const btn = document.createElement('button');
+    btn.textContent = '🗑 Очистить';
+    btn.style = 'position:fixed;bottom:80px;right:10px;z-index:99999;background:red;color:white;border:none;padding:8px 12px;border-radius:8px;font-size:12px';
+    btn.onclick = () => {
+        localStorage.clear();
+        sessionStorage.clear();
+        alert('Данные очищены. Перезагрузите страницу.');
+    };
+    document.body.appendChild(btn);
 });
