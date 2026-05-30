@@ -6,6 +6,10 @@ function saveTgId(id) {
 }
 
 function getTgId() {
+    try {
+        console.log('[tgid] window.WebApp:', typeof window.WebApp, window.WebApp ? Object.keys(window.WebApp).join(',') : 'нет');
+    } catch(e) {}
+
     const urlParam = new URLSearchParams(location.search).get('tg_id');
     if (urlParam) { saveTgId(urlParam); return urlParam; }
 
