@@ -6,6 +6,7 @@ function saveTgId(id) {
 }
 
 function getTgId() {
+    console.log('[tgid] start, location.search:', location.search);
     try {
         console.log('[tgid] window.WebApp:', typeof window.WebApp, window.WebApp ? Object.keys(window.WebApp).join(',') : 'нет');
     } catch(e) {}
@@ -27,6 +28,7 @@ function getTgId() {
     const ts = parseInt(localStorage.getItem('tg_id_ts') || '0');
     if (v && (Date.now() - ts < 15552000000)) return v;
 
+    console.log('[tgid] returning null, ничего не нашёл');
     return null;
 }
 
