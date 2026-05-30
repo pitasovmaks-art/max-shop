@@ -30,4 +30,14 @@ router.get('/chat', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+/* DELETE /api/users/map/:userId — remove mapping (admin only) */
+router.delete('/map/:userId', require('../middleware/auth').requireAdmin, async (req, res) => {
+    try {
+        await db.execute('DELETE FROM user_map WHERE user_id=$1', [+req.params.userId]);
+        res.json({ ok: true });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 module.exports = router;
