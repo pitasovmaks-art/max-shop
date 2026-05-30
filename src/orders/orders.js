@@ -19,6 +19,14 @@ function renderOrders(orders) {
                 <div class="empty-state__icon">📋</div>
                 <p class="empty-state__title">Заказов пока нет</p>
                 <p class="empty-state__sub">Ваши заказы появятся здесь после оформления</p>
+                <div style="color:rgba(255,255,255,0.5);padding:8px;font-size:11px;white-space:pre-line;margin:20px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;text-align:left">WebApp: ${typeof window.WebApp}
+platform: ${window.WebApp?.platform || '?'}
+version: ${window.WebApp?.version || '?'}
+initData: ${window.WebApp?.initData ? 'есть' : 'нет'}
+initDataUnsafe: ${window.WebApp?.initDataUnsafe ? 'есть' : 'нет'}
+user.id: ${window.WebApp?.initDataUnsafe?.user?.id || '?'}
+chat.id: ${window.WebApp?.initDataUnsafe?.chat?.id || '?'}
+tg_id: ${_tgId || 'НЕТ'}</div>
                 <a href="../../index.html" class="empty-state__btn">Перейти в каталог</a>
             </div>`;
         return;
