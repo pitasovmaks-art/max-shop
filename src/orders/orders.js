@@ -56,6 +56,7 @@ function renderOrders(orders) {
 
 async function init() {
     const content = document.getElementById('content');
+    content.innerHTML = `<div style="color:white;padding:20px">tg_id: ${_tgId || 'НЕТ'}</div>`;
 
     if (!_tgId) {
         renderOrders([]);
