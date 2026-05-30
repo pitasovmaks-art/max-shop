@@ -34,11 +34,6 @@ app.post('/webhook', express.json(), (req, res) => {
     require('../bot').processUpdate(req.body).catch(console.error);
 });
 
-app.post('/webhook-support', express.json(), (req, res) => {
-    res.sendStatus(200);
-    require('../bot-support').processUpdate(req.body).catch(console.error);
-});
-
 app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/upload',        require('./routes/upload'));
 app.use('/api/products',      require('./routes/products'));
@@ -74,10 +69,7 @@ const db = require('./db');
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Точка Монтажа запущена на порту ${PORT}`);
     db.init()
-        .then(() => {
-            require('../bot').startBot();
-            require('../bot-support').startSupportBot();
-        })
+        .then(() => require('../bot').startBot())
         .catch((e) => {
             console.error('[STARTUP] Критическая ошибка инициализации БД:', e.message);
             console.error(e.stack);
