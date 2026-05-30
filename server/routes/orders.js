@@ -25,6 +25,7 @@ function normalize(o) {
 /* POST /api/orders — public, customers submit */
 router.post('/', async (req, res) => {
     const { name, phone, store, delivery, address, city, tgId, comment, items, total } = req.body;
+    console.log('[orders] новый заказ: name=', name, 'tgId=', tgId, 'city=', city);
     if (!name || !phone || !store || !items || total == null) {
         return res.status(400).json({ error: 'Обязательные поля: name, phone, store, items, total' });
     }
