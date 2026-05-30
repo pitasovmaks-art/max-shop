@@ -119,17 +119,4 @@ document.addEventListener('DOMContentLoaded', () => {
     updateNavLinks();
     updateCartBadge();
     init();
-
-    const btn = document.createElement('button');
-    btn.textContent = '🗑 Очистить';
-    btn.style = 'position:fixed;bottom:80px;right:10px;z-index:99999;background:red;color:white;border:none;padding:8px 12px;border-radius:8px;font-size:12px';
-    btn.addEventListener('click', () => {
-        if (confirm('Очистить tg_id?')) {
-            localStorage.removeItem('tg_id');
-            localStorage.removeItem('tg_id_ts');
-            sessionStorage.removeItem('tg_id');
-            alert('Очищено. Закройте Max полностью и откройте заново.');
-        }
-    });
-    document.body.appendChild(btn);
 });

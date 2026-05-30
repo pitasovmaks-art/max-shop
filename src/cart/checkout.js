@@ -333,6 +333,12 @@ function handleConsentChange() {
 
 /* ─── Submit ────────────────────────────────────────────── */
 async function submitOrder() {
+    const agreePolicy = document.getElementById('agreePolicy')?.checked;
+    const agreeOffer  = document.getElementById('agreeOffer')?.checked;
+    if (!agreePolicy || !agreeOffer) {
+        alert('Для оформления заказа необходимо согласие с Политикой и Офертой');
+        return;
+    }
     if (!validate()) return;
 
     const btn = document.getElementById('submitBtn');

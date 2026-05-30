@@ -290,3 +290,9 @@ a      { text-decoration: none; color: inherit; }
     padding: 6px 2px 2px;
     font-weight: 500;
 }
+
+/* ─── Legal checkboxes ───────────────────────────────────── */
+.legal-checks { margin: 16px 0 4px; display: flex; flex-direction: column; gap: 12px; }
+.legal-check { display: flex; gap: 10px; align-items: flex-start; color: rgba(255,255,255,0.8); font-size: 13px; cursor: pointer; line-height: 1.5; }
+.legal-check input { margin-top: 3px; flex-shrink: 0; }
+.legal-check a { color: #F85800; text-decoration: underline; }
