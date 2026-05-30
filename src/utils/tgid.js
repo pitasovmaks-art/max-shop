@@ -21,7 +21,7 @@ function getTgId() {
 
     const v = localStorage.getItem('tg_id');
     const ts = parseInt(localStorage.getItem('tg_id_ts') || '0');
-    if (v && (Date.now() - ts < 86400000)) return v;
+    if (v && (Date.now() - ts < 15552000000)) return v;
 
     return null;
 }
