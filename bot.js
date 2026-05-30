@@ -179,7 +179,8 @@ async function processUpdate(update) {
             try {
                 await sendMessage(
                     chatId,
-                    '👋 Спасибо за сообщение! Теперь вы будете получать уведомления о статусе ваших заказов.'
+                    '👋 Спасибо за сообщение! Теперь вы будете получать уведомления о статусе ваших заказов.\n\nОткройте магазин через кнопку ниже:',
+                    [[{ type: 'open_app', text: '🛒 Открыть магазин', web_app: `${SHOP_URL}?tg_id=${chatId}` }]]
                 );
             } catch (e) {
                 console.error('[bot] fallback reply error:', e.message);
