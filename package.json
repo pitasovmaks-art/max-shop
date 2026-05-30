@@ -4,7 +4,7 @@
   "description": "Точка Монтажа — магазин строительных инструментов",
   "main": "server/index.js",
   "scripts": {
-    "start": "pm2-runtime server/index.js",
+    "start": "pm2-runtime ecosystem.config.js",
     "dev": "node --watch server/index.js"
   },
   "dependencies": {
