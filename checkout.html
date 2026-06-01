@@ -128,35 +128,31 @@
 
         <!-- 5. Consent -->
         <section class="section section--last">
-            <div class="consent-wrap" id="consentWrap">
-                <label class="consent-label" for="consentCheck">
-                    <input
-                        class="consent-checkbox"
-                        type="checkbox"
-                        id="consentCheck"
-                        onchange="handleConsentChange()"
-                    >
-                    <span class="consent-box"></span>
-                    <span class="consent-text">
-                        Я принимаю
-                        <a class="consent-link" href="offer.html" target="_blank">публичную оферту</a>
-                        и согласен с
-                        <a class="consent-link" href="privacy.html" target="_blank">обработкой персональных данных</a>
-                    </span>
-                </label>
-                <span class="consent-error hidden" id="consentError">Необходимо ваше согласие</span>
-            </div>
             <div class="legal-checks">
                 <label class="legal-check">
-                    <input type="checkbox" id="agreePolicy">
+                    <input type="checkbox" id="agreePolicy" onchange="handleLegalCheck()">
                     <span>Я даю согласие на обработку моих персональных данных в соответствии с <a href="/src/legal/policy.html" target="_blank">Политикой обработки персональных данных</a></span>
                 </label>
                 <label class="legal-check">
-                    <input type="checkbox" id="agreeOffer">
+                    <input type="checkbox" id="agreeOffer" onchange="handleLegalCheck()">
                     <span>Я ознакомлен и согласен с <a href="/src/legal/offer.html" target="_blank">публичной офертой</a></span>
                 </label>
             </div>
         </section>
+
+        <!-- Legal footer -->
+        <div class="legal-footer">
+            <div class="legal-footer__info">
+                ИП Питасов Максим Сергеевич<br>
+                ИНН: 635009278943 | ОГРНИП: 325632700121983<br>
+                Адрес: 350058, г. Краснодар, ул. Селезнева, д. 4/10, оф. 53<br>
+                Email: pitasov01@inbox.ru
+            </div>
+            <div class="legal-footer__links">
+                <a href="/src/legal/policy.html">Политика обработки персональных данных</a>
+                <a href="/src/legal/offer.html">Публичная оферта</a>
+            </div>
+        </div>
 
     </div>
 

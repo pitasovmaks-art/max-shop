@@ -448,3 +448,9 @@ a      { text-decoration: none; color: inherit; }
     background: #F85800;
     color: #FFFFFF;
 }
+
+/* ─── Legal footer ───────────────────────────────────────── */
+.legal-footer { padding: 24px 16px; color: rgba(255,255,255,0.5); font-size: 11px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 40px; }
+.legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
+.legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
+.legal-footer__links a { color: #F85800; text-decoration: none; }

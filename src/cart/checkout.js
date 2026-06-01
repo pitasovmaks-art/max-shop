@@ -304,27 +304,17 @@ function validate() {
         }
     }
 
-    if (!document.getElementById('consentCheck')?.checked) {
-        document.getElementById('consentWrap')?.classList.add('consent-wrap--error');
-        document.getElementById('consentError')?.classList.remove('hidden');
-        ok = false;
-    }
-
     return ok;
 }
 
-/* ─── Consent checkbox ──────────────────────────────────── */
-function handleConsentChange() {
-    const checked = document.getElementById('consentCheck').checked;
-    const btn     = document.getElementById('submitBtn');
-    const wrap    = document.getElementById('consentWrap');
-    const err     = document.getElementById('consentError');
-
-    if (checked) {
+/* ─── Legal checkboxes ──────────────────────────────────── */
+function handleLegalCheck() {
+    const btn    = document.getElementById('submitBtn');
+    const policy = document.getElementById('agreePolicy')?.checked;
+    const offer  = document.getElementById('agreeOffer')?.checked;
+    if (policy && offer) {
         btn.disabled = false;
         btn.classList.remove('submit-btn--disabled');
-        wrap?.classList.remove('consent-wrap--error');
-        err?.classList.add('hidden');
     } else {
         btn.disabled = true;
         btn.classList.add('submit-btn--disabled');
