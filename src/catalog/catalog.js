@@ -402,7 +402,11 @@ function render() {
         const tgId   = getTgId();
         const isFav  = _favorites.has(p.id);
         const favBtn = tgId
-            ? `<button class="fav-btn${isFav ? ' fav-btn--active' : ''}" onclick="event.stopPropagation();toggleFav(${p.id})" aria-label="Избранное">${isFav ? '❤' : '♡'}</button>`
+            ? `<button class="fav-btn${isFav ? ' fav-btn--active' : ''}" onclick="event.stopPropagation();toggleFav(${p.id})" aria-label="Избранное">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="${isFav ? '#F85800' : 'none'}" stroke="${isFav ? '#F85800' : 'rgba(255,255,255,0.8)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:fill .2s,stroke .2s">
+                    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                </svg>
+               </button>`
             : '';
 
         if (p.isService) {
@@ -446,18 +450,23 @@ async function toggleFav(productId) {
     // Optimistic update
     if (wasFav) { _favorites.delete(productId); } else { _favorites.add(productId); }
     const btn = document.querySelector(`#pcard-${productId} .fav-btn`);
-    if (btn) {
-        btn.classList.toggle('fav-btn--active', !wasFav);
-        btn.textContent = wasFav ? '♡' : '❤';
+    const svg = btn?.querySelector('svg');
+    function applyFavState(active) {
+        if (!btn) return;
+        btn.classList.toggle('fav-btn--active', active);
+        if (svg) {
+            svg.setAttribute('fill',   active ? '#F85800' : 'none');
+            svg.setAttribute('stroke', active ? '#F85800' : 'rgba(255,255,255,0.8)');
+        }
     }
+    applyFavState(!wasFav);
     fetch('/api/favorites', {
         method:  wasFav ? 'DELETE' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ tgId, productId }),
     }).catch(() => {
-        // Revert on error
         if (wasFav) { _favorites.add(productId); } else { _favorites.delete(productId); }
-        if (btn) { btn.classList.toggle('fav-btn--active', wasFav); btn.textContent = wasFav ? '❤' : '♡'; }
+        applyFavState(wasFav);
     });
 }
 
