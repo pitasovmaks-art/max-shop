@@ -58,12 +58,17 @@ async function dbMarkKnown(chatId) {
 }
 
 /* ─── HTTP helper (Max API) ─────────────────────────────── */
-function request(method, endpoint, body = null) {
+function request(method, endpoint, body = null, query = {}) {
     return new Promise((resolve, reject) => {
-        const data = body ? JSON.stringify(body) : null;
+        const qs = new URLSearchParams(
+            Object.fromEntries(Object.entries(query).filter(([, v]) => v != null))
+        ).toString();
+        const urlPath = `/${endpoint}${qs ? '?' + qs : ''}`;
+        const data    = body ? JSON.stringify(body) : null;
+
         const opts = {
             hostname: API_BASE,
-            path:     endpoint,
+            path:     urlPath,
             method,
             headers: {
                 'Authorization': TOKEN,
@@ -76,16 +81,25 @@ function request(method, endpoint, body = null) {
             let raw = '';
             res.on('data', chunk => raw += chunk);
             res.on('end', () => {
-                if (res.statusCode >= 400) {
-                    reject(new Error(`HTTP ${res.statusCode}: ${raw}`));
-                } else {
-                    try { resolve(JSON.parse(raw)); }
-                    catch { resolve(raw); }
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (res.statusCode >= 400) {
+                        reject(new Error(`API ${res.statusCode}: ${JSON.stringify(parsed)}`));
+                    } else {
+                        resolve(parsed);
+                    }
+                } catch {
+                    if (res.statusCode >= 400) {
+                        reject(new Error(`API ${res.statusCode}: ${raw}`));
+                    } else {
+                        resolve(raw);
+                    }
                 }
             });
         });
 
         req.on('error', reject);
+        req.setTimeout(25000, () => { req.destroy(); reject(new Error('timeout')); });
         if (data) req.write(data);
         req.end();
     });
@@ -93,12 +107,10 @@ function request(method, endpoint, body = null) {
 
 /* ─── Send message ──────────────────────────────────────── */
 function sendMessage(chatId, text) {
-    return request('POST', '/messages', {
-        recipient: { chat_id: chatId },
-        body:      { type: 'text', text },
-    }).catch(e => {
-        console.error(`[support] sendMessage(${chatId}) ошибка:`, e.message);
-    });
+    return request('POST', 'messages', { text, format: 'markdown' }, { chat_id: chatId })
+        .catch(e => {
+            console.error(`[support] sendMessage(${chatId}) ошибка:`, e.message);
+        });
 }
 
 /* ─── Webhook registration ──────────────────────────────── */
