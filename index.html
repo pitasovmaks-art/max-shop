@@ -47,6 +47,11 @@
             <span class="header__logo-text">Точка Монтажа</span>
         </div>
         <button id="headerCityBtn" onclick="showCityScreen()" style="display:flex;align-items:center;gap:3px;color:rgba(255,255,255,0.8);font-size:12px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;cursor:pointer;padding:5px 9px;white-space:nowrap;font-family:inherit;flex-shrink:0;">📍 <span id="cityLabel">—</span></button>
+        <button class="header__fav" id="headerFavBtn" onclick="openFavorites()" aria-label="Избранное">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
         <button class="header__cart" onclick="location.href='cart.html'" aria-label="Корзина">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

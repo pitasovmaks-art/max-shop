@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Точка Монтажа — Избранное</title>
+    <link rel="stylesheet" href="../catalog/catalog.css">
+    <link rel="stylesheet" href="../../src/cookie.css">
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
+    <script src="/src/utils/tgid.js?v=20260601"></script>
+    <style>
+        body { background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%); min-height: 100vh; }
+        .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding-bottom: 80px; }
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center;
+            height: 56px; padding: 0 8px 0 4px;
+            background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.2);
+        }
+        .header__back {
+            width: 44px; height: 44px; display: flex; align-items: center;
+            justify-content: center; border-radius: 50%; color: #fff; flex-shrink: 0;
+        }
+        .header__back:active { background: rgba(255,255,255,.12); }
+        .header__title { flex: 1; font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -.3px; }
+        .header__cart {
+            position: relative; width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; color: #fff; flex-shrink: 0;
+        }
+        .header__cart:active { background: rgba(255,255,255,.08); }
+        .cart-badge {
+            position: absolute; top: 4px; right: 4px;
+            min-width: 17px; height: 17px; background: #F85800; color: #fff;
+            font-size: 10px; font-weight: 700; border-radius: 9px; padding: 0 3px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .empty-state {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 80px 24px; gap: 12px; text-align: center; color: #fff;
+        }
+        .empty-state__icon { font-size: 56px; }
+        .empty-state__title { font-size: 18px; font-weight: 700; }
+        .empty-state__sub { font-size: 14px; opacity: .6; }
+        .empty-state__btn {
+            margin-top: 8px; padding: 12px 28px; background: #F85800;
+            color: #fff; border-radius: 14px; font-size: 15px; font-weight: 700;
+            text-decoration: none; display: inline-block;
+        }
+        .loading { text-align: center; padding: 60px 24px; font-size: 14px; color: rgba(255,255,255,.6); }
+        /* Override fav-btn for remove in favorites page */
+        .fav-btn { color: #F85800; background: rgba(0,0,0,0.45); }
+    </style>
+</head>
+<body>
+<div class="app">
+    <header class="header">
+        <button class="header__back" onclick="history.length>1?history.back():location.href='../../index.html'" aria-label="Назад">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <span class="header__title">Избранное</span>
+        <button class="header__cart" onclick="location.href='../../cart.html'" aria-label="Корзина">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="cart-badge hidden" id="cartBadge">0</span>
+        </button>
+    </header>
+
+    <div id="loading" class="loading">Загружаем избранное...</div>
+    <main class="main" id="main" style="display:none"></main>
+</div>
+
+<script src="favorites.js?v=20260601"></script>
+<script src="../../src/cookie.js?v=20260601"></script>
+</body>
+</html>

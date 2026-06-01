@@ -123,6 +123,15 @@ async function createSchema() {
         )
     `);
     await pool.query(`
+        CREATE TABLE IF NOT EXISTS favorites (
+            id         SERIAL PRIMARY KEY,
+            tg_id      BIGINT NOT NULL,
+            product_id BIGINT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW(),
+            UNIQUE(tg_id, product_id)
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS support_admins (
             user_id    BIGINT PRIMARY KEY,
             chat_id    BIGINT NOT NULL,

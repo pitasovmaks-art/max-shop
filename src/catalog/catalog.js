@@ -2,6 +2,7 @@
 let _categories    = [];
 let _subcategories = [];
 let _products      = [];
+let _favorites     = new Set();  // Set of product_id (Number)
 
 /* ─── City ──────────────────────────────────────────────────── */
 let _city = localStorage.getItem('city') || null;
@@ -398,10 +399,16 @@ function render() {
               ).join('')}</div>`
             : '';
 
+        const tgId   = getTgId();
+        const isFav  = _favorites.has(p.id);
+        const favBtn = tgId
+            ? `<button class="fav-btn${isFav ? ' fav-btn--active' : ''}" onclick="event.stopPropagation();toggleFav(${p.id})" aria-label="Избранное">${isFav ? '❤' : '♡'}</button>`
+            : '';
+
         if (p.isService) {
             return `
             <div class="product-card" id="pcard-${p.id}" onclick="openProduct(${p.id})">
-                <div class="product-card__img ${imgBg}">${imgIcon}${subBadge}</div>
+                <div class="product-card__img ${imgBg}">${imgIcon}${subBadge}${favBtn}</div>
                 <div class="product-card__body">
                     <div class="product-card__name">${p.name}</div>
                     <div class="product-card__footer">
@@ -418,7 +425,7 @@ function render() {
 
         return `
         <div class="product-card" id="pcard-${p.id}" onclick="openProduct(${p.id})">
-            <div class="product-card__img ${imgBg}">${imgIcon}${outBadge}${subBadge}</div>
+            <div class="product-card__img ${imgBg}">${imgIcon}${outBadge}${subBadge}${favBtn}</div>
             <div class="product-card__body">
                 <div class="product-card__name">${p.name}</div>
                 ${variantPills}
@@ -431,14 +438,49 @@ function render() {
     }).join('');
 }
 
+/* ─── Favourites ─────────────────────────────────────────────── */
+async function toggleFav(productId) {
+    const tgId = getTgId();
+    if (!tgId) return;
+    const wasFav = _favorites.has(productId);
+    // Optimistic update
+    if (wasFav) { _favorites.delete(productId); } else { _favorites.add(productId); }
+    const btn = document.querySelector(`#pcard-${productId} .fav-btn`);
+    if (btn) {
+        btn.classList.toggle('fav-btn--active', !wasFav);
+        btn.textContent = wasFav ? '♡' : '❤';
+    }
+    fetch('/api/favorites', {
+        method:  wasFav ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ tgId, productId }),
+    }).catch(() => {
+        // Revert on error
+        if (wasFav) { _favorites.add(productId); } else { _favorites.delete(productId); }
+        if (btn) { btn.classList.toggle('fav-btn--active', wasFav); btn.textContent = wasFav ? '❤' : '♡'; }
+    });
+}
+
+function openFavorites() {
+    const tgId = getTgId();
+    const base = 'src/favorites/favorites.html';
+    location.href = tgId ? `${base}?tg_id=${tgId}` : base;
+}
+
 /* ─── Init ──────────────────────────────────────────────────── */
 async function init() {
+    const tgId = getTgId();
     try {
-        [_categories, _subcategories, _products] = await Promise.all([
+        const [cats, subs, prods, favs] = await Promise.all([
             apiFetch('/api/categories'),
             apiFetch('/api/subcategories'),
             apiFetch('/api/products'),
+            tgId ? apiFetch(`/api/favorites?tg_id=${encodeURIComponent(tgId)}`).catch(() => []) : Promise.resolve([]),
         ]);
+        _categories    = cats;
+        _subcategories = subs;
+        _products      = prods;
+        _favorites     = new Set(favs.map(f => Number(f.id)));
     } catch (e) {
         console.error('Ошибка загрузки каталога:', e);
         document.getElementById('emptyState').classList.remove('hidden');
