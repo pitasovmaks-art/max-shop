@@ -403,7 +403,7 @@ function render() {
         const isFav  = _favorites.has(p.id);
         const favBtn = tgId
             ? `<button class="fav-btn${isFav ? ' fav-btn--active' : ''}" onclick="event.stopPropagation();toggleFav(${p.id})" aria-label="Избранное">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="${isFav ? '#F85800' : 'none'}" stroke="${isFav ? '#F85800' : 'rgba(255,255,255,0.8)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:fill .2s,stroke .2s">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="${isFav ? '#FF3B30' : 'none'}" stroke="${isFav ? '#FF3B30' : 'rgba(255,255,255,0.8)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:fill .2s,stroke .2s">
                     <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
                 </svg>
                </button>`
@@ -455,8 +455,8 @@ async function toggleFav(productId) {
         if (!btn) return;
         btn.classList.toggle('fav-btn--active', active);
         if (svg) {
-            svg.setAttribute('fill',   active ? '#F85800' : 'none');
-            svg.setAttribute('stroke', active ? '#F85800' : 'rgba(255,255,255,0.8)');
+            svg.setAttribute('fill',   active ? '#FF3B30' : 'none');
+            svg.setAttribute('stroke', active ? '#FF3B30' : 'rgba(255,255,255,0.8)');
         }
     }
     applyFavState(!wasFav);
