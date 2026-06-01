@@ -456,15 +456,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ─── Support ───────────────────────────────────────────────── */
-let _botUsername = '';
+let _supportBotUsername = 'id635009278943_1_bot';
 
 fetch('/api/config')
     .then(r => r.json())
-    .then(cfg => { _botUsername = cfg.botUsername || ''; })
+    .then(cfg => { _supportBotUsername = cfg.supportBotUsername || 'id635009278943_1_bot'; })
     .catch(() => {});
 
 function openSupport() {
-    const username = _botUsername || 'id635009278943_bot';
+    const username = _supportBotUsername;
     if (window.WebApp && window.WebApp.openLink) {
         window.WebApp.openLink(`https://max.ru/${username}`);
     } else {

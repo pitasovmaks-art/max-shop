@@ -98,10 +98,10 @@ function updateCartBadge() {
 }
 
 /* ─── Support ────────────────────────────────────────────── */
-let _botUsername = '';
-fetch('/api/config').then(r => r.json()).then(cfg => { _botUsername = cfg.botUsername || ''; }).catch(() => {});
+let _supportBotUsername = 'id635009278943_1_bot';
+fetch('/api/config').then(r => r.json()).then(cfg => { _supportBotUsername = cfg.supportBotUsername || 'id635009278943_1_bot'; }).catch(() => {});
 function openSupport() {
-    const url = `https://max.ru/${_botUsername || 'id635009278943_bot'}`;
+    const url = `https://max.ru/${_supportBotUsername}`;
     if (window.WebApp?.openLink) window.WebApp.openLink(url);
     else window.location.href = url;
 }

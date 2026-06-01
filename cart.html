@@ -107,10 +107,10 @@
     const navOrders = document.getElementById('navOrders');
     if (navOrders) navOrders.href = 'src/orders/orders.html?tg_id=' + tgId;
 })();
-let _cartBotUsername = '';
-fetch('/api/config').then(r=>r.json()).then(cfg=>{ _cartBotUsername = cfg.botUsername||''; }).catch(()=>{});
+let _cartSupportBotUsername = 'id635009278943_1_bot';
+fetch('/api/config').then(r=>r.json()).then(cfg=>{ _cartSupportBotUsername = cfg.supportBotUsername||'id635009278943_1_bot'; }).catch(()=>{});
 function openCartSupport() {
-    const url = 'https://max.ru/' + (_cartBotUsername || 'id635009278943_bot');
+    const url = 'https://max.ru/' + _cartSupportBotUsername;
     if (window.WebApp?.openLink) window.WebApp.openLink(url); else window.location.href = url;
 }
 </script>

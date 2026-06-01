@@ -26,7 +26,10 @@ app.get('/healthz', (req, res) => res.status(200).send('OK'));
 app.use(express.static(path.join(__dirname, '..')));
 
 app.get('/api/config', (req, res) => {
-    res.json({ botUsername: process.env.BOT_USERNAME || '' });
+    res.json({
+        botUsername:        process.env.BOT_USERNAME         || '',
+        supportBotUsername: process.env.SUPPORT_BOT_USERNAME || 'id635009278943_1_bot',
+    });
 });
 
 app.post('/webhook', express.json(), (req, res) => {
