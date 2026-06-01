@@ -192,6 +192,7 @@ async function processUpdate(update) {
 
         /* ── Сообщение от менеджера ── */
         if (userId && SUPPORT_ADMIN_USER_IDS.includes(userId)) {
+            console.log('[support] manager msg full:', JSON.stringify(msg));
             await dbSaveAdminMap(userId, chatId);
 
             if (text.startsWith('/reply')) {
