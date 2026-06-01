@@ -151,25 +151,36 @@ async function reorderItems(orderItems) {
 
         if (!product.inStock) { skipped++; continue; }
 
-        // Try to match the variant by name — at checkout it was saved as "Name (VariantLabel)"
+        // Select variant: city first, then label match within city variants
         let variant = null;
         if (product.variants && product.variants.length) {
+            // Step 1: filter to variants valid for current city
+            const cityVariants = city === 'krd'
+                ? product.variants.filter(v => v.isKrd  && v.priceKrdPickup  > 0)
+                : product.variants.filter(v => !v.isKrd && v.priceMskPickup  > 0);
+
+            // No variants for this city → skip as unavailable
+            if (!cityVariants.length) { skipped++; continue; }
+
+            // Step 2: among city variants try to match the original label
             const prefix = product.name + ' (';
+            let label = null;
             if (orderItem.name.startsWith(prefix) && orderItem.name.endsWith(')')) {
-                const label = orderItem.name.slice(prefix.length, -1);
-                variant = product.variants.find(v => v.label === label) || null;
+                label = orderItem.name.slice(prefix.length, -1);
             }
+            variant = (label && cityVariants.find(v => v.label === label)) || cityVariants[0];
         }
 
         const key = variant ? `${product.id}_v${variant.id}` : String(product.id);
 
-        // Build prices — same logic as catalog.js addToCart
+        // Build prices — mirrors catalog.js addToCart exactly
         let priceKrdPickup, priceMskPickup, priceMskDelivery;
         if (variant) {
             priceKrdPickup   = variant.priceKrdPickup   || 0;
             priceMskPickup   = variant.priceMskPickup   || 0;
             priceMskDelivery = variant.priceMskDelivery || 0;
         } else {
+            // Only reached when product has no variants at all
             priceKrdPickup   = product.priceKrd      || product.price || 0;
             priceMskPickup   = product.priceMsk      || product.price || 0;
             priceMskDelivery = product.priceDelivery || product.price || 0;
