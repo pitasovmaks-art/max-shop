@@ -175,6 +175,7 @@ async function processUpdate(update) {
         const senderName = msg.sender?.name || msg.sender?.username || String(userId);
 
         if (!chatId) return;
+        console.log('[support] message: userId=' + userId + ' chatId=' + chatId + ' isManager=' + SUPPORT_ADMIN_USER_IDS.includes(userId) + ' text=' + text);
         if (msg.sender?.is_bot) return;
 
         /* ── Сообщение от менеджера ── */
