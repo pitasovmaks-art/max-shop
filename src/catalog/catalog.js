@@ -501,9 +501,38 @@ async function init() {
     updateBadges();
 }
 
+/* ─── Reload favorites state (e.g. after bfcache restore) ───── */
+async function reloadFavorites() {
+    const tgId = getTgId();
+    if (!tgId) return;
+    try {
+        const favs = await apiFetch(`/api/favorites?tg_id=${encodeURIComponent(tgId)}`).catch(() => []);
+        _favorites = new Set(favs.map(f => Number(f.id)));
+        // Update all visible heart buttons without full re-render
+        document.querySelectorAll('.fav-btn').forEach(btn => {
+            const card = btn.closest('[id^="pcard-"]');
+            if (!card) return;
+            const productId = Number(card.id.replace('pcard-', ''));
+            const active    = _favorites.has(productId);
+            btn.classList.toggle('fav-btn--active', active);
+            const svg = btn.querySelector('svg');
+            if (svg) {
+                svg.setAttribute('fill',   active ? '#FF3B30' : 'none');
+                svg.setAttribute('stroke', active ? '#FF3B30' : 'rgba(255,255,255,0.8)');
+            }
+        });
+    } catch (e) {
+        console.error('[favorites] reloadFavorites error:', e);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     renderCityList('');
     if (detectCity()) init();
+});
+
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) reloadFavorites();
 });
 
 /* ─── Support ───────────────────────────────────────────────── */
