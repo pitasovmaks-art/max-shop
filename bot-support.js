@@ -130,7 +130,6 @@ async function processUpdate(update) {
             const userId = update.user?.user_id;
             if (!chatId) return;
 
-            // Если это менеджер — сохранить его chatId в этом боте
             if (userId && SUPPORT_ADMIN_USER_IDS.includes(userId)) {
                 const map = loadAdminMap();
                 if (map[userId] !== chatId) {
@@ -143,8 +142,8 @@ async function processUpdate(update) {
             }
 
             await sendMessage(chatId,
-                '👋 Здравствуйте! Это служба поддержки магазина Точка Монтажа.\n\n' +
-                'Опишите ваш вопрос или проблему, и наши менеджеры свяжутся с вами в ближайшее время.'
+                '👋 Здравствуйте! Это служба поддержки магазина Точка Монтажа. ' +
+                'Опишите ваш вопрос или проблему, и мы свяжемся с вами в ближайшее время.'
             );
             return;
         }
@@ -187,20 +186,9 @@ async function processUpdate(update) {
         }
 
         /* ── Сообщение от клиента ── */
-        const known   = loadKnown();
-        const isFirst = !known.includes(chatId);
-
-        if (isFirst) {
-            await sendMessage(chatId,
-                '👋 Здравствуйте! Это служба поддержки магазина Точка Монтажа.\n\n' +
-                'Опишите ваш вопрос или проблему, и наши менеджеры свяжутся с вами в ближайшее время.'
-            );
-            saveKnown([...known, chatId]);
-        } else {
-            await sendMessage(chatId,
-                '✅ Спасибо за обращение! Ваш вопрос передан менеджерам. Мы ответим в ближайшее время.'
-            );
-        }
+        await sendMessage(chatId,
+            '✅ Спасибо за обращение! Мы получили ваше сообщение и передали его менеджерам. Скоро вернёмся с ответом.'
+        );
 
         /* ── Переслать менеджерам чьи chatId уже известны ── */
         const adminMap    = loadAdminMap();
