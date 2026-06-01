@@ -38,6 +38,7 @@ app.post('/webhook', express.json(), (req, res) => {
 });
 
 app.post('/webhook-support', express.json(), (req, res) => {
+    console.log('[support] webhook получил запрос:', JSON.stringify(req.body).slice(0, 200));
     res.sendStatus(200);
     try {
         require('../bot-support').processUpdate(req.body).catch(e => console.error('[support] processUpdate:', e.message));
