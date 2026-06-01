@@ -65,11 +65,16 @@ tg_id: ${_tgId || 'НЕТ'}</div>
 
     content.querySelectorAll('.reorder-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            try {
-                reorderItems(JSON.parse(decodeURIComponent(btn.dataset.items)));
-            } catch (e) {
-                console.error('reorder parse error:', e);
-            }
+            if (btn.disabled) return;
+            let items;
+            try { items = JSON.parse(decodeURIComponent(btn.dataset.items)); }
+            catch (e) { console.error('reorder parse error:', e); return; }
+            btn.disabled = true;
+            btn.textContent = '⏳ Загружаем...';
+            reorderItems(items).finally(() => {
+                btn.disabled = false;
+                btn.textContent = '🔄 Заказать снова';
+            });
         });
     });
 }
@@ -128,32 +133,76 @@ function updateNavLinks() {
 }
 
 /* ─── Reorder ────────────────────────────────────────────── */
-function reorderItems(items) {
-    try {
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-            .map(i => ({ ...i, key: i.key || String(i.id) }));
+async function reorderItems(orderItems) {
+    const city = localStorage.getItem('city');
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+        .map(i => ({ ...i, key: i.key || String(i.id) }));
 
-        for (const item of items) {
-            const key      = String(item.id);
-            const existing = cart.find(i => i.key === key);
-            if (existing) {
-                existing.qty += item.qty;
-            } else {
-                cart.push({
-                    key,
-                    id:    item.id,
-                    name:  item.name,
-                    price: item.price,
-                    qty:   item.qty,
-                });
+    let added = 0, skipped = 0;
+
+    for (const orderItem of orderItems) {
+        // Fetch actual product data (includes variants, image, actual prices)
+        let product;
+        try {
+            const r = await fetch(`/api/products/${orderItem.id}`);
+            if (!r.ok) { skipped++; continue; }
+            product = await r.json();
+        } catch { skipped++; continue; }
+
+        if (!product.inStock) { skipped++; continue; }
+
+        // Try to match the variant by name — at checkout it was saved as "Name (VariantLabel)"
+        let variant = null;
+        if (product.variants && product.variants.length) {
+            const prefix = product.name + ' (';
+            if (orderItem.name.startsWith(prefix) && orderItem.name.endsWith(')')) {
+                const label = orderItem.name.slice(prefix.length, -1);
+                variant = product.variants.find(v => v.label === label) || null;
             }
         }
 
-        localStorage.setItem('cart', JSON.stringify(cart));
-        updateCartBadge();
+        const key = variant ? `${product.id}_v${variant.id}` : String(product.id);
+
+        // Build prices — same logic as catalog.js addToCart
+        let priceKrdPickup, priceMskPickup, priceMskDelivery;
+        if (variant) {
+            priceKrdPickup   = variant.priceKrdPickup   || 0;
+            priceMskPickup   = variant.priceMskPickup   || 0;
+            priceMskDelivery = variant.priceMskDelivery || 0;
+        } else {
+            priceKrdPickup   = product.priceKrd      || product.price || 0;
+            priceMskPickup   = product.priceMsk      || product.price || 0;
+            priceMskDelivery = product.priceDelivery || product.price || 0;
+        }
+        const price = city === 'krd' ? priceKrdPickup : priceMskPickup;
+
+        const existing = cart.find(i => i.key === key);
+        if (existing) {
+            existing.qty += orderItem.qty;
+        } else {
+            const cartItem = {
+                key, id: product.id, name: product.name,
+                price, priceKrdPickup, priceMskPickup, priceMskDelivery,
+                priceDelivery: priceMskDelivery,
+                qty:        orderItem.qty,
+                categoryId: product.categoryId,
+                image:      product.image || undefined,
+            };
+            if (variant) { cartItem.variantId = variant.id; cartItem.variantLabel = variant.label; }
+            cart.push(cartItem);
+        }
+        added++;
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartBadge();
+
+    if (skipped === 0) {
         showReorderToast('✓ Товары добавлены в корзину');
-    } catch (e) {
-        console.error('reorderItems error:', e);
+    } else if (added > 0) {
+        showReorderToast(`✓ Добавлено: ${added}. ⚠️ Недоступно: ${skipped}`);
+    } else {
+        showReorderToast('⚠️ Товары из этого заказа больше недоступны');
     }
 }
 
