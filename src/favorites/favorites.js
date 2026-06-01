@@ -115,11 +115,20 @@ function renderFavorites(products) {
     }
 
     main.innerHTML = `<div class="products-grid">${products.map(p => {
-        const price    = getPrice(p);
+        const hasVariants   = p.variants && p.variants.length > 0;
+        const effectiveVar  = _effectiveVariant(p);
+        const unavailable   = hasVariants && !effectiveVar;   // variants exist but none for current city
+
+        const price    = unavailable ? 0 : getPrice(p);
         const imgBg    = p.image ? '' : 'img-bg--default';
         const imgIcon  = p.image ? `<img class="product-card__photo" src="${p.image}" alt="${p.name}">` : '📦';
-        const priceStr = price > 0 ? fmt(price) : (p.priceLabel || fmt(p.price || 0));
-        const addBtn   = p.inStock
+        const priceStr = unavailable
+            ? `<span style="display:flex;flex-direction:column;gap:2px">
+                <span style="color:rgba(255,255,255,0.5);font-size:11px;font-weight:500">Доступен в другом городе</span>
+                <span style="color:rgba(255,255,255,0.35);font-size:10px;font-weight:400">Смените город, чтобы заказать</span>
+               </span>`
+            : (price > 0 ? fmt(price) : (p.priceLabel || fmt(p.price || 0)));
+        const addBtn   = (!unavailable && p.inStock)
             ? `<button class="add-btn" onclick="event.stopPropagation();_addToCart(${p.id})" aria-label="В корзину">+</button>`
             : `<button class="add-btn add-btn--disabled" disabled>+</button>`;
         return `
