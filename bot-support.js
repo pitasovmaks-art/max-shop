@@ -192,9 +192,21 @@ async function processUpdate(update) {
 
         /* ── Сообщение от менеджера ── */
         if (userId && SUPPORT_ADMIN_USER_IDS.includes(userId)) {
-            console.log('[support] manager msg full:', JSON.stringify(msg));
             await dbSaveAdminMap(userId, chatId);
 
+            /* Способ 1: свайп-reply на пересланное сообщение клиента */
+            const replyLink = msg.link;
+            if (replyLink && replyLink.type === 'reply' && replyLink.message?.text) {
+                const idMatch = replyLink.message.text.match(/ID:\s*(\d+)/);
+                if (idMatch) {
+                    const clientChatId = Number(idMatch[1]);
+                    await sendMessage(clientChatId, `💬 Ответ от поддержки Точки Монтажа:\n\n${text}`);
+                    await sendMessage(chatId, '✅ Ответ отправлен клиенту');
+                    return;
+                }
+            }
+
+            /* Способ 2: /reply <chat_id> <текст> */
             if (text.startsWith('/reply')) {
                 const match = text.match(/^\/reply\s+(\d+)\s+([\s\S]+)$/);
                 if (!match) {
