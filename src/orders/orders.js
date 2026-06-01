@@ -37,8 +37,9 @@ tg_id: ${_tgId || 'НЕТ'}</div>
         const date = new Date(o.createdAt).toLocaleString('ru-RU', {
             day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
         });
-        const itemsText = o.items.map(i => `${i.name} × ${i.qty}`).join(', ');
-        const trackBtn  = o.trackingNumber
+        const itemsText  = o.items.map(i => `${i.name} × ${i.qty}`).join(', ');
+        const itemsData  = encodeURIComponent(JSON.stringify(o.items));
+        const trackBtn   = o.trackingNumber
             ? `<a class="track-btn" href="https://www.cdek.ru/ru/tracking?order_id=${encodeURIComponent(o.trackingNumber)}" target="_blank">
                    📦 Отследить посылку
                </a>`
@@ -58,8 +59,19 @@ tg_id: ${_tgId || 'НЕТ'}</div>
             ${o.trackingNumber ? `<div class="order-card__tracking">🔖 Трек-номер: ${o.trackingNumber}</div>` : ''}
             ${trackBtn}
             <div class="order-card__total">${fmt(o.total)}</div>
+            <button class="reorder-btn" data-items="${itemsData}">🔄 Заказать снова</button>
         </div>`;
     }).join('');
+
+    content.querySelectorAll('.reorder-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            try {
+                reorderItems(JSON.parse(decodeURIComponent(btn.dataset.items)));
+            } catch (e) {
+                console.error('reorder parse error:', e);
+            }
+        });
+    });
 }
 
 async function init() {
@@ -113,6 +125,50 @@ function updateNavLinks() {
     if (navCatalog) navCatalog.href = `../../index.html?tg_id=${_tgId}`;
     const navCart = document.getElementById('navCart');
     if (navCart) navCart.href = `../../cart.html?tg_id=${_tgId}`;
+}
+
+/* ─── Reorder ────────────────────────────────────────────── */
+function reorderItems(items) {
+    try {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+            .map(i => ({ ...i, key: i.key || String(i.id) }));
+
+        for (const item of items) {
+            const key      = String(item.id);
+            const existing = cart.find(i => i.key === key);
+            if (existing) {
+                existing.qty += item.qty;
+            } else {
+                cart.push({
+                    key,
+                    id:    item.id,
+                    name:  item.name,
+                    price: item.price,
+                    qty:   item.qty,
+                });
+            }
+        }
+
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartBadge();
+        showReorderToast('✓ Товары добавлены в корзину');
+    } catch (e) {
+        console.error('reorderItems error:', e);
+    }
+}
+
+function showReorderToast(msg) {
+    let toast = document.getElementById('reorderToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'reorderToast';
+        toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,0.9);backdrop-filter:blur(10px);color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
