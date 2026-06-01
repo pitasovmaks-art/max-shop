@@ -55,6 +55,7 @@ app.use('/api/orders',        require('./routes/orders'));
 app.use('/api/stores',        require('./routes/stores'));
 app.use('/api/cdek',          require('./routes/cdek'));
 app.use('/api/users',         require('./routes/users'));
+app.use('/api/support',       require('./routes/support'));
 
 /* Reset data to defaults (admin only) */
 app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, async (req, res) => {

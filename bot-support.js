@@ -2,42 +2,62 @@
    Max Messenger Support Bot — Точка Монтажа
    ───────────────────────────────────────────────────────── */
 const https = require('https');
-const fs    = require('fs');
 const path  = require('path');
 
-const API_BASE              = 'platform-api.max.ru';
-const TOKEN                 = process.env.SUPPORT_BOT_TOKEN || '';
-const WEBHOOK_BASE          = (process.env.WEBHOOK_URL || 'https://pitasovmaks-art-max-shop-c149.twc1.net/webhook').replace('/webhook', '');
-const SUPPORT_WEBHOOK_URL   = WEBHOOK_BASE + '/webhook-support';
+const API_BASE               = 'platform-api.max.ru';
+const TOKEN                  = process.env.SUPPORT_BOT_TOKEN || '';
+const WEBHOOK_BASE           = (process.env.WEBHOOK_URL || 'https://pitasovmaks-art-max-shop-c149.twc1.net/webhook').replace('/webhook', '');
+const SUPPORT_WEBHOOK_URL    = WEBHOOK_BASE + '/webhook-support';
 const SUPPORT_ADMIN_USER_IDS = [5149723, 100067838];   // user_id одинаков у обоих ботов
-const KNOWN_FILE            = path.join(__dirname, 'bot_support_known_users.json');
-const ADMIN_MAP_FILE        = path.join(__dirname, 'bot_support_admins.json');
 
-/* ─── Known users ───────────────────────────────────────── */
-function loadKnown() {
+/* ─── DB helpers (прямой доступ, тот же процесс) ────────── */
+function getDb() {
+    try { return require('./server/db'); } catch (e) { return null; }
+}
+
+async function dbSaveAdminMap(userId, chatId) {
     try {
-        if (!fs.existsSync(KNOWN_FILE)) return [];
-        return JSON.parse(fs.readFileSync(KNOWN_FILE, 'utf8'));
-    } catch (e) { return []; }
+        const db = getDb();
+        if (!db) return;
+        await db.execute(
+            `INSERT INTO support_admins (user_id, chat_id, updated_at)
+             VALUES ($1, $2, NOW())
+             ON CONFLICT (user_id) DO UPDATE SET chat_id = $2, updated_at = NOW()`,
+            [String(userId), String(chatId)]
+        );
+    } catch (e) {
+        console.error('[support] dbSaveAdminMap ошибка:', e.message);
+    }
 }
 
-function saveKnown(ids) {
-    try { fs.writeFileSync(KNOWN_FILE, JSON.stringify(ids)); } catch (e) {}
-}
-
-/* ─── Admin map: { userId: chatId } ────────────────────── */
-function loadAdminMap() {
+async function dbLoadAdminMap() {
     try {
-        if (!fs.existsSync(ADMIN_MAP_FILE)) return {};
-        return JSON.parse(fs.readFileSync(ADMIN_MAP_FILE, 'utf8'));
-    } catch (e) { return {}; }
+        const db = getDb();
+        if (!db) return {};
+        const rows = await db.query('SELECT user_id, chat_id FROM support_admins');
+        const map = {};
+        for (const row of rows) map[row.user_id] = row.chat_id;
+        return map;
+    } catch (e) {
+        console.error('[support] dbLoadAdminMap ошибка:', e.message);
+        return {};
+    }
 }
 
-function saveAdminMap(map) {
-    try { fs.writeFileSync(ADMIN_MAP_FILE, JSON.stringify(map)); } catch (e) {}
+async function dbMarkKnown(chatId) {
+    try {
+        const db = getDb();
+        if (!db) return;
+        await db.execute(
+            `INSERT INTO support_known (chat_id) VALUES ($1) ON CONFLICT DO NOTHING`,
+            [String(chatId)]
+        );
+    } catch (e) {
+        console.error('[support] dbMarkKnown ошибка:', e.message);
+    }
 }
 
-/* ─── HTTP helper ───────────────────────────────────────── */
+/* ─── HTTP helper (Max API) ─────────────────────────────── */
 function request(method, endpoint, body = null) {
     return new Promise((resolve, reject) => {
         const data = body ? JSON.stringify(body) : null;
@@ -131,12 +151,8 @@ async function processUpdate(update) {
             if (!chatId) return;
 
             if (userId && SUPPORT_ADMIN_USER_IDS.includes(userId)) {
-                const map = loadAdminMap();
-                if (map[userId] !== chatId) {
-                    map[userId] = chatId;
-                    saveAdminMap(map);
-                    console.log(`[support] Менеджер зарегистрирован: userId=${userId} chatId=${chatId}`);
-                }
+                await dbSaveAdminMap(userId, chatId);
+                console.log(`[support] Менеджер зарегистрирован: userId=${userId} chatId=${chatId}`);
                 await sendMessage(chatId, '✅ Вы зарегистрированы как менеджер поддержки. Клиентские обращения будут приходить сюда.');
                 return;
             }
@@ -161,16 +177,10 @@ async function processUpdate(update) {
         if (!chatId) return;
         if (msg.sender?.is_bot) return;
 
-        /* ── Любое сообщение от менеджера — обновить маппинг ── */
+        /* ── Сообщение от менеджера ── */
         if (userId && SUPPORT_ADMIN_USER_IDS.includes(userId)) {
-            const map = loadAdminMap();
-            if (map[userId] !== chatId) {
-                map[userId] = chatId;
-                saveAdminMap(map);
-                console.log(`[support] Менеджер обновил chatId: userId=${userId} chatId=${chatId}`);
-            }
+            await dbSaveAdminMap(userId, chatId);
 
-            /* ── /reply <client_chat_id> <текст> ── */
             if (text.startsWith('/reply')) {
                 const match = text.match(/^\/reply\s+(\d+)\s+([\s\S]+)$/);
                 if (!match) {
@@ -186,12 +196,14 @@ async function processUpdate(update) {
         }
 
         /* ── Сообщение от клиента ── */
+        await dbMarkKnown(chatId);
+
         await sendMessage(chatId,
             '✅ Спасибо за обращение! Мы получили ваше сообщение и передали его менеджерам. Скоро вернёмся с ответом.'
         );
 
-        /* ── Переслать менеджерам чьи chatId уже известны ── */
-        const adminMap    = loadAdminMap();
+        /* ── Переслать менеджерам из БД ── */
+        const adminMap    = await dbLoadAdminMap();
         const knownAdmins = Object.values(adminMap);
 
         if (knownAdmins.length === 0) {
