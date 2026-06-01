@@ -108,7 +108,9 @@ function render() {
 
         return `
         <div class="cart-item" id="item-${item.key}">
-            <div class="cart-item__img ${meta.bg}">${meta.icon}</div>
+            ${item.image
+                ? `<div class="cart-item__img"><img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px"></div>`
+                : `<div class="cart-item__img ${meta.bg}">${meta.icon}</div>`}
             <div class="cart-item__info">
                 <div class="cart-item__name">${item.name}</div>
                 ${item.variantLabel ? `<div class="cart-item__variant">${item.variantLabel}</div>` : ''}

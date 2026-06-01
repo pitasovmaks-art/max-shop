@@ -224,6 +224,7 @@ function addToCart(productId) {
             price, priceKrdPickup, priceMskPickup, priceMskDelivery,
             priceDelivery: priceMskDelivery,
             qty: 1, categoryId: product.categoryId,
+            image: product.image || undefined,
         };
         if (variant) { item.variantId = variant.id; item.variantLabel = variant.label; }
         cart.push(item);
