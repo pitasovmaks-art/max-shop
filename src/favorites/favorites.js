@@ -1,6 +1,11 @@
 const _tgId = getTgId() || '';
 const _city = localStorage.getItem('city') || '';
 
+function goBack() {
+    const tgId = getTgId();
+    window.location.href = tgId ? `/index.html?tg_id=${tgId}` : '/index.html';
+}
+
 /* ─── Helpers ───────────────────────────────────────────── */
 function fmt(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
 
