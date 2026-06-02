@@ -2,7 +2,8 @@
 let _categories    = [];
 let _subcategories = [];
 let _products      = [];
-let _favorites     = new Set();  // Set of product_id (Number)
+let _favorites     = new Set();      // Set of product_id (Number)
+let _subscriptions = new Set();      // product_ids subscribed for restock notifications
 
 /* ─── City ──────────────────────────────────────────────────── */
 let _city = localStorage.getItem('city') || null;
@@ -423,9 +424,17 @@ function render() {
             </div>`;
         }
 
-        const btn = p.inStock
-            ? `<button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})" aria-label="В корзину">+</button>`
-            : `<button class="add-btn add-btn--disabled" disabled>+</button>`;
+        let btn;
+        if (p.inStock) {
+            btn = `<button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})" aria-label="В корзину">+</button>`;
+        } else if (tgId) {
+            const subscribed = _subscriptions.has(p.id);
+            btn = subscribed
+                ? `<button class="add-btn add-btn--subscribed" disabled aria-label="Вы подписаны">✓</button>`
+                : `<button class="add-btn add-btn--notify" onclick="event.stopPropagation();subscribeNotify(${p.id})" aria-label="Уведомить о поступлении">🔔</button>`;
+        } else {
+            btn = `<button class="add-btn add-btn--disabled" disabled>+</button>`;
+        }
 
         return `
         <div class="product-card" id="pcard-${p.id}" onclick="openProduct(${p.id})">
@@ -470,6 +479,29 @@ async function toggleFav(productId) {
     });
 }
 
+/* ─── Stock notify ───────────────────────────────────────────── */
+async function subscribeNotify(productId) {
+    const tgId = getTgId();
+    if (!tgId) { showToast('Откройте магазин через бота в Max Messenger'); return; }
+    try {
+        await fetch('/api/stock-notify', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ tgId, productId }),
+        });
+        _subscriptions.add(productId);
+        const btn = document.querySelector(`#pcard-${productId} .add-btn--notify`);
+        if (btn) {
+            btn.classList.replace('add-btn--notify', 'add-btn--subscribed');
+            btn.disabled = true;
+            btn.textContent = '✓';
+            btn.setAttribute('aria-label', 'Вы подписаны');
+            btn.onclick = null;
+        }
+        showToast('🔔 Уведомим когда товар появится');
+    } catch { showToast('Ошибка. Попробуйте снова'); }
+}
+
 function openFavorites() {
     const tgId = getTgId();
     const base = 'src/favorites/favorites.html';
@@ -480,16 +512,18 @@ function openFavorites() {
 async function init() {
     const tgId = getTgId();
     try {
-        const [cats, subs, prods, favs] = await Promise.all([
+        const [cats, subs, prods, favs, stockSubs] = await Promise.all([
             apiFetch('/api/categories'),
             apiFetch('/api/subcategories'),
             apiFetch('/api/products'),
             tgId ? apiFetch(`/api/favorites?tg_id=${encodeURIComponent(tgId)}`).catch(() => []) : Promise.resolve([]),
+            tgId ? apiFetch(`/api/stock-notify/list?tg_id=${encodeURIComponent(tgId)}`).catch(() => []) : Promise.resolve([]),
         ]);
         _categories    = cats;
         _subcategories = subs;
         _products      = prods;
         _favorites     = new Set(favs.map(f => Number(f.id)));
+        _subscriptions = new Set((stockSubs || []).map(id => Number(id)));
     } catch (e) {
         console.error('Ошибка загрузки каталога:', e);
         document.getElementById('emptyState').classList.remove('hidden');

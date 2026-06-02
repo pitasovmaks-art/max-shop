@@ -351,6 +351,38 @@ async function notifyCustomer(tgId, orderId, status, extra) {
     }
 }
 
+/* ─── Notify: back in stock ─────────────────────────────── */
+async function notifyStock(tgId, productName) {
+    if (!TOKEN || !tgId) return;
+    const text = `🔔 Товар «${productName}» снова в наличии! Успейте заказать.`;
+    const trySend = async (id) => {
+        const result = await sendMessage(+id, text);
+        console.log(`[bot] notifyStock OK: tg_id=${tgId} product=${productName}`, result);
+    };
+    try {
+        await trySend(tgId);
+    } catch (e) {
+        console.error(`[bot] notifyStock FAIL first try: tg_id=${tgId}`, e.message);
+        try {
+            const base = process.env.WEBHOOK_URL
+                ? process.env.WEBHOOK_URL.replace('/webhook', '')
+                : 'http://localhost:3000';
+            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            if (r.ok) {
+                const data = await r.json();
+                if (data.chatId && data.chatId !== String(tgId)) {
+                    console.log(`[bot] notifyStock retry with chatId=${data.chatId}`);
+                    await trySend(data.chatId);
+                    return;
+                }
+            }
+        } catch (e2) {
+            console.error(`[bot] notifyStock user_map lookup failed:`, e2.message);
+        }
+        console.error(`[bot] notifyStock FAIL final: tg_id=${tgId} product=${productName}`, e.message);
+    }
+}
+
 /* ─── Start bot ─────────────────────────────────────────── */
 function startBot() {
     if (!TOKEN) {
@@ -361,4 +393,4 @@ function startBot() {
     registerWebhook();
 }
 
-module.exports = { startBot, notifyStore, processUpdate, notifyCustomer };
+module.exports = { startBot, notifyStore, processUpdate, notifyCustomer, notifyStock };

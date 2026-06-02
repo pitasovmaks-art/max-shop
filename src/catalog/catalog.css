@@ -321,6 +321,10 @@ a      { text-decoration: none; color: inherit; }
 .add-btn:active           { background: #D94F00; transform: scale(.9); }
 .add-btn--disabled        { background: #CCCCCC; color: #FFFFFF; opacity: 1; cursor: default; }
 .add-btn--disabled:active { background: #CCCCCC; transform: none; }
+.add-btn--notify          { background: #5856D6; font-size: 16px; }
+.add-btn--notify:active   { background: #4340C4; transform: scale(.9); }
+.add-btn--subscribed      { background: #34C759; color: #FFFFFF; cursor: default; font-size: 16px; font-weight: 700; }
+.add-btn--subscribed:active { background: #34C759; transform: none; }
 .add-btn--service {
     width: auto;
     border-radius: 10px;

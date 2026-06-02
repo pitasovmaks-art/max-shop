@@ -145,6 +145,11 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
     const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, priceLabel, image } = req.body;
     try {
+        const current = await db.queryOne('SELECT in_stock FROM products WHERE id=$1', [+req.params.id]);
+        if (!current) return res.status(404).json({ error: 'Not found' });
+        const wasInStock = current.in_stock === 1;
+        const nowInStock = !!inStock;
+
         const changed = await db.execute(
             `UPDATE products
              SET name=$1,"desc"=$2,category_id=$3,sub_id=$4,price=$5,
@@ -159,6 +164,39 @@ router.put('/:id', requireAdmin, async (req, res) => {
         const product = normalize(await db.queryOne('SELECT * FROM products WHERE id=$1', [+req.params.id]));
         await attachVariants([product]);
         res.json(product);
+
+        // false → true: notify subscribers asynchronously after response
+        if (!wasInStock && nowInStock) {
+            setImmediate(async () => {
+                try {
+                    const subs = await db.query(
+                        'SELECT tg_id FROM stock_subscriptions WHERE product_id=$1 AND notified=FALSE',
+                        [+req.params.id]
+                    );
+                    if (!subs.length) return;
+                    const { notifyStock } = require('../../bot');
+                    for (const s of subs) {
+                        await notifyStock(s.tg_id, product.name);
+                        await new Promise(r => setTimeout(r, 250));
+                    }
+                    await db.execute(
+                        'UPDATE stock_subscriptions SET notified=TRUE WHERE product_id=$1 AND notified=FALSE',
+                        [+req.params.id]
+                    );
+                    console.log(`[stock-notify] Notified ${subs.length} subscriber(s) for product ${req.params.id}`);
+                } catch (e) {
+                    console.error('[stock-notify] Notify error:', e.message);
+                }
+            });
+        }
+
+        // true → false: reset notified so subscribers are notified again on next restock
+        if (wasInStock && !nowInStock) {
+            db.execute(
+                'UPDATE stock_subscriptions SET notified=FALSE WHERE product_id=$1',
+                [+req.params.id]
+            ).catch(e => console.error('[stock-notify] Reset error:', e.message));
+        }
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

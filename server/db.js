@@ -144,6 +144,16 @@ async function createSchema() {
         )
     `);
     await pool.query(`
+        CREATE TABLE IF NOT EXISTS stock_subscriptions (
+            id         SERIAL  PRIMARY KEY,
+            tg_id      BIGINT  NOT NULL,
+            product_id BIGINT  NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW(),
+            notified   BOOLEAN DEFAULT FALSE,
+            UNIQUE(tg_id, product_id)
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS stores (
             id         SERIAL  PRIMARY KEY,
             name       TEXT    NOT NULL,

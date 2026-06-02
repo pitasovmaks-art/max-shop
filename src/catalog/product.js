@@ -223,9 +223,16 @@ function renderInfo() {
 
     const btn = document.getElementById('addToCartBtn');
     if (!_product.inStock) {
-        btn.classList.add('add-to-cart-btn--disabled');
-        btn.disabled = true;
-        btn.textContent = 'Нет в наличии';
+        const tgId = getTgId();
+        if (tgId) {
+            btn.textContent = '🔔 Сообщить о поступлении';
+            btn.onclick = subscribeNotifyProduct;
+            setupNotifyBtn();  // async: replaces to "✓ Вы подписаны" if already subscribed
+        } else {
+            btn.classList.add('add-to-cart-btn--disabled');
+            btn.disabled = true;
+            btn.textContent = 'Нет в наличии';
+        }
     } else {
         btn.textContent = _product.isService ? 'Записаться' : 'В корзину';
         btn.onclick = addToCart;
@@ -267,6 +274,41 @@ function addToCart() {
     }
     saveCart(cart);
     showToast('✓ Добавлено в корзину');
+}
+
+/* ─── Stock notify ───────────────────────────────────────────── */
+async function setupNotifyBtn() {
+    const tgId = getTgId();
+    if (!tgId || !_product || _product.inStock) return;
+    try {
+        const r = await fetch(`/api/stock-notify/check?tg_id=${encodeURIComponent(tgId)}&product_id=${_product.id}`);
+        const data = await r.json();
+        if (data.subscribed) applySubscribedState();
+    } catch {}
+}
+
+function applySubscribedState() {
+    const btn = document.getElementById('addToCartBtn');
+    if (!btn) return;
+    btn.classList.remove('add-to-cart-btn--disabled');
+    btn.classList.add('add-to-cart-btn--subscribed');
+    btn.disabled = true;
+    btn.textContent = '✓ Вы подписаны';
+    btn.onclick = null;
+}
+
+async function subscribeNotifyProduct() {
+    const tgId = getTgId();
+    if (!tgId) { showToast('Откройте магазин через бота в Max Messenger'); return; }
+    try {
+        await fetch('/api/stock-notify', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ tgId, productId: _product.id }),
+        });
+        applySubscribedState();
+        showToast('🔔 Уведомим когда товар появится');
+    } catch { showToast('Ошибка. Попробуйте снова'); }
 }
 
 /* ─── Init ──────────────────────────────────────────────────── */

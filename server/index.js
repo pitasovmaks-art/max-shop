@@ -58,6 +58,7 @@ app.use('/api/cdek',          require('./routes/cdek'));
 app.use('/api/users',         require('./routes/users'));
 app.use('/api/support',       require('./routes/support'));
 app.use('/api/favorites',     require('./routes/favorites'));
+app.use('/api/stock-notify', require('./routes/stock-notify'));
 
 /* Reset data to defaults (admin only) */
 app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, async (req, res) => {
