@@ -531,8 +531,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (detectCity()) init();
 });
 
-window.addEventListener('pageshow', (event) => {
-    if (event.persisted) reloadFavorites();
+window.addEventListener('pageshow', () => {
+    reloadFavorites();
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') reloadFavorites();
 });
 
 /* ─── Support ───────────────────────────────────────────────── */
