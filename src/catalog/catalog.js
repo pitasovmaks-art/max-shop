@@ -504,6 +504,7 @@ async function init() {
 /* ─── Reload favorites state (e.g. after bfcache restore) ───── */
 async function reloadFavorites() {
     const tgId = getTgId();
+    console.log('[fav] reloadFavorites вызван, tgId=', tgId);
     if (!tgId) return;
     try {
         const favs = await apiFetch(`/api/favorites?tg_id=${encodeURIComponent(tgId)}`).catch(() => []);
@@ -531,11 +532,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (detectCity()) init();
 });
 
-window.addEventListener('pageshow', () => {
+window.addEventListener('pageshow', (event) => {
+    console.log('[fav] pageshow событие, persisted=', event.persisted);
     reloadFavorites();
 });
 
 document.addEventListener('visibilitychange', () => {
+    console.log('[fav] visibilitychange:', document.visibilityState);
     if (document.visibilityState === 'visible') reloadFavorites();
 });
 
