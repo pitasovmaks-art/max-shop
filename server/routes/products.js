@@ -190,12 +190,12 @@ router.put('/:id', requireAdmin, async (req, res) => {
             });
         }
 
-        // true → false: reset notified so subscribers are notified again on next restock
+        // true → false: delete already-notified rows so users must re-subscribe for next cycle
         if (wasInStock && !nowInStock) {
             db.execute(
-                'UPDATE stock_subscriptions SET notified=FALSE WHERE product_id=$1',
+                'DELETE FROM stock_subscriptions WHERE product_id=$1 AND notified=TRUE',
                 [+req.params.id]
-            ).catch(e => console.error('[stock-notify] Reset error:', e.message));
+            ).catch(e => console.error('[stock-notify] Cleanup error:', e.message));
         }
     } catch (e) { res.status(500).json({ error: e.message }); }
 });

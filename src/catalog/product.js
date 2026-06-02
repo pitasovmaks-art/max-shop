@@ -293,7 +293,7 @@ function applySubscribedState() {
     btn.classList.remove('add-to-cart-btn--disabled');
     btn.classList.add('add-to-cart-btn--subscribed');
     btn.disabled = true;
-    btn.textContent = '✓ Вы подписаны';
+    btn.textContent = '🔔 Вы подписаны';
     btn.onclick = null;
 }
 

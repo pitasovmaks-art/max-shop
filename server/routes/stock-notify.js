@@ -22,20 +22,20 @@ router.get('/check', async (req, res) => {
     if (!tg_id || !product_id) return res.status(400).json({ error: 'tg_id and product_id required' });
     try {
         const row = await db.queryOne(
-            'SELECT id FROM stock_subscriptions WHERE tg_id=$1 AND product_id=$2',
+            'SELECT id FROM stock_subscriptions WHERE tg_id=$1 AND product_id=$2 AND notified=FALSE',
             [+tg_id, +product_id]
         );
         res.json({ subscribed: !!row });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/* GET /list?tg_id=... — all subscribed product_ids for one user */
+/* GET /list?tg_id=... — active (unnotified) subscriptions for one user */
 router.get('/list', async (req, res) => {
     const { tg_id } = req.query;
     if (!tg_id) return res.status(400).json({ error: 'tg_id required' });
     try {
         const rows = await db.query(
-            'SELECT product_id FROM stock_subscriptions WHERE tg_id=$1',
+            'SELECT product_id FROM stock_subscriptions WHERE tg_id=$1 AND notified=FALSE',
             [+tg_id]
         );
         res.json(rows.map(r => Number(r.product_id)));

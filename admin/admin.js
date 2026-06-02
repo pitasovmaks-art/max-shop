@@ -1004,7 +1004,7 @@ async function quickToggleStock(id) {
         });
         const idx = _products.findIndex(p => p.id === id);
         if (idx !== -1) _products[idx] = { ..._products[idx], ...updated };
-        renderProductList();
+        renderList();
         showToast(newStock ? '✓ Наличие обновлено: В наличии' : '✓ Наличие обновлено: Нет в наличии');
     } catch (e) {
         if (btn) { btn.disabled = false; btn.style.opacity = ''; }
