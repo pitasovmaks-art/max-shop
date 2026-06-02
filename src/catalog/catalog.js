@@ -495,6 +495,7 @@ async function init() {
         document.getElementById('emptyState').classList.remove('hidden');
         document.getElementById('resultsCount').textContent = 'Ошибка загрузки';
     }
+    localStorage.removeItem('favorites_changed');
     renderCategoryFilters();
     renderSubFilters();
     render();
@@ -522,6 +523,7 @@ async function reloadFavorites() {
                 svg.setAttribute('stroke', active ? '#FF3B30' : 'rgba(255,255,255,0.8)');
             }
         });
+        localStorage.removeItem('favorites_changed');
     } catch (e) {
         console.error('[favorites] reloadFavorites error:', e);
     }
@@ -534,12 +536,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('pageshow', (event) => {
     console.log('[fav] pageshow событие, persisted=', event.persisted);
-    reloadFavorites();
+    if (localStorage.getItem('favorites_changed')) reloadFavorites();
 });
 
 document.addEventListener('visibilitychange', () => {
     console.log('[fav] visibilitychange:', document.visibilityState);
-    if (document.visibilityState === 'visible') reloadFavorites();
+    if (document.visibilityState === 'visible' && localStorage.getItem('favorites_changed')) reloadFavorites();
 });
 
 /* ─── Support ───────────────────────────────────────────────── */

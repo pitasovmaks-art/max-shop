@@ -80,7 +80,7 @@ async function removeFav(productId, products) {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ tgId: _tgId, productId }),
     }).catch(() => {});
-    // Re-render without this product
+    localStorage.setItem('favorites_changed', Date.now().toString());
     renderFavorites(products.filter(p => p.id !== productId));
 }
 
