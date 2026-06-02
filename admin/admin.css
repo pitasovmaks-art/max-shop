@@ -396,6 +396,16 @@ a      { text-decoration: none; color: inherit; }
 }
 .product-row__stock--in  { color: var(--green); }
 .product-row__stock--out { color: var(--red); }
+button.product-row__stock {
+    background: none;
+    border-radius: 6px;
+    padding: 2px 5px;
+    margin-left: -5px;
+    cursor: pointer;
+    transition: background .15s;
+}
+button.product-row__stock:hover   { background: rgba(255,255,255,.08); }
+button.product-row__stock:active  { opacity: .7; }
 
 .product-row__actions {
     display: flex;

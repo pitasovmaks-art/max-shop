@@ -425,8 +425,8 @@ function renderList() {
         if (sub) metaParts.push(sub.name);
 
         const stockHtml = p.inStock
-            ? `<span class="product-row__stock product-row__stock--in">● В наличии</span>`
-            : `<span class="product-row__stock product-row__stock--out">● Нет в наличии</span>`;
+            ? `<button class="product-row__stock product-row__stock--in" onclick="quickToggleStock(${p.id})" title="Нажмите чтобы снять с продажи">● В наличии</button>`
+            : `<button class="product-row__stock product-row__stock--out" onclick="quickToggleStock(${p.id})" title="Нажмите чтобы поставить в наличие">● Нет в наличии</button>`;
 
         const varHtml = p.variants && p.variants.length
             ? `<span class="product-row__vars">${p.variants.length} вар.</span>`
@@ -974,6 +974,40 @@ async function saveTracking(id) {
         renderOrders();
     } catch(e) {
         console.error('[TRACKING] ошибка:', e.message);
+        showToast('Ошибка: ' + e.message);
+    }
+}
+
+/* ─── Quick stock toggle ─────────────────────────────────── */
+async function quickToggleStock(id) {
+    const p = _products.find(p => p.id === id);
+    if (!p) return;
+    const newStock = !p.inStock;
+
+    const btn = document.querySelector(`#row-${id} .product-row__stock`);
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+
+    try {
+        const updated = await apiAdmin(`/api/products/${id}`, 'PUT', {
+            name:          p.name,
+            desc:          p.desc          || null,
+            categoryId:    p.categoryId,
+            subId:         p.subId         || null,
+            price:         p.price         || 0,
+            priceKrd:      p.priceKrd      || 0,
+            priceMsk:      p.priceMsk      || 0,
+            priceDelivery: p.priceDelivery || 0,
+            inStock:       newStock,
+            isService:     p.isService     || false,
+            priceLabel:    p.priceLabel    || null,
+            image:         p.image         || null,
+        });
+        const idx = _products.findIndex(p => p.id === id);
+        if (idx !== -1) _products[idx] = { ..._products[idx], ...updated };
+        renderProductList();
+        showToast(newStock ? '✓ Наличие обновлено: В наличии' : '✓ Наличие обновлено: Нет в наличии');
+    } catch (e) {
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
         showToast('Ошибка: ' + e.message);
     }
 }
