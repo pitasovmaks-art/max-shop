@@ -540,17 +540,16 @@ async function init() {
     renderSubFilters();
     render();
     updateBadges();
+    _startPolling();
 }
 
 /* ─── Reload favorites state (e.g. after bfcache restore) ───── */
 async function reloadFavorites() {
     const tgId = getTgId();
-    console.log('[fav] reloadFavorites вызван, tgId=', tgId);
     if (!tgId) return;
     try {
         const favs = await apiFetch(`/api/favorites?tg_id=${encodeURIComponent(tgId)}`).catch(() => []);
         _favorites = new Set(favs.map(f => Number(f.id)));
-        // Update all visible heart buttons without full re-render
         document.querySelectorAll('.fav-btn').forEach(btn => {
             const card = btn.closest('[id^="pcard-"]');
             if (!card) return;
@@ -569,19 +568,74 @@ async function reloadFavorites() {
     }
 }
 
+/* ─── Reload products + stock subscriptions + favorites ──────── */
+async function reloadProductsAndSubscriptions() {
+    if (!_products.length) return;
+    const tgId = getTgId();
+    try {
+        const [prods, stockSubs, favs] = await Promise.all([
+            apiFetch('/api/products'),
+            tgId ? apiFetch(`/api/stock-notify/list?tg_id=${encodeURIComponent(tgId)}`).catch(() => []) : Promise.resolve([]),
+            tgId ? apiFetch(`/api/favorites?tg_id=${encodeURIComponent(tgId)}`).catch(() => []) : Promise.resolve([]),
+        ]);
+        _products      = prods;
+        _subscriptions = new Set((stockSubs || []).map(id => Number(id)));
+        _favorites     = new Set(favs.map(f => Number(f.id)));
+        localStorage.removeItem('favorites_changed');
+        render();
+    } catch (e) {
+        console.error('[reload] reloadProductsAndSubscriptions error:', e);
+    }
+}
+
+/* ─── Stock state polling (runs while tab is visible) ───────── */
+let _pollInterval = null;
+
+async function pollStockState() {
+    const tgId = getTgId();
+    if (!tgId || !_products.length) return;
+    try {
+        const [prods, stockSubs] = await Promise.all([
+            apiFetch('/api/products'),
+            apiFetch(`/api/stock-notify/list?tg_id=${encodeURIComponent(tgId)}`).catch(() => []),
+        ]);
+        const newSubs = new Set((stockSubs || []).map(id => Number(id)));
+        const hasChange = prods.some(p => {
+            const old = _products.find(op => op.id === p.id);
+            return old && (old.inStock !== p.inStock || _subscriptions.has(p.id) !== newSubs.has(p.id));
+        });
+        _products      = prods;
+        _subscriptions = newSubs;
+        if (hasChange) render();
+    } catch { /* silent poll failure */ }
+}
+
+function _startPolling() {
+    if (_pollInterval) return;
+    _pollInterval = setInterval(pollStockState, 45_000);
+}
+
+function _stopPolling() {
+    clearInterval(_pollInterval);
+    _pollInterval = null;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     renderCityList('');
     if (detectCity()) init();
 });
 
-window.addEventListener('pageshow', (event) => {
-    console.log('[fav] pageshow событие, persisted=', event.persisted);
-    if (localStorage.getItem('favorites_changed')) reloadFavorites();
+window.addEventListener('pageshow', () => {
+    if (_products.length) reloadProductsAndSubscriptions();
+    else if (localStorage.getItem('favorites_changed')) reloadFavorites();
 });
 
 document.addEventListener('visibilitychange', () => {
-    console.log('[fav] visibilitychange:', document.visibilityState);
-    if (document.visibilityState === 'visible' && localStorage.getItem('favorites_changed')) reloadFavorites();
+    if (document.visibilityState === 'visible') {
+        if (_products.length) { reloadProductsAndSubscriptions(); _startPolling(); }
+    } else {
+        _stopPolling();
+    }
 });
 
 /* ─── Support ───────────────────────────────────────────────── */
