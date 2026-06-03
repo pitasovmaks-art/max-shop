@@ -149,12 +149,13 @@ router.post('/import', requireAdmin, async (req, res) => {
                 const productId = prodRow[0].id;
 
                 // Each Excel row may produce up to two variants (KRD + MSK),
-                // matching _collectVariants() in admin.js: isKrd=true variants carry
-                // only priceKrdPickup; isKrd=false carry priceMskPickup+priceMskDelivery.
-                // isDefault is applied to the first generated variant of the marked row;
-                // if no row has isDefault=1 the very first generated variant gets it.
+                // matching _collectVariants() in admin.js: KRD and MSK groups each
+                // have their own isDefault, tracked independently — because
+                // _effectiveVariant filters by city first, then looks for isDefault
+                // within that city's subset.
                 const hasExplicitDefault = grp.some(r => +r.isDefault === 1);
-                let defaultSet = false;
+                let defaultKrdSet = false;
+                let defaultMskSet = false;
                 let sortIdx = 0;
                 for (let i = 0; i < grp.length; i++) {
                     const r        = grp[i];
@@ -165,8 +166,8 @@ router.post('/import', requireAdmin, async (req, res) => {
                     const rowWantsDefault = hasExplicitDefault ? +r.isDefault === 1 : i === 0;
 
                     if (krdPrice > 0) {
-                        const def = rowWantsDefault && !defaultSet;
-                        if (def) defaultSet = true;
+                        const def = rowWantsDefault && !defaultKrdSet;
+                        if (def) defaultKrdSet = true;
                         await client.query(
                             `INSERT INTO product_variants
                              (product_id,label,price,price_krd,price_msk,price_delivery,
@@ -176,8 +177,8 @@ router.post('/import', requireAdmin, async (req, res) => {
                         );
                     }
                     if (mskPrice > 0 || delPrice > 0) {
-                        const def = rowWantsDefault && !defaultSet;
-                        if (def) defaultSet = true;
+                        const def = rowWantsDefault && !defaultMskSet;
+                        if (def) defaultMskSet = true;
                         await client.query(
                             `INSERT INTO product_variants
                              (product_id,label,price,price_krd,price_msk,price_delivery,
