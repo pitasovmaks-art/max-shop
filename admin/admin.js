@@ -891,23 +891,41 @@ function handleImportFile(input) {
     reader.onload = async (e) => {
         let rows;
         try {
-            const wb   = XLSX.read(e.target.result, { type: 'array' });
-            const ws   = wb.Sheets[wb.SheetNames[0]];
-            const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
-            rows = data.map(r => ({
-                name:              String(r['name']              || r['Название']           || '').trim(),
-                category:          String(r['category']          || r['Категория']          || '').trim(),
-                subcategory:       String(r['subcategory']       || r['Подкатегория']       || '').trim(),
-                desc:              String(r['desc']              || r['Описание']           || '').trim(),
-                inStock:           r['inStock']  !== undefined ? r['inStock']  : (r['Наличие'] !== undefined ? r['Наличие'] : 1),
-                variantLabel:      String(r['variantLabel']      || r['Вариант']            || '').trim(),
-                priceKrdPickup:    +(r['priceKrdPickup']    || r['Цена КРД']         || 0),
-                priceMskPickup:    +(r['priceMskPickup']    || r['Цена МСК']         || 0),
-                priceMskDelivery:  +(r['priceMskDelivery']  || r['Цена доставка']    || 0),
-                isDefault:         +(r['isDefault']         || r['По умолчанию']     || 0),
-            }));
+            if (typeof XLSX === 'undefined') throw new Error('Библиотека XLSX не загружена. Проверьте интернет-соединение и обновите страницу.');
+            const wb  = XLSX.read(e.target.result, { type: 'array' });
+            // Prefer sheet named "Товары", fall back to first sheet
+            const sheetName = wb.SheetNames.find(n => n.trim() === 'Товары') || wb.SheetNames[0];
+            const ws  = wb.Sheets[sheetName];
+            const raw = XLSX.utils.sheet_to_json(ws, { defval: '', header: 1 });
+            // Find header row: first row that contains 'name' or 'Название' or 'category' or 'Категория'
+            const KNOWN = ['name','Название','category','Категория','variantLabel','Вариант'];
+            const headerRowIdx = raw.findIndex(row =>
+                Array.isArray(row) && row.some(cell => KNOWN.includes(String(cell).trim()))
+            );
+            if (headerRowIdx === -1) throw new Error('Строка заголовков не найдена. Первая строка должна содержать: name (или Название), category (или Категория) и т.д.');
+            const headers = raw[headerRowIdx].map(h => String(h).trim());
+            const dataRows = raw.slice(headerRowIdx + 1).filter(row =>
+                row.some(cell => cell !== '' && cell !== null && cell !== undefined)
+            );
+            rows = dataRows.map(row => {
+                const r = {};
+                headers.forEach((h, i) => { r[h] = row[i] ?? ''; });
+                return {
+                    name:             String(r['name']             || r['Название']        || '').trim(),
+                    category:         String(r['category']         || r['Категория']       || '').trim(),
+                    subcategory:      String(r['subcategory']      || r['Подкатегория']    || '').trim(),
+                    desc:             String(r['desc']             || r['Описание']        || '').trim(),
+                    inStock:          r['inStock']  !== undefined && r['inStock']  !== '' ? r['inStock']  :
+                                      r['Наличие'] !== undefined && r['Наличие']  !== '' ? r['Наличие']  : 1,
+                    variantLabel:     String(r['variantLabel']     || r['Вариант']         || '').trim(),
+                    priceKrdPickup:   +(r['priceKrdPickup']   || r['Цена КРД']      || 0),
+                    priceMskPickup:   +(r['priceMskPickup']   || r['Цена МСК']      || 0),
+                    priceMskDelivery: +(r['priceMskDelivery'] || r['Цена доставка'] || 0),
+                    isDefault:        +(r['isDefault']        || r['По умолчанию']  || 0),
+                };
+            });
         } catch (err) {
-            alert('Не удалось прочитать файл. Убедитесь что это .xlsx файл с правильной структурой.');
+            alert('Не удалось прочитать файл.\n\n' + (err.message || err));
             return;
         }
         if (!rows.length) { alert('Файл пустой или не содержит данных.'); return; }
