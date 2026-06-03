@@ -398,7 +398,7 @@ function clearSearch() {
 
 /* ─── Product list ──────────────────────────────────────── */
 function getFiltered() {
-    return _products.filter(p => {
+    const list = _products.filter(p => {
         if (state.filter !== 'all' && p.categoryId !== state.filter) return false;
         if (state.query) {
             const cat = catById(p.categoryId);
@@ -408,6 +408,10 @@ function getFiltered() {
         }
         return true;
     });
+    if (typeof state.filter === 'number' && !state.query) {
+        return [...list].sort((a, b) => (a.sortOrderInCategory ?? 0) - (b.sortOrderInCategory ?? 0));
+    }
+    return list;
 }
 
 function renderList() {
