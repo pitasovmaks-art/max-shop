@@ -342,6 +342,19 @@ a      { text-decoration: none; color: inherit; }
     gap: 12px;
     padding: 12px;
 }
+.product-row--draggable { cursor: default; }
+.product-row.drag-dragging { opacity: .4; }
+.product-row.drag-over { outline: 2px solid var(--accent, #FFD60A); outline-offset: -2px; }
+.drag-handle {
+    flex-shrink: 0;
+    width: 24px;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.3);
+    cursor: grab;
+    touch-action: none;
+}
+.drag-handle:hover { color: rgba(255,255,255,.7); }
+.drag-handle:active { cursor: grabbing; }
 
 .product-row__img {
     width: 52px; height: 52px;

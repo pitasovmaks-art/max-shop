@@ -65,9 +65,23 @@ router.get('/', async (req, res) => {
             sql += ` AND (name ILIKE $${i} OR "desc" ILIKE $${i+1})`;
             params.push(q, q); i += 2;
         }
-        sql += ' ORDER BY id';
+        sql += ' ORDER BY sort_order, id';
         const products = (await db.query(sql, params)).map(normalize);
         res.json(await attachVariants(products));
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* PUT /api/products/reorder */
+router.put('/reorder', requireAdmin, async (req, res) => {
+    const { order } = req.body;
+    if (!Array.isArray(order)) return res.status(400).json({ error: 'Expected { order: [...ids] }' });
+    try {
+        await db.inTransaction(async (client) => {
+            for (let i = 0; i < order.length; i++) {
+                await client.query('UPDATE products SET sort_order=$1 WHERE id=$2', [i, order[i]]);
+            }
+        });
+        res.json({ ok: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -128,12 +142,14 @@ router.post('/', requireAdmin, async (req, res) => {
     const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, priceLabel, image } = req.body;
     if (!name) return res.status(400).json({ error: 'name required' });
     try {
+        const maxRow = await db.queryOne('SELECT COALESCE(MAX(sort_order), 0) AS m FROM products');
+        const nextOrder = (maxRow?.m ?? 0) + 1;
         const row = await db.queryOne(
-            `INSERT INTO products (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,in_stock,is_service,price_label,image)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
+            `INSERT INTO products (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,in_stock,is_service,price_label,image,sort_order)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
             [name, desc || null, categoryId || null, subId || null, price || 0,
              priceKrd || 0, priceMsk || 0, priceDelivery || 0,
-             inStock ? 1 : 0, isService ? 1 : 0, priceLabel || null, image || null]
+             inStock ? 1 : 0, isService ? 1 : 0, priceLabel || null, image || null, nextOrder]
         );
         const product = normalize(await db.queryOne('SELECT * FROM products WHERE id=$1', [row.id]));
         await attachVariants([product]);

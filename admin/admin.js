@@ -418,6 +418,8 @@ function renderList() {
     if (!list.length) { el.innerHTML = ''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
 
+    const isDragEnabled = state.filter === 'all' && !state.query;
+
     el.innerHTML = list.map(p => {
         const cat = catById(p.categoryId);
         const sub = subById(p.subId);
@@ -449,8 +451,19 @@ function renderList() {
             return `<span class="product-row__price">${fmt(p.price)}</span>`;
         })();
 
+        const dragHandle = isDragEnabled
+            ? `<div class="drag-handle" title="Перетащить">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
+                    <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+                    <circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
+                </svg>
+               </div>`
+            : '';
+
         return `
-        <div class="product-row" id="row-${p.id}">
+        <div class="product-row${isDragEnabled ? ' product-row--draggable' : ''}" id="row-${p.id}" data-id="${p.id}"${isDragEnabled ? ' draggable="true"' : ''}>
+            ${dragHandle}
             ${p.image
                 ? `<div class="product-row__img product-row__img--photo"><img src="${p.image}" alt=""></div>`
                 : `<div class="product-row__img cat-bg-${cat.color}">${cat.icon}</div>`}
@@ -477,6 +490,69 @@ function renderList() {
             </div>
         </div>`;
     }).join('');
+
+    if (isDragEnabled) initDragDrop(el);
+}
+
+/* ─── Drag & drop sorting ───────────────────────────────── */
+function initDragDrop(container) {
+    let dragSrc = null;
+
+    container.querySelectorAll('.product-row--draggable').forEach(row => {
+        row.addEventListener('dragstart', e => {
+            dragSrc = row;
+            row.classList.add('drag-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', row.dataset.id);
+        });
+
+        row.addEventListener('dragend', () => {
+            row.classList.remove('drag-dragging');
+            container.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        });
+
+        row.addEventListener('dragover', e => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (row === dragSrc) return;
+            container.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            row.classList.add('drag-over');
+        });
+
+        row.addEventListener('dragleave', e => {
+            if (!row.contains(e.relatedTarget)) row.classList.remove('drag-over');
+        });
+
+        row.addEventListener('drop', e => {
+            e.preventDefault();
+            row.classList.remove('drag-over');
+            if (!dragSrc || dragSrc === row) return;
+
+            const rows = [...container.querySelectorAll('.product-row--draggable')];
+            const srcIdx = rows.indexOf(dragSrc);
+            const tgtIdx = rows.indexOf(row);
+
+            if (srcIdx < tgtIdx) row.after(dragSrc);
+            else row.before(dragSrc);
+
+            saveNewOrder(container);
+        });
+    });
+}
+
+async function saveNewOrder(container) {
+    const order = [...container.querySelectorAll('.product-row--draggable')]
+        .map(row => +row.dataset.id);
+    try {
+        await apiAdmin('/api/products/reorder', 'PUT', { order });
+        // Update in-memory order so filter/re-render stays consistent
+        const idxMap = {};
+        order.forEach((id, i) => { idxMap[id] = i; });
+        _products.sort((a, b) => (idxMap[a.id] ?? 999) - (idxMap[b.id] ?? 999));
+        showToast('✓ Порядок сохранён');
+    } catch {
+        showToast('Ошибка сохранения порядка');
+    }
 }
 
 /* ─── Photo upload ──────────────────────────────────────── */
