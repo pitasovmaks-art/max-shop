@@ -418,7 +418,7 @@ function renderList() {
     if (!list.length) { el.innerHTML = ''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
 
-    const isDragEnabled = state.filter === 'all' && !state.query;
+    const isDragEnabled = !state.query && (state.filter === 'all' || typeof state.filter === 'number');
 
     el.innerHTML = list.map(p => {
         const cat = catById(p.categoryId);
@@ -544,12 +544,21 @@ async function saveNewOrder(container) {
     const order = [...container.querySelectorAll('.product-row--draggable')]
         .map(row => +row.dataset.id);
     try {
-        await apiAdmin('/api/products/reorder', 'PUT', { order });
-        // Update in-memory order so filter/re-render stays consistent
-        const idxMap = {};
-        order.forEach((id, i) => { idxMap[id] = i; });
-        _products.sort((a, b) => (idxMap[a.id] ?? 999) - (idxMap[b.id] ?? 999));
-        showToast('✓ Порядок сохранён');
+        if (state.filter === 'all') {
+            await apiAdmin('/api/products/reorder', 'PUT', { order });
+            const idxMap = {};
+            order.forEach((id, i) => { idxMap[id] = i; });
+            _products.sort((a, b) => (idxMap[a.id] ?? 999) - (idxMap[b.id] ?? 999));
+            showToast('✓ Порядок сохранён');
+        } else {
+            await apiAdmin('/api/products/reorder-category', 'PUT', { categoryId: state.filter, order });
+            const idxMap = {};
+            order.forEach((id, i) => { idxMap[id] = i; });
+            _products.forEach(p => {
+                if (idxMap[p.id] !== undefined) p.sortOrderInCategory = idxMap[p.id];
+            });
+            showToast('✓ Порядок в категории сохранён');
+        }
     } catch {
         showToast('Ошибка сохранения порядка');
     }

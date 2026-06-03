@@ -334,7 +334,7 @@ function clearSearch() {
 
 /* ─── Filter products ───────────────────────────────────────── */
 function getFiltered() {
-    return _products.filter(p => {
+    const list = _products.filter(p => {
         if (state.categoryId !== null && p.categoryId !== state.categoryId) return false;
         if (state.subId      !== null && p.subId      !== state.subId)      return false;
         if (state.query) {
@@ -345,6 +345,10 @@ function getFiltered() {
         }
         return true;
     });
+    if (state.categoryId !== null && !state.query) {
+        return [...list].sort((a, b) => a.sortOrderInCategory - b.sortOrderInCategory);
+    }
+    return list;
 }
 
 /* ─── Helpers ───────────────────────────────────────────────── */

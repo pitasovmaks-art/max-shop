@@ -4,19 +4,21 @@ const { requireAdmin } = require('../middleware/auth');
 
 function normalize(p) {
     return {
-        id:            p.id,
-        name:          p.name,
-        desc:          p.desc,
-        categoryId:    p.category_id,
-        subId:         p.sub_id,
-        price:         p.price,
-        priceKrd:      p.price_krd      || 0,
-        priceMsk:      p.price_msk      || 0,
-        priceDelivery: p.price_delivery || 0,
-        inStock:       p.in_stock       === 1,
-        isService:     p.is_service     === 1,
-        priceLabel:    p.price_label    || undefined,
-        image:         p.image          || undefined,
+        id:                   p.id,
+        name:                 p.name,
+        desc:                 p.desc,
+        categoryId:           p.category_id,
+        subId:                p.sub_id,
+        price:                p.price,
+        priceKrd:             p.price_krd               || 0,
+        priceMsk:             p.price_msk               || 0,
+        priceDelivery:        p.price_delivery          || 0,
+        inStock:              p.in_stock                === 1,
+        isService:            p.is_service              === 1,
+        priceLabel:           p.price_label             || undefined,
+        image:                p.image                   || undefined,
+        sortOrder:            p.sort_order              || 0,
+        sortOrderInCategory:  p.sort_order_in_category  || 0,
     };
 }
 
@@ -65,7 +67,7 @@ router.get('/', async (req, res) => {
             sql += ` AND (name ILIKE $${i} OR "desc" ILIKE $${i+1})`;
             params.push(q, q); i += 2;
         }
-        sql += ' ORDER BY sort_order, id';
+        sql += req.query.categoryId ? ' ORDER BY sort_order_in_category, id' : ' ORDER BY sort_order, id';
         const products = (await db.query(sql, params)).map(normalize);
         res.json(await attachVariants(products));
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -79,6 +81,23 @@ router.put('/reorder', requireAdmin, async (req, res) => {
         await db.inTransaction(async (client) => {
             for (let i = 0; i < order.length; i++) {
                 await client.query('UPDATE products SET sort_order=$1 WHERE id=$2', [i, order[i]]);
+            }
+        });
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* PUT /api/products/reorder-category */
+router.put('/reorder-category', requireAdmin, async (req, res) => {
+    const { categoryId, order } = req.body;
+    if (!Array.isArray(order) || !categoryId) return res.status(400).json({ error: 'Expected { categoryId, order: [...ids] }' });
+    try {
+        await db.inTransaction(async (client) => {
+            for (let i = 0; i < order.length; i++) {
+                await client.query(
+                    'UPDATE products SET sort_order_in_category=$1 WHERE id=$2 AND category_id=$3',
+                    [i, order[i], categoryId]
+                );
             }
         });
         res.json({ ok: true });
@@ -142,14 +161,20 @@ router.post('/', requireAdmin, async (req, res) => {
     const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, priceLabel, image } = req.body;
     if (!name) return res.status(400).json({ error: 'name required' });
     try {
-        const maxRow = await db.queryOne('SELECT COALESCE(MAX(sort_order), 0) AS m FROM products');
-        const nextOrder = (maxRow?.m ?? 0) + 1;
+        const [globalMax, catMax] = await Promise.all([
+            db.queryOne('SELECT COALESCE(MAX(sort_order), 0) AS m FROM products'),
+            categoryId
+                ? db.queryOne('SELECT COALESCE(MAX(sort_order_in_category), 0) AS m FROM products WHERE category_id=$1', [categoryId])
+                : Promise.resolve({ m: 0 }),
+        ]);
+        const nextOrder    = (globalMax?.m ?? 0) + 1;
+        const nextCatOrder = (catMax?.m ?? 0) + 1;
         const row = await db.queryOne(
-            `INSERT INTO products (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,in_stock,is_service,price_label,image,sort_order)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+            `INSERT INTO products (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,in_stock,is_service,price_label,image,sort_order,sort_order_in_category)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
             [name, desc || null, categoryId || null, subId || null, price || 0,
              priceKrd || 0, priceMsk || 0, priceDelivery || 0,
-             inStock ? 1 : 0, isService ? 1 : 0, priceLabel || null, image || null, nextOrder]
+             inStock ? 1 : 0, isService ? 1 : 0, priceLabel || null, image || null, nextOrder, nextCatOrder]
         );
         const product = normalize(await db.queryOne('SELECT * FROM products WHERE id=$1', [row.id]));
         await attachVariants([product]);
@@ -161,20 +186,35 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
     const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, priceLabel, image } = req.body;
     try {
-        const current = await db.queryOne('SELECT in_stock FROM products WHERE id=$1', [+req.params.id]);
+        const current = await db.queryOne('SELECT in_stock, category_id FROM products WHERE id=$1', [+req.params.id]);
         if (!current) return res.status(404).json({ error: 'Not found' });
-        const wasInStock = current.in_stock === 1;
-        const nowInStock = !!inStock;
+        const wasInStock  = current.in_stock    === 1;
+        const nowInStock  = !!inStock;
+        const catChanged  = String(current.category_id) !== String(categoryId || null);
+
+        let newCatOrder = undefined;
+        if (catChanged && categoryId) {
+            const catMax = await db.queryOne(
+                'SELECT COALESCE(MAX(sort_order_in_category), 0) AS m FROM products WHERE category_id=$1',
+                [categoryId]
+            );
+            newCatOrder = (catMax?.m ?? 0) + 1;
+        }
 
         const changed = await db.execute(
             `UPDATE products
              SET name=$1,"desc"=$2,category_id=$3,sub_id=$4,price=$5,
                  price_krd=$6,price_msk=$7,price_delivery=$8,
                  in_stock=$9,is_service=$10,price_label=$11,image=$12
+                 ${newCatOrder !== undefined ? ',sort_order_in_category=$14' : ''}
              WHERE id=$13`,
-            [name, desc || null, categoryId || null, subId || null, price || 0,
-             priceKrd || 0, priceMsk || 0, priceDelivery || 0,
-             inStock ? 1 : 0, isService ? 1 : 0, priceLabel || null, image || null, +req.params.id]
+            newCatOrder !== undefined
+                ? [name, desc || null, categoryId || null, subId || null, price || 0,
+                   priceKrd || 0, priceMsk || 0, priceDelivery || 0,
+                   inStock ? 1 : 0, isService ? 1 : 0, priceLabel || null, image || null, +req.params.id, newCatOrder]
+                : [name, desc || null, categoryId || null, subId || null, price || 0,
+                   priceKrd || 0, priceMsk || 0, priceDelivery || 0,
+                   inStock ? 1 : 0, isService ? 1 : 0, priceLabel || null, image || null, +req.params.id]
         );
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         const product = normalize(await db.queryOne('SELECT * FROM products WHERE id=$1', [+req.params.id]));
