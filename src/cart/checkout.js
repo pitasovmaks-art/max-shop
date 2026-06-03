@@ -138,6 +138,12 @@ function setDelivery(method) {
 
 function applyDelivery(method) {
     _deliveryMethod = method;
+    if (_pendingFreshProducts) {
+        _pendingFreshProducts = null;
+        document.getElementById('priceCheckWarn')?.remove();
+        const btn = document.getElementById('submitBtn');
+        if (btn && !btn.disabled) btn.textContent = 'Подтвердить заказ';
+    }
 
     ['pickup', 'city', 'russia'].forEach(m => {
         document.getElementById(`tab-${m}`)?.classList.toggle('delivery-tab--active', m === method);
@@ -322,6 +328,29 @@ function handleLegalCheck() {
 }
 
 /* ─── Submit ────────────────────────────────────────────── */
+let _pendingFreshProducts = null;
+
+function _checkCartItem(item, freshProducts) {
+    const city = localStorage.getItem('city');
+    const p = freshProducts.find(pr => pr.id === item.id);
+    if (!p) return { ok: false, price: 0, reason: `«${item.name}» больше не существует` };
+    if (!p.inStock && !p.isService) return { ok: false, price: 0, reason: `«${item.name}» нет в наличии` };
+    let price;
+    if (item.variantId) {
+        const v = (p.variants || []).find(vr => vr.id === item.variantId);
+        if (!v) return { ok: false, price: 0, reason: `Вариант «${item.name}» больше не доступен` };
+        if (_deliveryMethod === 'russia') price = v.priceMskDelivery || 0;
+        else if (city === 'krd') price = v.priceKrdPickup || 0;
+        else price = v.priceMskPickup || 0;
+    } else {
+        if (_deliveryMethod === 'russia') price = p.priceMskDelivery || p.priceDelivery || p.price || 0;
+        else if (city === 'krd') price = p.priceKrdPickup || p.priceKrd || p.price || 0;
+        else price = p.priceMskPickup || p.priceMsk || p.price || 0;
+    }
+    if (price <= 0) return { ok: false, price: 0, reason: `Цена «${item.name}» не определена` };
+    return { ok: true, price };
+}
+
 async function submitOrder() {
     const agreePolicy = document.getElementById('agreePolicy')?.checked;
     const agreeOffer  = document.getElementById('agreeOffer')?.checked;
@@ -332,11 +361,63 @@ async function submitOrder() {
     if (!validate()) return;
 
     const btn = document.getElementById('submitBtn');
+
+    // ── Проверка актуальной цены (первое нажатие) ────────────────
+    if (!_pendingFreshProducts) {
+        btn.disabled = true;
+        btn.textContent = 'Проверяем цены...';
+        let fresh;
+        try {
+            fresh = await fetch('/api/products').then(r => r.json());
+        } catch {
+            btn.disabled = false;
+            btn.textContent = 'Подтвердить заказ';
+            alert('Не удалось проверить цены. Попробуйте ещё раз.');
+            return;
+        }
+        const cart   = getCart();
+        const checks = cart.map(i => _checkCartItem(i, fresh));
+
+        const unavailable = checks.filter(c => !c.ok);
+        if (unavailable.length) {
+            btn.disabled = false;
+            btn.textContent = 'Подтвердить заказ';
+            alert(unavailable.map(c => c.reason).join('\n') + '\n\nВернитесь в корзину и обновите состав заказа.');
+            return;
+        }
+
+        const oldTotal = cart.reduce((s, i) => s + itemPrice(i) * i.qty, 0);
+        const newTotal = checks.reduce((s, c, idx) => s + c.price * cart[idx].qty, 0);
+
+        if (newTotal !== oldTotal) {
+            _pendingFreshProducts = fresh;
+            let warn = document.getElementById('priceCheckWarn');
+            if (!warn) {
+                warn = document.createElement('div');
+                warn.id = 'priceCheckWarn';
+                warn.style.cssText = 'background:rgba(255,214,10,.12);border:1px solid rgba(255,214,10,.35);border-radius:12px;padding:12px 16px;margin:0 0 12px;font-size:13px;color:#FFD60A;line-height:1.5';
+                btn.parentNode.insertBefore(warn, btn);
+            }
+            warn.innerHTML = `⚠️ Цена изменилась.<br>`
+                + `Старая сумма: <s>${oldTotal.toLocaleString('ru-RU')} ₽</s> → `
+                + `<b>${newTotal.toLocaleString('ru-RU')} ₽</b>.<br>`
+                + `Нажмите ещё раз для подтверждения.`;
+            document.getElementById('totalPrice').textContent  = fmt(newTotal);
+            document.getElementById('footerPrice').textContent = fmt(newTotal);
+            btn.disabled = false;
+            btn.textContent = `Оформить за ${newTotal.toLocaleString('ru-RU')} ₽`;
+            return;
+        }
+        _pendingFreshProducts = fresh;
+    }
+
+    // ── Оформление (второе нажатие или цены не изменились) ───────
     btn.disabled = true;
     btn.textContent = 'Оформляем...';
 
-    const cart    = getCart();
-    const total   = cart.reduce((s, i) => s + itemPrice(i) * i.qty, 0);
+    const cart  = getCart();
+    const total = cart.reduce((s, i) => s + _checkCartItem(i, _pendingFreshProducts).price * i.qty, 0);
+
     const phone   = document.getElementById('inputPhone').value;
     const name    = document.getElementById('inputName').value.trim();
     const comment = (document.getElementById('inputComment')?.value || '').trim();
@@ -353,6 +434,7 @@ async function submitOrder() {
             btn.disabled = false;
             btn.classList.remove('submit-btn--disabled');
             btn.textContent = 'Подтвердить заказ';
+            _pendingFreshProducts = null;
             alert('Выберите магазин для самовывоза');
             return;
         }
@@ -380,12 +462,12 @@ async function submitOrder() {
                 delivery: _deliveryMethod,
                 address:  address || undefined,
                 city:     city    || undefined,
-                tgId:     tgId     || undefined,
+                tgId:     tgId    || undefined,
                 comment:  comment || undefined,
                 items: cart.map(i => ({
                     id:    i.id,
                     name:  i.name + (i.variantLabel ? ` (${i.variantLabel})` : ''),
-                    price: itemPrice(i),
+                    price: _checkCartItem(i, _pendingFreshProducts).price,
                     qty:   i.qty,
                 })),
                 total,
@@ -395,6 +477,8 @@ async function submitOrder() {
         if (!r.ok) throw new Error(await r.text());
         const data = await r.json();
 
+        document.getElementById('priceCheckWarn')?.remove();
+        _pendingFreshProducts = null;
         document.getElementById('successOrder').textContent = `Заказ #${data.id}`;
 
         const DELIVERY_LABELS = { pickup: 'Магазин самовывоза', city: 'Адрес доставки', russia: 'Адрес доставки' };
@@ -416,6 +500,7 @@ async function submitOrder() {
         btn.disabled = false;
         btn.classList.remove('submit-btn--disabled');
         btn.textContent = 'Подтвердить заказ';
+        _pendingFreshProducts = null;
         alert('Ошибка при оформлении заказа. Попробуйте ещё раз.');
     }
 }

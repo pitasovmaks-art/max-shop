@@ -612,7 +612,7 @@ async function pollStockState() {
 
 function _startPolling() {
     if (_pollInterval) return;
-    _pollInterval = setInterval(pollStockState, 45_000);
+    _pollInterval = setInterval(pollStockState, 20_000);
 }
 
 function _stopPolling() {

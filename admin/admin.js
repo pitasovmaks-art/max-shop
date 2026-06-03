@@ -114,7 +114,7 @@ function setDefaultVariantMsk(idx) { _formVariantsMsk.forEach((v, i) => { v.isDe
 
 function _collectVariants() {
     const krd = _formVariantsKrd
-        .filter(v => String(v.label).trim())
+        .filter(v => String(v.label).trim() || v.priceKrdPickup > 0)
         .map((v, i) => ({
             label:           String(v.label).trim(),
             price:           0, priceKrd: 0, priceMsk: 0, priceDelivery: 0,
@@ -126,7 +126,7 @@ function _collectVariants() {
             sortOrder:       i,
         }));
     const msk = _formVariantsMsk
-        .filter(v => String(v.label).trim())
+        .filter(v => String(v.label).trim() || v.priceMskPickup > 0 || v.priceMskDelivery > 0)
         .map((v, i) => ({
             label:           String(v.label).trim(),
             price:           0, priceKrd: 0, priceMsk: 0, priceDelivery: 0,
