@@ -461,6 +461,35 @@ button.product-row__stock:active  { opacity: .7; }
     transition: transform .15s, background .15s;
 }
 .fab:active { background: #DDDDDD; transform: translateX(calc(50% - 224px + 16px)) scale(.92); }
+.fab--import {
+    background: var(--accent, #FFD60A);
+    bottom: calc(var(--nav-h) + 88px);
+}
+.fab--import:active { background: #e6c100; transform: translateX(calc(50% - 224px + 16px)) scale(.92); }
+
+.import-result {
+    background: var(--bg-secondary, #1C1C1E);
+    border-radius: 16px;
+    padding: 24px 20px 20px;
+    width: calc(100% - 40px);
+    max-width: 440px;
+    max-height: 70vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.import-result__title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+.import-result__body {
+    flex: 1;
+    font-size: 14px;
+    color: rgba(255,255,255,.8);
+    line-height: 1.5;
+}
 
 /* ─── Bottom nav ────────────────────────────────────────── */
 .bottom-nav {

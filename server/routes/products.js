@@ -73,6 +73,131 @@ router.get('/', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+/* POST /api/products/import */
+router.post('/import', requireAdmin, async (req, res) => {
+    const rows = req.body;
+    if (!Array.isArray(rows) || !rows.length) return res.status(400).json({ error: 'Expected array of rows' });
+
+    const categories   = await db.query('SELECT id, name FROM categories');
+    const subcategories = await db.query('SELECT id, name, category_id FROM subcategories');
+    const catByName    = Object.fromEntries(categories.map(c => [c.name.trim().toLowerCase(), c.id]));
+    const subByName    = {};
+    subcategories.forEach(s => {
+        subByName[`${s.category_id}::${s.name.trim().toLowerCase()}`] = s.id;
+    });
+
+    // Group rows by (name + category) preserving insertion order
+    const groups = [];
+    const groupMap = {};
+    rows.forEach((row, idx) => {
+        const key = `${String(row.name || '').trim()}::${String(row.category || '').trim().toLowerCase()}`;
+        if (!groupMap[key]) { groupMap[key] = []; groups.push({ key, rows: groupMap[key] }); }
+        groupMap[key].push({ ...row, _idx: idx + 2 }); // +2: header row + 1-based
+    });
+
+    let created = 0;
+    let skipped = 0;
+    const errors = [];
+
+    const globalMaxRow = await db.queryOne('SELECT COALESCE(MAX(sort_order), 0) AS m FROM products');
+    let globalOrder = (globalMaxRow?.m ?? 0);
+
+    for (const { rows: grp } of groups) {
+        const first   = grp[0];
+        const name    = String(first.name || '').trim();
+        const catName = String(first.category || '').trim().toLowerCase();
+
+        if (!name) {
+            grp.forEach(r => errors.push({ row: r._idx, reason: 'Пустое название товара' }));
+            skipped++; continue;
+        }
+        const categoryId = catByName[catName];
+        if (!categoryId) {
+            grp.forEach(r => errors.push({ row: r._idx, reason: `Категория не найдена: "${first.category}"` }));
+            skipped++; continue;
+        }
+
+        const hasPrice = grp.some(r =>
+            (+r.priceKrdPickup || 0) > 0 || (+r.priceMskPickup || 0) > 0 || (+r.priceMskDelivery || 0) > 0
+        );
+        if (!hasPrice) {
+            grp.forEach(r => errors.push({ row: r._idx, reason: `Нет ни одной цены у товара "${name}"` }));
+            skipped++; continue;
+        }
+
+        const subName = String(first.subcategory || '').trim().toLowerCase();
+        const subId   = subName ? (subByName[`${categoryId}::${subName}`] ?? null) : null;
+        const inStock = first.inStock === undefined || first.inStock === '' ? true : !!+first.inStock;
+        const desc    = String(first.desc || '').trim() || null;
+
+        try {
+            await db.inTransaction(async (client) => {
+                globalOrder++;
+                const catMaxRow = await client.query(
+                    'SELECT COALESCE(MAX(sort_order_in_category), 0) AS m FROM products WHERE category_id=$1',
+                    [categoryId]
+                );
+                const catOrder = (catMaxRow[0]?.m ?? 0) + 1;
+
+                const prodRow = await client.query(
+                    `INSERT INTO products
+                     (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,
+                      in_stock,is_service,sort_order,sort_order_in_category)
+                     VALUES ($1,$2,$3,$4,0,0,0,0,$5,0,$6,$7) RETURNING id`,
+                    [name, desc, categoryId, subId, inStock ? 1 : 0, globalOrder, catOrder]
+                );
+                const productId = prodRow[0].id;
+
+                // Each Excel row may produce up to two variants (KRD + MSK),
+                // matching _collectVariants() in admin.js: isKrd=true variants carry
+                // only priceKrdPickup; isKrd=false carry priceMskPickup+priceMskDelivery.
+                // isDefault is applied to the first generated variant of the marked row;
+                // if no row has isDefault=1 the very first generated variant gets it.
+                const hasExplicitDefault = grp.some(r => +r.isDefault === 1);
+                let defaultSet = false;
+                let sortIdx = 0;
+                for (let i = 0; i < grp.length; i++) {
+                    const r        = grp[i];
+                    const label    = String(r.variantLabel || '').trim();
+                    const krdPrice = +r.priceKrdPickup   || 0;
+                    const mskPrice = +r.priceMskPickup   || 0;
+                    const delPrice = +r.priceMskDelivery || 0;
+                    const rowWantsDefault = hasExplicitDefault ? +r.isDefault === 1 : i === 0;
+
+                    if (krdPrice > 0) {
+                        const def = rowWantsDefault && !defaultSet;
+                        if (def) defaultSet = true;
+                        await client.query(
+                            `INSERT INTO product_variants
+                             (product_id,label,price,price_krd,price_msk,price_delivery,
+                              price_krd_pickup,price_msk_pickup,price_msk_delivery,is_krd,is_default,sort_order)
+                             VALUES ($1,$2,0,0,0,0,$3,0,0,1,$4,$5)`,
+                            [productId, label, krdPrice, def ? 1 : 0, sortIdx++]
+                        );
+                    }
+                    if (mskPrice > 0 || delPrice > 0) {
+                        const def = rowWantsDefault && !defaultSet;
+                        if (def) defaultSet = true;
+                        await client.query(
+                            `INSERT INTO product_variants
+                             (product_id,label,price,price_krd,price_msk,price_delivery,
+                              price_krd_pickup,price_msk_pickup,price_msk_delivery,is_krd,is_default,sort_order)
+                             VALUES ($1,$2,0,0,0,0,0,$3,$4,0,$5,$6)`,
+                            [productId, label, mskPrice, delPrice, def ? 1 : 0, sortIdx++]
+                        );
+                    }
+                }
+            });
+            created++;
+        } catch (e) {
+            grp.forEach(r => errors.push({ row: r._idx, reason: `Ошибка БД: ${e.message}` }));
+            skipped++;
+        }
+    }
+
+    res.json({ created, skipped, errors });
+});
+
 /* PUT /api/products/reorder */
 router.put('/reorder', requireAdmin, async (req, res) => {
     const { order } = req.body;

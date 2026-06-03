@@ -327,6 +327,7 @@ function switchTab(tab) {
     document.getElementById('sectionStores').classList.toggle('hidden',     !isStores);
 
     document.getElementById('fabProducts').classList.toggle('hidden',   !isProducts);
+    document.getElementById('fabImport').classList.toggle('hidden',     !isProducts);
     document.getElementById('fabCategories').classList.toggle('hidden', !isCategories);
     document.getElementById('fabStores').classList.toggle('hidden',     !isStores);
 
@@ -875,6 +876,71 @@ async function saveProduct() {
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; }
     }
+}
+
+/* ─── Import products from XLSX ─────────────────────────── */
+function triggerImport() {
+    document.getElementById('importFileInput').value = '';
+    document.getElementById('importFileInput').click();
+}
+
+function handleImportFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        let rows;
+        try {
+            const wb   = XLSX.read(e.target.result, { type: 'array' });
+            const ws   = wb.Sheets[wb.SheetNames[0]];
+            const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
+            rows = data.map(r => ({
+                name:              String(r['name']              || r['Название']           || '').trim(),
+                category:          String(r['category']          || r['Категория']          || '').trim(),
+                subcategory:       String(r['subcategory']       || r['Подкатегория']       || '').trim(),
+                desc:              String(r['desc']              || r['Описание']           || '').trim(),
+                inStock:           r['inStock']  !== undefined ? r['inStock']  : (r['Наличие'] !== undefined ? r['Наличие'] : 1),
+                variantLabel:      String(r['variantLabel']      || r['Вариант']            || '').trim(),
+                priceKrdPickup:    +(r['priceKrdPickup']    || r['Цена КРД']         || 0),
+                priceMskPickup:    +(r['priceMskPickup']    || r['Цена МСК']         || 0),
+                priceMskDelivery:  +(r['priceMskDelivery']  || r['Цена доставка']    || 0),
+                isDefault:         +(r['isDefault']         || r['По умолчанию']     || 0),
+            }));
+        } catch (err) {
+            alert('Не удалось прочитать файл. Убедитесь что это .xlsx файл с правильной структурой.');
+            return;
+        }
+        if (!rows.length) { alert('Файл пустой или не содержит данных.'); return; }
+        showToast('⏳ Импортируем...');
+        try {
+            const result = await apiAdmin('/api/products/import', 'POST', rows);
+            await refreshData();
+            render();
+            showImportResult(result);
+        } catch (err) {
+            alert('Ошибка импорта. Проверьте подключение и попробуйте снова.');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function showImportResult(result) {
+    document.getElementById('importResultTitle').textContent =
+        `Импорт завершён: создано ${result.created}, пропущено ${result.skipped}`;
+    const body = document.getElementById('importResultBody');
+    if (result.errors && result.errors.length) {
+        body.innerHTML = '<div style="margin-bottom:8px;font-weight:600;color:rgba(255,255,255,.7)">Ошибки:</div>'
+            + result.errors.map(e =>
+                `<div style="font-size:13px;margin-bottom:4px;color:#FF3B30">Строка ${e.row}: ${e.reason}</div>`
+            ).join('');
+    } else {
+        body.innerHTML = '<div style="color:#22c55e;font-size:14px">Все товары импортированы успешно.</div>';
+    }
+    document.getElementById('importResultOverlay').classList.remove('hidden');
+}
+
+function closeImportResult() {
+    document.getElementById('importResultOverlay').classList.add('hidden');
 }
 
 /* ─── Delete product ────────────────────────────────────── */
