@@ -432,9 +432,22 @@ function renderList() {
             ? `<span class="product-row__vars">${p.variants.length} вар.</span>`
             : '';
 
-        const priceHtml = p.isService
-            ? `<span class="product-row__price">${p.priceLabel || fmt(p.price)}</span>`
-            : `<span class="product-row__price">${fmt(p.price)}</span>`;
+        const priceHtml = (() => {
+            if (p.isService) return `<span class="product-row__price">${p.priceLabel || fmt(p.price)}</span>`;
+            if (p.price > 0) return `<span class="product-row__price">${fmt(p.price)}</span>`;
+            if (p.variants && p.variants.length) {
+                const prices = p.variants
+                    .map(v => v.priceKrdPickup || v.priceMskPickup || 0)
+                    .filter(x => x > 0);
+                if (prices.length) {
+                    const min = Math.min(...prices);
+                    const max = Math.max(...prices);
+                    const label = min === max ? fmt(min) : `от ${fmt(min)}`;
+                    return `<span class="product-row__price">${label}</span>`;
+                }
+            }
+            return `<span class="product-row__price">${fmt(p.price)}</span>`;
+        })();
 
         return `
         <div class="product-row" id="row-${p.id}">

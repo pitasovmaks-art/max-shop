@@ -392,8 +392,9 @@ function render() {
             ? getEffectivePrice(activeVar, _city)
             : (_city === 'krd' ? (p.priceKrd || p.price || 0) : (p.priceMsk || p.price || 0));
 
-        const variantPills = cityVars.length
-            ? `<div class="variant-pills">${cityVars.map(vr =>
+        const visiblePills = cityVars.filter(vr => vr.label && vr.label.trim());
+        const variantPills = visiblePills.length
+            ? `<div class="variant-pills">${visiblePills.map(vr =>
                 `<button class="variant-pill${activeVar && vr.id === activeVar.id ? ' variant-pill--active' : ''}"
                     data-vid="${vr.id}"
                     onclick="event.stopPropagation();selectVariant(${p.id},${vr.id})">${vr.label}</button>`

@@ -346,6 +346,16 @@ function _checkCartItem(item, freshProducts) {
         if (_deliveryMethod === 'russia') price = p.priceMskDelivery || p.priceDelivery || p.price || 0;
         else if (city === 'krd') price = p.priceKrdPickup || p.priceKrd || p.price || 0;
         else price = p.priceMskPickup || p.priceMsk || p.price || 0;
+        if (price <= 0 && p.variants && p.variants.length) {
+            const v = _deliveryMethod === 'russia'
+                ? p.variants.find(vr => vr.priceMskDelivery > 0)
+                : city === 'krd'
+                    ? p.variants.find(vr => vr.priceKrdPickup > 0)
+                    : p.variants.find(vr => vr.priceMskPickup > 0);
+            if (v) price = _deliveryMethod === 'russia'
+                ? v.priceMskDelivery
+                : city === 'krd' ? v.priceKrdPickup : v.priceMskPickup;
+        }
     }
     if (price <= 0) return { ok: false, price: 0, reason: `Цена «${item.name}» не определена` };
     return { ok: true, price };
