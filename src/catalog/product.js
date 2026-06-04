@@ -249,14 +249,12 @@ function addToCart() {
     const isKrd   = city === 'krd';
 
     const label  = variant?.label ?? '';
-    const krdVar = (_product.variants || []).find(v => v.isKrd  && v.label === label)
-                || (_product.variants || []).find(v => v.isKrd);
-    const mskVar = (_product.variants || []).find(v => !v.isKrd && v.label === label)
-                || (_product.variants || []).find(v => !v.isKrd);
+    const krdVar = (_product.variants || []).find(v => v.isKrd  && v.label === label) || null;
+    const mskVar = (_product.variants || []).find(v => !v.isKrd && v.label === label) || null;
 
-    const priceKrdPickup   = krdVar?.priceKrdPickup   || _product.priceKrd      || _product.price || 0;
-    const priceMskPickup   = mskVar?.priceMskPickup   || _product.priceMsk      || _product.price || 0;
-    const priceMskDelivery = mskVar?.priceMskDelivery || _product.priceDelivery || 0;
+    const priceKrdPickup   = krdVar?.priceKrdPickup   || (!label ? _product.priceKrd      || _product.price || 0 : 0);
+    const priceMskPickup   = mskVar?.priceMskPickup   || (!label ? _product.priceMsk      || _product.price || 0 : 0);
+    const priceMskDelivery = mskVar?.priceMskDelivery || (!label ? _product.priceDelivery || 0               : 0);
     const salePriceKrd     = krdVar?.salePrice || 0;
     const salePriceMsk     = mskVar?.salePrice || 0;
 

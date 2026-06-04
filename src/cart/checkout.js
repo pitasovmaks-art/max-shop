@@ -362,12 +362,9 @@ function _checkCartItem(item, freshProducts) {
 
     let freshItem;
     if (hasVariants) {
-        const krdVar = p.variants.find(v => v.isKrd  && v.label === label)
-                    || p.variants.find(v => v.isKrd);
-        const mskVar = p.variants.find(v => !v.isKrd && v.label === label)
-                    || p.variants.find(v => !v.isKrd);
+        const krdVar = p.variants.find(v => v.isKrd  && v.label === label) || null;
+        const mskVar = p.variants.find(v => !v.isKrd && v.label === label) || null;
 
-        // If the item needs a city variant and it doesn't exist → unavailable
         if (isKrd && !krdVar) return { ok: false, price: 0, reason: `«${item.name}» недоступен в выбранном городе` };
         if (!isKrd && _deliveryMethod !== 'russia' && !mskVar) return { ok: false, price: 0, reason: `«${item.name}» недоступен в выбранном городе` };
 

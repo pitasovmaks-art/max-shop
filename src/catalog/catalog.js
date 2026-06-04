@@ -204,15 +204,13 @@ function addToCart(productId) {
     const variant = _effectiveVariant(product);
     const label   = variant?.label ?? '';
 
-    // Find both city variants with the same label to store all price data
-    const krdVar = (product.variants || []).find(v => v.isKrd  && v.label === label)
-                || (product.variants || []).find(v => v.isKrd);
-    const mskVar = (product.variants || []).find(v => !v.isKrd && v.label === label)
-                || (product.variants || []).find(v => !v.isKrd);
+    // Strict match by label only — no fallback to a different label's variant
+    const krdVar = (product.variants || []).find(v => v.isKrd  && v.label === label) || null;
+    const mskVar = (product.variants || []).find(v => !v.isKrd && v.label === label) || null;
 
-    const priceKrdPickup   = krdVar?.priceKrdPickup   || product.priceKrd      || product.price || 0;
-    const priceMskPickup   = mskVar?.priceMskPickup   || product.priceMsk      || product.price || 0;
-    const priceMskDelivery = mskVar?.priceMskDelivery || product.priceDelivery || 0;
+    const priceKrdPickup   = krdVar?.priceKrdPickup   || (!label ? product.priceKrd  || product.price || 0 : 0);
+    const priceMskPickup   = mskVar?.priceMskPickup   || (!label ? product.priceMsk  || product.price || 0 : 0);
+    const priceMskDelivery = mskVar?.priceMskDelivery || (!label ? product.priceDelivery || 0           : 0);
     const salePriceKrd     = krdVar?.salePrice || 0;
     const salePriceMsk     = mskVar?.salePrice || 0;
 
