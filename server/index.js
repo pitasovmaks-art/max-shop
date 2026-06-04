@@ -60,6 +60,7 @@ app.use('/api/support',       require('./routes/support'));
 app.use('/api/favorites',     require('./routes/favorites'));
 app.use('/api/stock-notify', require('./routes/stock-notify'));
 app.use('/api/promo',       require('./routes/promo'));
+app.use('/api/debug',       require('./routes/debug'));
 
 /* Reset data to defaults (admin only) */
 app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, async (req, res) => {
