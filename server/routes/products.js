@@ -133,20 +133,20 @@ router.post('/import', requireAdmin, async (req, res) => {
         try {
             await db.inTransaction(async (client) => {
                 globalOrder++;
-                const catMaxRow = await client.query(
+                const catMaxRes = await client.query(
                     'SELECT COALESCE(MAX(sort_order_in_category), 0) AS m FROM products WHERE category_id=$1',
                     [categoryId]
                 );
-                const catOrder = (catMaxRow[0]?.m ?? 0) + 1;
+                const catOrder = (catMaxRes.rows[0]?.m ?? 0) + 1;
 
-                const prodRow = await client.query(
+                const prodRes = await client.query(
                     `INSERT INTO products
                      (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,
                       in_stock,is_service,sort_order,sort_order_in_category)
                      VALUES ($1,$2,$3,$4,0,0,0,0,$5,0,$6,$7) RETURNING id`,
                     [name, desc, categoryId, subId, inStock ? 1 : 0, globalOrder, catOrder]
                 );
-                const productId = prodRow[0].id;
+                const productId = prodRes.rows[0].id;
 
                 // Each Excel row may produce up to two variants (KRD + MSK),
                 // matching _collectVariants() in admin.js: KRD and MSK groups each
