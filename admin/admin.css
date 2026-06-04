@@ -1063,6 +1063,12 @@ button.product-row__stock:active  { opacity: .7; }
     padding: 8px 8px !important;
     height: 38px !important;
 }
+.variant-row__price--sale {
+    border-color: rgba(255,59,48,0.4) !important;
+}
+.variant-row__price--sale:focus {
+    border-color: #FF3B30 !important;
+}
 
 .variant-row__def {
     display: flex;

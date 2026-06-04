@@ -299,11 +299,31 @@ a      { text-decoration: none; color: inherit; }
     font-size: 15px;
     font-weight: 700;
     color: #FFFFFF;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    flex-wrap: wrap;
 }
 .product-card__price--service {
     font-size: 13px;
     font-weight: 600;
     color: rgba(255,255,255,0.7);
+}
+.price-old {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.45);
+    text-decoration: line-through;
+}
+.price-sale {
+    color: #FF3B30;
+    font-size: 15px;
+    font-weight: 700;
+}
+.cat-btn--sale {
+    background: rgba(255,59,48,0.15);
+    border-color: rgba(255,59,48,0.4);
+    color: #FF3B30;
 }
 
 .add-btn {

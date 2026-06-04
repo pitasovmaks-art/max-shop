@@ -97,11 +97,14 @@ function updatePrice() {
         el.textContent = _product.priceLabel || fmt(_product.price);
     } else {
         el.className = 'product-price';
-        const ev = effectiveVariant();
-        const price = ev
+        const ev        = effectiveVariant();
+        const basePrice = ev
             ? effectivePrice(ev)
             : (city === 'krd' ? (_product.priceKrd || _product.price || 0) : (_product.priceMsk || _product.price || 0));
-        el.textContent = fmt(price);
+        const salePrice = ev?.salePrice || 0;
+        el.innerHTML    = salePrice > 0
+            ? `<s class="price-old">${fmt(basePrice)}</s><span class="price-sale">${fmt(salePrice)}</span>`
+            : fmt(basePrice);
     }
 }
 
@@ -245,18 +248,21 @@ function addToCart() {
     const city    = localStorage.getItem('city');
     const isKrd   = city === 'krd';
 
-    let priceKrdPickup, priceMskPickup, priceMskDelivery;
+    let priceKrdPickup, priceMskPickup, priceMskDelivery, salePrice;
     if (variant) {
         priceKrdPickup   = variant.priceKrdPickup   || 0;
         priceMskPickup   = variant.priceMskPickup   || 0;
         priceMskDelivery = variant.priceMskDelivery || 0;
+        salePrice        = variant.salePrice        || 0;
     } else {
         priceKrdPickup   = _product.priceKrd      || _product.price || 0;
         priceMskPickup   = _product.priceMsk      || _product.price || 0;
         priceMskDelivery = _product.priceDelivery || _product.price || 0;
+        salePrice        = 0;
     }
-    const price = isKrd ? priceKrdPickup : priceMskPickup;
-    const key   = variant ? `${_product.id}_v${variant.id}` : String(_product.id);
+    const basePrice = isKrd ? priceKrdPickup : priceMskPickup;
+    const price     = salePrice > 0 ? salePrice : basePrice;
+    const key       = variant ? `${_product.id}_v${variant.id}` : String(_product.id);
 
     const cart     = getCart();
     const existing = cart.find(i => i.key === key);
@@ -269,6 +275,7 @@ function addToCart() {
             priceDelivery: priceMskDelivery,
             qty: 1, categoryId: _product.categoryId,
         };
+        if (salePrice > 0) item.salePrice = salePrice;
         if (variant) { item.variantId = variant.id; item.variantLabel = variant.label; }
         cart.push(item);
     }

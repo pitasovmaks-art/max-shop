@@ -203,17 +203,20 @@ function addToCart(productId) {
     const city    = _city || localStorage.getItem('city');
     const variant = _effectiveVariant(product);
 
-    let priceKrdPickup, priceMskPickup, priceMskDelivery;
+    let priceKrdPickup, priceMskPickup, priceMskDelivery, salePrice;
     if (variant) {
         priceKrdPickup   = variant.priceKrdPickup   || 0;
         priceMskPickup   = variant.priceMskPickup   || 0;
         priceMskDelivery = variant.priceMskDelivery || 0;
+        salePrice        = variant.salePrice        || 0;
     } else {
         priceKrdPickup   = product.priceKrd      || product.price || 0;
         priceMskPickup   = product.priceMsk      || product.price || 0;
         priceMskDelivery = product.priceDelivery || product.price || 0;
+        salePrice        = 0;
     }
-    const price = city === 'krd' ? priceKrdPickup : priceMskPickup;
+    const basePrice = city === 'krd' ? priceKrdPickup : priceMskPickup;
+    const price     = salePrice > 0 ? salePrice : basePrice;
 
     const key  = variant ? `${productId}_v${variant.id}` : String(productId);
     const cart = getCart();
@@ -228,6 +231,7 @@ function addToCart(productId) {
             qty: 1, categoryId: product.categoryId,
             image: product.image || undefined,
         };
+        if (salePrice > 0) item.salePrice = salePrice;
         if (variant) { item.variantId = variant.id; item.variantLabel = variant.label; }
         cart.push(item);
     }
@@ -277,7 +281,12 @@ function showToast(message) {
 function renderCategoryFilters() {
     const el = document.getElementById('categories');
     if (!el) return;
+    const hasSale = _products.some(p => p.isSale);
+    const salBtn  = hasSale
+        ? `<button class="cat-btn cat-btn--sale ${state.categoryId === 'sale' ? 'active' : ''}" onclick="setCategory('sale',this)">🔥 Акция</button>`
+        : '';
     el.innerHTML = `<button class="cat-btn ${state.categoryId === null ? 'active' : ''}" onclick="setCategory(null,this)">Все</button>`
+        + salBtn
         + _categories.map(c =>
             `<button class="cat-btn ${state.categoryId === c.id ? 'active' : ''}" onclick="setCategory(${c.id},this)">${c.name}</button>`
         ).join('');
@@ -334,6 +343,9 @@ function clearSearch() {
 
 /* ─── Filter products ───────────────────────────────────────── */
 function getFiltered() {
+    if (state.categoryId === 'sale') {
+        return _products.filter(p => p.isSale);
+    }
     const list = _products.filter(p => {
         if (state.categoryId !== null && p.categoryId !== state.categoryId) return false;
         if (state.subId      !== null && p.subId      !== state.subId)      return false;
@@ -353,6 +365,13 @@ function getFiltered() {
 
 /* ─── Helpers ───────────────────────────────────────────────── */
 function fmt(price) { return price.toLocaleString('ru-RU') + ' ₽'; }
+
+function fmtPrice(regularPrice, salePrice) {
+    if (salePrice > 0) {
+        return `<s class="price-old">${fmt(regularPrice)}</s><span class="price-sale">${fmt(salePrice)}</span>`;
+    }
+    return fmt(regularPrice);
+}
 
 function plural(n, one, few, many) {
     const m10 = n % 10, m100 = n % 100;
@@ -395,6 +414,7 @@ function render() {
         const displayPrice = activeVar
             ? getEffectivePrice(activeVar, _city)
             : (_city === 'krd' ? (p.priceKrd || p.price || 0) : (p.priceMsk || p.price || 0));
+        const displaySale  = activeVar?.salePrice || 0;
 
         const visiblePills = cityVars.filter(vr => vr.label && vr.label.trim());
         const variantPills = visiblePills.length
@@ -448,7 +468,7 @@ function render() {
                 <div class="product-card__name">${p.name}</div>
                 ${variantPills}
                 <div class="product-card__footer">
-                    <span class="product-card__price">${fmt(displayPrice)}</span>
+                    <span class="product-card__price">${fmtPrice(displayPrice, displaySale)}</span>
                     ${btn}
                 </div>
             </div>

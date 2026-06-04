@@ -37,6 +37,7 @@ function normalizeVariant(v) {
         isKrd:           v.is_krd             === 1,
         isDefault:       v.is_default         === 1,
         sortOrder:       v.sort_order,
+        salePrice:       v.sale_price         || 0,
     };
 }
 
@@ -50,7 +51,10 @@ async function attachVariants(products) {
         if (!byProduct[v.product_id]) byProduct[v.product_id] = [];
         byProduct[v.product_id].push(normalizeVariant(v));
     });
-    products.forEach(p => { p.variants = byProduct[p.id] || []; });
+    products.forEach(p => {
+        p.variants = byProduct[p.id] || [];
+        p.isSale   = p.variants.some(v => v.salePrice > 0);
+    });
     return products;
 }
 
@@ -265,12 +269,12 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
                 await client.query(
                     `INSERT INTO product_variants
                      (product_id,label,price,price_krd,price_msk,price_delivery,
-                      price_krd_pickup,price_msk_pickup,price_msk_delivery,is_krd,is_default,sort_order)
-                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+                      price_krd_pickup,price_msk_pickup,price_msk_delivery,is_krd,is_default,sort_order,sale_price)
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
                     [productId, String(v.label).trim(),
                      v.price || 0, v.priceKrd || 0, v.priceMsk || 0, v.priceDelivery || 0,
                      v.priceKrdPickup || 0, v.priceMskPickup || 0, v.priceMskDelivery || 0,
-                     v.isKrd ? 1 : 0, v.isDefault ? 1 : 0, v.sortOrder ?? i]
+                     v.isKrd ? 1 : 0, v.isDefault ? 1 : 0, v.sortOrder ?? i, v.salePrice || 0]
                 );
             }
         });

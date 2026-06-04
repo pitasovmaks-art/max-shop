@@ -1,0 +1,3019 @@
+[
+  {
+    "id": 2660630612,
+    "name": "Газовый монтажный пистолет MAOVON RB-65 + гвозди усиленные 19мм 1000шт.",
+    "offer_id": "MVRB-65+Y19",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1957108458"
+    ],
+    "description_category_id": 17028653,
+    "type_id": 970944397,
+    "created_at": "2025-09-06T08:38:32.707101Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-f/7340307135.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7340307122.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-8/7340307272.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-i/7340307138.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-8/7340307128.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-y/7340307262.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-4/7340307196.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-7/7340307199.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-t/7340307185.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-n/7316863547.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-x/7340307117.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-h/7340307137.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-q/7520251562.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-t/7340307113.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-h/7340307209.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7340307158.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-6/7340307270.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-p/7340307217.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-o/7520251560.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "13500.00",
+    "old_price": "18858.00",
+    "price": "14300.00",
+    "sources": [
+      {
+        "sku": 2815378212,
+        "source": "sds",
+        "created_at": "2025-09-06T08:38:57.859623Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 498088225,
+      "count": 6
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 42,
+        "return_amount": 228,
+        "sale_schema": "FBO",
+        "value": 6006
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 48,
+        "return_amount": 1023,
+        "sale_schema": "FBS",
+        "value": 6864
+      },
+      {
+        "percent": 48,
+        "sale_schema": "RFBS",
+        "value": 6864
+      },
+      {
+        "percent": 47,
+        "sale_schema": "FBP",
+        "value": 6721
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 6.3,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": false,
+      "stocks": []
+    },
+    "errors": [],
+    "updated_at": "2025-09-07T04:23:36.813559Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": false
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+      "external_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-i/7340307210.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Готов к продаже",
+      "status_description": "Нет на складе",
+      "is_created": true,
+      "status_tooltip": "Товар можно привезти на склад Ozon или указать его количество на своем складе",
+      "status_updated_at": "2025-09-06T08:39:08.496720Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 2815378212,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 2815378212,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3614477542,
+    "name": "Гвозди кованые 16*3.05 мм FOX для монтажного пистолета 1000шт.",
+    "offer_id": "K16",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1677254827"
+    ],
+    "description_category_id": 87889854,
+    "type_id": 94545,
+    "created_at": "2026-02-13T22:26:25.174307Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-e/7640380238.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-p/7640380249.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-l/7640380245.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-j/7640380243.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-f/7640380239.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-k/7640380244.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7640375618.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "1000.00",
+    "old_price": "3500.00",
+    "price": "1350.00",
+    "sources": [
+      {
+        "sku": 3531639593,
+        "source": "sds",
+        "created_at": "2026-02-13T22:26:45.143471Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 669164478,
+      "count": 9
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 39,
+        "return_amount": 89,
+        "sale_schema": "FBO",
+        "value": 318.24
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 45,
+        "return_amount": 218,
+        "sale_schema": "FBS",
+        "value": 367.2
+      },
+      {
+        "percent": 45,
+        "sale_schema": "RFBS",
+        "value": 367.2
+      },
+      {
+        "percent": 45,
+        "sale_schema": "FBP",
+        "value": 367.2
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 1.1,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 315,
+          "reserved": 0,
+          "sku": 3531639593,
+          "source": "fbo"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-02-14T00:34:46.290339Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+      "external_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-5/7640380229.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-02-13T22:26:45.694282Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3531639593,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3531639593,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3519656816,
+    "name": "СТВОЛ ЭЛЕКТРОМОНТАЖНЫЙ 1 шт. для монтажного пистолета GSN50",
+    "offer_id": "GSN50-69E",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1633814876"
+    ],
+    "description_category_id": 17028653,
+    "type_id": 970944397,
+    "created_at": "2026-01-27T18:26:50.236795Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-7/7115368435.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-b/7115368439.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-d/7115368441.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-c/7115368440.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "3000.00",
+    "old_price": "10000.00",
+    "price": "4500.00",
+    "sources": [
+      {
+        "sku": 3458560782,
+        "source": "sds",
+        "created_at": "2026-01-27T18:27:01.555794Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 427343963,
+      "count": 1
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 41,
+        "return_amount": 81,
+        "sale_schema": "FBO",
+        "value": 1845
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 47,
+        "return_amount": 153,
+        "sale_schema": "FBS",
+        "value": 2115
+      },
+      {
+        "percent": 47,
+        "sale_schema": "RFBS",
+        "value": 2115
+      },
+      {
+        "percent": 47,
+        "sale_schema": "FBP",
+        "value": 2115
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 0.2,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": false,
+      "stocks": [
+        {
+          "present": 0,
+          "reserved": 0,
+          "sku": 3458560782,
+          "source": "fbo"
+        },
+        {
+          "present": 0,
+          "reserved": 0,
+          "sku": 3458560782,
+          "source": "fbs"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-01-28T00:42:38.313653Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": false
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_RED",
+      "external_index_data": {
+        "minimal_price": "1065.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 1.51
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-e/7115368442.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Готов к продаже",
+      "status_description": "Нет на складе",
+      "is_created": true,
+      "status_tooltip": "Товар можно привезти на склад Ozon или указать его количество на своем складе",
+      "status_updated_at": "2026-01-27T18:27:02.041381Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3458560782,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3458560782,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 4742961702,
+    "name": "Коронка алмазная по бетону с микроударом адель diamond hit dh de-400 72мм глубина реза 65мм",
+    "offer_id": "DH-DE400",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN4438121536"
+    ],
+    "description_category_id": 17028734,
+    "type_id": 94912,
+    "created_at": "2026-05-25T14:11:07.703230Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-k/10790645204.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-n/10790649815.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-a/10790649298.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-l/10790648733.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-e/10790646746.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "",
+    "old_price": "20500.00",
+    "price": "9614.00",
+    "sources": [
+      {
+        "sku": 4438121536,
+        "source": "sds",
+        "created_at": "2026-05-25T14:12:37.245131Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 1660107606,
+      "count": 1
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 42,
+        "return_amount": 81,
+        "sale_schema": "FBO",
+        "value": 4037.88
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 48,
+        "return_amount": 168,
+        "sale_schema": "FBS",
+        "value": 4614.72
+      },
+      {
+        "percent": 48,
+        "sale_schema": "RFBS",
+        "value": 4614.72
+      },
+      {
+        "percent": 47,
+        "sale_schema": "FBP",
+        "value": 4518.58
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 0.5,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 100,
+          "reserved": 0,
+          "sku": 4438121536,
+          "source": "fbs"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-05-25T14:20:26.456830Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_RED",
+      "external_index_data": {
+        "minimal_price": "4114.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 1.12
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-e/10790645630.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "success",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-05-25T14:21:36.862881Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 4438121536,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 4438121536,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 2660630710,
+    "name": "Гвоздезабивной монтажный пистолет MAOVON RB-65 (Kapachi) в КЕЙСЕ степлер строительный по бетону",
+    "offer_id": "MVRB-65 (BOX)",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN2609778160"
+    ],
+    "description_category_id": 17028653,
+    "type_id": 970944397,
+    "created_at": "2025-09-06T08:38:33.146703Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-b/7723778447.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7723756904.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-1/7723756909.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-3/7723756911.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-c/7723778448.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-6/7723756914.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-8/7723756916.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-7/7723756915.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-l/7723774029.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-q/7723774034.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-p/7723774033.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-v/7723774039.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-n/7723774031.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-u/7723774038.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7723774040.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-s/7723774036.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-m/7723774030.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-y/7723774042.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-t/7723774037.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "19000.00",
+    "old_price": "43580.00",
+    "price": "19000.00",
+    "sources": [
+      {
+        "sku": 2815378229,
+        "source": "sds",
+        "created_at": "2025-09-06T08:38:57.977309Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 498088225,
+      "count": 6
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 42,
+        "return_amount": 228,
+        "sale_schema": "FBO",
+        "value": 7980
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 48,
+        "return_amount": 1023,
+        "sale_schema": "FBS",
+        "value": 9120
+      },
+      {
+        "percent": 48,
+        "sale_schema": "RFBS",
+        "value": 9120
+      },
+      {
+        "percent": 47,
+        "sale_schema": "FBP",
+        "value": 8930
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 6.3,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 11,
+          "reserved": 0,
+          "sku": 2815378229,
+          "source": "fbo"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-03-09T16:31:38.788897Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_SUPER",
+      "external_index_data": {
+        "minimal_price": "12536.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0.9
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-n/9116756483.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "success",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-03-09T16:46:47.103885Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 2815378229,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 2815378229,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3519692571,
+    "name": "Ствол электромонтажный для пистолета dccn40a под российскую расходку, насадка электромонтажная для dccn40a",
+    "offer_id": "DCCN40A-33E",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1747814105"
+    ],
+    "description_category_id": 89202024,
+    "type_id": 94875,
+    "created_at": "2026-01-27T18:50:14.544304Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-5/7183349537.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-5/7183349429.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-4/7183349536.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-6/7183349538.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "",
+    "old_price": "3500.00",
+    "price": "2500.00",
+    "sources": [
+      {
+        "sku": 3458586014,
+        "source": "sds",
+        "created_at": "2026-01-27T18:50:27.452375Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 1106177828,
+      "count": 1
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 41,
+        "return_amount": 69,
+        "sale_schema": "FBO",
+        "value": 1025
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 47,
+        "return_amount": 98,
+        "sale_schema": "FBS",
+        "value": 1175
+      },
+      {
+        "percent": 47,
+        "sale_schema": "RFBS",
+        "value": 1175
+      },
+      {
+        "percent": 47,
+        "sale_schema": "FBP",
+        "value": 1175
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 0.1,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": false,
+      "stocks": [
+        {
+          "present": 0,
+          "reserved": 0,
+          "sku": 3458586014,
+          "source": "fbo"
+        },
+        {
+          "present": 0,
+          "reserved": 0,
+          "sku": 3458586014,
+          "source": "fbs"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-01-28T00:48:26.388605Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": false
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+      "external_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-n/7183349519.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Готов к продаже",
+      "status_description": "Нет на складе",
+      "is_created": true,
+      "status_tooltip": "Товар можно привезти на склад Ozon или указать его количество на своем складе",
+      "status_updated_at": "2026-01-27T18:50:28.770799Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3458586014,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3458586014,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3588400330,
+    "name": "Гвозди усиленные 38*3.0 мм FOX для монтажного пистолета 800шт.",
+    "offer_id": "Y38",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1677248149"
+    ],
+    "description_category_id": 87889854,
+    "type_id": 94545,
+    "created_at": "2026-02-07T19:31:28.243180Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-y/7640375614.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7640375612.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-v/7640382271.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-x/7640375613.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-1/7640375617.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-0/7640375616.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7640375618.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "",
+    "old_price": "3200.00",
+    "price": "1400.00",
+    "sources": [
+      {
+        "sku": 3512010224,
+        "source": "sds",
+        "created_at": "2026-02-07T19:31:46.330550Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 669164478,
+      "count": 9
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 39,
+        "return_amount": 89,
+        "sale_schema": "FBO",
+        "value": 410.28
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 45,
+        "return_amount": 218,
+        "sale_schema": "FBS",
+        "value": 473.4
+      },
+      {
+        "percent": 45,
+        "sale_schema": "RFBS",
+        "value": 473.4
+      },
+      {
+        "percent": 45,
+        "sale_schema": "FBP",
+        "value": 473.4
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 1.7,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 46,
+          "reserved": 0,
+          "sku": 3512010224,
+          "source": "fbo"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-02-09T00:27:27.422791Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_SUPER",
+      "external_index_data": {
+        "minimal_price": "1704.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0.38
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-q/7640377370.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-02-07T19:31:48.491767Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3512010224,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3512010224,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3614500711,
+    "name": "Гвозди усиленные 22*3.0 мм FOX для монтажного пистолета 1000шт.",
+    "offer_id": "Y22",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1677243734"
+    ],
+    "description_category_id": 87889854,
+    "type_id": 94545,
+    "created_at": "2026-02-13T22:37:21.085030Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-y/7640375614.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7640375612.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-e/7640376098.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-x/7640375613.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-1/7640375617.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-0/7640375616.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7640375618.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "",
+    "old_price": "2750.00",
+    "price": "1150.00",
+    "sources": [
+      {
+        "sku": 3531658456,
+        "source": "sds",
+        "created_at": "2026-02-13T22:37:32.899840Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 669164478,
+      "count": 9
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 39,
+        "return_amount": 89,
+        "sale_schema": "FBO",
+        "value": 448.5
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 45,
+        "return_amount": 218,
+        "sale_schema": "FBS",
+        "value": 517.5
+      },
+      {
+        "percent": 45,
+        "sale_schema": "RFBS",
+        "value": 517.5
+      },
+      {
+        "percent": 45,
+        "sale_schema": "FBP",
+        "value": 517.5
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 1.3,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": false,
+      "stocks": []
+    },
+    "errors": [],
+    "updated_at": "2026-02-14T00:29:11.212500Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": false
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_SUPER",
+      "external_index_data": {
+        "minimal_price": "3227.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0.36
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-d/7640376097.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Готов к продаже",
+      "status_description": "Нет на складе",
+      "is_created": true,
+      "status_tooltip": "Товар можно привезти на склад Ozon или указать его количество на своем складе",
+      "status_updated_at": "2026-02-13T22:37:33.816327Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3531658456,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3531658456,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3588397628,
+    "name": "Гвозди усиленные 25*3.0 мм FOX для монтажного пистолета 1000шт.",
+    "offer_id": "Y25",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1677245488"
+    ],
+    "description_category_id": 87889854,
+    "type_id": 94545,
+    "created_at": "2026-02-07T19:30:00.057602Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-y/7640375614.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7640375612.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7640376230.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-x/7640375613.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-1/7640375617.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-0/7640375616.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7640375618.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "",
+    "old_price": "3000.00",
+    "price": "1250.00",
+    "sources": [
+      {
+        "sku": 3512008596,
+        "source": "sds",
+        "created_at": "2026-02-07T19:30:15.495279Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 669164478,
+      "count": 9
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 39,
+        "return_amount": 89,
+        "sale_schema": "FBO",
+        "value": 351.39
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 45,
+        "return_amount": 218,
+        "sale_schema": "FBS",
+        "value": 405.45
+      },
+      {
+        "percent": 45,
+        "sale_schema": "RFBS",
+        "value": 405.45
+      },
+      {
+        "percent": 45,
+        "sale_schema": "FBP",
+        "value": 405.45
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 1.5,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 13,
+          "reserved": 4,
+          "sku": 3512008596,
+          "source": "fbo"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-02-09T00:27:26.997898Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_SUPER",
+      "external_index_data": {
+        "minimal_price": "1480.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0.37
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-3/7640376231.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-02-07T19:30:17.611292Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3512008596,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3512008596,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 2671732314,
+    "name": "Гвоздезабивной монтажный пистолет MAOVON RB-65 (Kapachi) в РЮКЗАКЕ степлер строительный по бетону",
+    "offer_id": "MVRB-65",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1887860319"
+    ],
+    "description_category_id": 17028653,
+    "type_id": 970944397,
+    "created_at": "2025-09-08T08:48:15.367433Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-b/7723778447.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7723756904.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-1/7723756909.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-3/7723756911.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-c/7723778448.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-6/7723756914.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-8/7723756916.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-7/7723756915.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-l/7723774029.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-q/7723774034.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-p/7723774033.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-v/7723774039.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-n/7723774031.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-u/7723774038.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7723774040.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-s/7723774036.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-m/7723774030.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-y/7723774042.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-t/7723774037.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "17400.00",
+    "old_price": "32000.00",
+    "price": "17400.00",
+    "sources": [
+      {
+        "sku": 2823480256,
+        "source": "sds",
+        "created_at": "2025-09-08T08:48:59.631929Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 498088225,
+      "count": 6
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 42,
+        "return_amount": 228,
+        "sale_schema": "FBO",
+        "value": 7308
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 48,
+        "return_amount": 1023,
+        "sale_schema": "FBS",
+        "value": 8352
+      },
+      {
+        "percent": 48,
+        "sale_schema": "RFBS",
+        "value": 8352
+      },
+      {
+        "percent": 47,
+        "sale_schema": "FBP",
+        "value": 8178
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 6.3,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 13,
+          "reserved": 0,
+          "sku": 2823480256,
+          "source": "fbo"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-03-09T16:33:04.457084Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_GREEN",
+      "external_index_data": {
+        "minimal_price": "12536.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0.83
+      },
+      "ozon_index_data": {
+        "minimal_price": "10564.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0.98
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-q/7730576810.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "success",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-03-09T16:39:43.967409Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 2823480256,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 2823480256,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 2660630631,
+    "name": "ЛЕГКИЙ МОНТАЖНЫЙ ПИСТОЛЕТ MAOVON RB-65 в кейсе + гвозди усиленные 19 мм 1000 шт.",
+    "offer_id": "MVRB-65 (BOX)+Y19",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1957117142"
+    ],
+    "description_category_id": 17028653,
+    "type_id": 970944397,
+    "created_at": "2025-09-06T08:38:32.859525Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-f/7340307135.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7340307122.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-8/7340307272.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-i/7340307138.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-8/7340307128.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-y/7340307262.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-4/7340307196.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-7/7340307199.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-t/7340307185.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-n/7316863547.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-x/7340307117.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-h/7340307137.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-q/7520251562.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-t/7340307113.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-h/7340307209.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7340307158.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-6/7340307270.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-p/7340307217.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-o/7520251560.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "14000.00",
+    "old_price": "18858.00",
+    "price": "14500.00",
+    "sources": [
+      {
+        "sku": 2815377854,
+        "source": "sds",
+        "created_at": "2025-09-06T08:38:55.186453Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 498088225,
+      "count": 6
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 42,
+        "return_amount": 228,
+        "sale_schema": "FBO",
+        "value": 6090
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 48,
+        "return_amount": 1023,
+        "sale_schema": "FBS",
+        "value": 6960
+      },
+      {
+        "percent": 48,
+        "sale_schema": "RFBS",
+        "value": 6960
+      },
+      {
+        "percent": 47,
+        "sale_schema": "FBP",
+        "value": 6815
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 6.3,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": false,
+      "stocks": []
+    },
+    "errors": [],
+    "updated_at": "2025-09-07T04:23:36.773044Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": false
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+      "external_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-i/7340307210.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Готов к продаже",
+      "status_description": "Нет на складе",
+      "is_created": true,
+      "status_tooltip": "Товар можно привезти на склад Ozon или указать его количество на своем складе",
+      "status_updated_at": "2025-09-06T08:39:02.038610Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 2815377854,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 2815377854,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3588393937,
+    "name": "Гвозди кованые 22*3.05 мм FOX для монтажного пистолета 1000шт.",
+    "offer_id": "K22",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1677255879"
+    ],
+    "description_category_id": 87889854,
+    "type_id": 94545,
+    "created_at": "2026-02-07T19:26:44.414880Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-e/7640380238.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-p/7640380249.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-e/7640381570.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-j/7640380243.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-f/7640380239.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-k/7640380244.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7640375618.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "",
+    "old_price": "3500.00",
+    "price": "1450.00",
+    "sources": [
+      {
+        "sku": 3512005668,
+        "source": "sds",
+        "created_at": "2026-02-07T19:27:01.502215Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 669164478,
+      "count": 9
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 39,
+        "return_amount": 85,
+        "sale_schema": "FBO",
+        "value": 368.16
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 45,
+        "return_amount": 191,
+        "sale_schema": "FBS",
+        "value": 424.8
+      },
+      {
+        "percent": 45,
+        "sale_schema": "RFBS",
+        "value": 424.8
+      },
+      {
+        "percent": 45,
+        "sale_schema": "FBP",
+        "value": 424.8
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 1.3,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 121,
+          "reserved": 3,
+          "sku": 3512005668,
+          "source": "fbo"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-02-09T00:25:58.300099Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_SUPER",
+      "external_index_data": {
+        "minimal_price": "1396.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0.41
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-4/7640381560.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-02-07T19:27:01.855207Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3512005668,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3512005668,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3588403799,
+    "name": "Гвозди усиленные 32*3.0 мм FOX для монтажного пистолета 1000шт.",
+    "offer_id": "Y32",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1764987780"
+    ],
+    "description_category_id": 87889854,
+    "type_id": 94545,
+    "created_at": "2026-02-07T19:34:13.120395Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-y/7640375614.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7640375612.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-z/7640375615.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-x/7640375613.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-1/7640375617.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-0/7640375616.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7640375618.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "",
+    "old_price": "3200.00",
+    "price": "1350.00",
+    "sources": [
+      {
+        "sku": 3512013064,
+        "source": "sds",
+        "created_at": "2026-02-07T19:34:27.399561Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 669164478,
+      "count": 9
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 39,
+        "return_amount": 85,
+        "sale_schema": "FBO",
+        "value": 526.5
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 45,
+        "return_amount": 191,
+        "sale_schema": "FBS",
+        "value": 607.5
+      },
+      {
+        "percent": 45,
+        "sale_schema": "RFBS",
+        "value": 607.5
+      },
+      {
+        "percent": 45,
+        "sale_schema": "FBP",
+        "value": 607.5
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 1.7,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": false,
+      "stocks": []
+    },
+    "errors": [],
+    "updated_at": "2026-02-09T00:25:58.448419Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": false
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+      "external_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-v/7640381767.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Готов к продаже",
+      "status_description": "Нет на складе",
+      "is_created": true,
+      "status_tooltip": "Товар можно привезти на склад Ozon или указать его количество на своем складе",
+      "status_updated_at": "2026-02-07T19:34:28.354680Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3512013064,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3512013064,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3614494162,
+    "name": "Гвозди кованые 19*3.05 мм FOX для монтажного пистолета 1000шт.",
+    "offer_id": "K19",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1677251649"
+    ],
+    "description_category_id": 87889854,
+    "type_id": 94545,
+    "created_at": "2026-02-13T22:34:02.559728Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-e/7640380238.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-p/7640380249.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-8/7640381420.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-j/7640380243.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-f/7640380239.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-k/7640380244.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7640375618.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "1000.00",
+    "old_price": "3600.00",
+    "price": "1400.00",
+    "sources": [
+      {
+        "sku": 3531651628,
+        "source": "sds",
+        "created_at": "2026-02-13T22:34:13.043194Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 669164478,
+      "count": 9
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 39,
+        "return_amount": 85,
+        "sale_schema": "FBO",
+        "value": 363.09
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 45,
+        "return_amount": 191,
+        "sale_schema": "FBS",
+        "value": 418.95
+      },
+      {
+        "percent": 45,
+        "sale_schema": "RFBS",
+        "value": 418.95
+      },
+      {
+        "percent": 45,
+        "sale_schema": "FBP",
+        "value": 418.95
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 1.2,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 68,
+          "reserved": 0,
+          "sku": 3531651628,
+          "source": "fbo"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-02-14T00:34:30.916111Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_SUPER",
+      "external_index_data": {
+        "minimal_price": "1546.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0.36
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-6/7640381418.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-02-13T22:34:13.212374Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3531651628,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3531651628,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 4173400595,
+    "name": "Гвоздезабивной монтажный пистолет по бетону GSN50 II с двумя стволами, степлер гвоздезабивной по бетону",
+    "offer_id": "GSN50+",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN3973159530"
+    ],
+    "description_category_id": 17028653,
+    "type_id": 970944397,
+    "created_at": "2026-04-16T14:48:29.681451Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-h/9848228345.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-r/9848228463.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-8/9848228480.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/9848228330.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/9848227826.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-1/9848227825.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-z/9848227967.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-q/9848228210.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-j/9848227879.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-t/9848228465.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-0/9848228256.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "38000.00",
+    "old_price": "100000.00",
+    "price": "40000.00",
+    "sources": [
+      {
+        "sku": 3973159530,
+        "source": "sds",
+        "created_at": "2026-04-16T14:50:10.460650Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 858681333,
+      "count": 2
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 42,
+        "return_amount": 315,
+        "sale_schema": "FBO",
+        "value": 16464
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 48,
+        "return_amount": 1383,
+        "sale_schema": "FBS",
+        "value": 18816
+      },
+      {
+        "percent": 48,
+        "sale_schema": "RFBS",
+        "value": 18816
+      },
+      {
+        "percent": 47,
+        "sale_schema": "FBP",
+        "value": 18424
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 9.1,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 1,
+          "reserved": 0,
+          "sku": 3973159530,
+          "source": "fbo"
+        },
+        {
+          "present": 0,
+          "reserved": 0,
+          "sku": 3973159530,
+          "source": "fbs"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-04-19T18:23:57.922477Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+      "external_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-c/9848228592.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "success",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-04-19T18:25:06.234085Z"
+    },
+    "is_super": true,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3973159530,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3973159530,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 2660630776,
+    "name": "Гвоздезабивной монтажный пистолет MAOVON RB-65 PRO в РЮКЗАКЕ с усиленным стволом, степлер строительный по бетону",
+    "offer_id": "MVRB-65PRO",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN2103785950"
+    ],
+    "description_category_id": 17028653,
+    "type_id": 970944397,
+    "created_at": "2025-09-06T08:38:33.294146Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-t/7730511149.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-x/7730511153.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-u/7730511150.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-v/7730511151.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-y/7730511154.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-3/7730511159.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-4/7730511160.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-e/7730511170.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-b/7730511167.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-7/7730511163.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-9/7730511165.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-0/7730511156.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-6/7730511162.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-a/7730511166.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7723774040.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-5/7730511161.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-m/7723774030.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-y/7723774042.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-c/7730511168.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "17850.00",
+    "old_price": "35000.00",
+    "price": "17850.00",
+    "sources": [
+      {
+        "sku": 2815378551,
+        "source": "sds",
+        "created_at": "2025-09-06T08:39:00.514829Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 498088225,
+      "count": 6
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 42,
+        "return_amount": 228,
+        "sale_schema": "FBO",
+        "value": 7497
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 48,
+        "return_amount": 1023,
+        "sale_schema": "FBS",
+        "value": 8568
+      },
+      {
+        "percent": 48,
+        "sale_schema": "RFBS",
+        "value": 8568
+      },
+      {
+        "percent": 47,
+        "sale_schema": "FBP",
+        "value": 8389.5
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 6.3,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 14,
+          "reserved": 0,
+          "sku": 2815378551,
+          "source": "fbo"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-03-11T17:21:53.955676Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_YELLOW",
+      "external_index_data": {
+        "minimal_price": "14749.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0.72
+      },
+      "ozon_index_data": {
+        "minimal_price": "10046.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 1.06
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-r/7730576919.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "success",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-03-11T17:23:00.376672Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 2815378551,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 2815378551,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 4759605450,
+    "name": "Беспроводной автомобильный компрессор, мощный аккумуляторный насос с автостопом для авто, мотоциклов, велосипедов, спортинвентаря с функцией пауэрбанка",
+    "offer_id": "EG-216",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN4452217482"
+    ],
+    "description_category_id": 83250454,
+    "type_id": 91458,
+    "created_at": "2026-05-26T13:13:17.242672Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-z/10825725887.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-f/10825724355.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-1/10825729561.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-6/10825728306.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-4/10825730644.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-k/10825730588.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-j/10825732747.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-y/10825724122.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-z/10825727003.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-u/10825723146.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "2348.00",
+    "old_price": "10000.00",
+    "price": "2348.00",
+    "sources": [
+      {
+        "sku": 4452217482,
+        "source": "sds",
+        "created_at": "2026-05-26T13:14:51.727763Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 730072902,
+      "count": 1
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 41,
+        "return_amount": 89,
+        "sale_schema": "FBO",
+        "value": 872.48
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 47,
+        "return_amount": 236,
+        "sale_schema": "FBS",
+        "value": 1000.16
+      },
+      {
+        "percent": 47,
+        "sale_schema": "RFBS",
+        "value": 1000.16
+      },
+      {
+        "percent": 44,
+        "sale_schema": "FBP",
+        "value": 936.32
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 0.6,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 119,
+          "reserved": 0,
+          "sku": 4452217482,
+          "source": "fbo"
+        },
+        {
+          "present": 0,
+          "reserved": 0,
+          "sku": 4452217482,
+          "source": "fbs"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-05-26T13:45:43.355244Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+      "external_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-q/10825732430.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "success",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-05-26T13:46:51.603336Z"
+    },
+    "is_super": true,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 4452217482,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 4452217482,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3588394164,
+    "name": "Гвозди усиленные 27*3.0 мм FOX для монтажного пистолета 1000шт.",
+    "offer_id": "Y27",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1677246164"
+    ],
+    "description_category_id": 87889854,
+    "type_id": 94545,
+    "created_at": "2026-02-07T19:27:01.133781Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-y/7640375614.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7640375612.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-s/7640376508.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-x/7640375613.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-1/7640375617.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-0/7640375616.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7640375618.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "",
+    "old_price": "1450.00",
+    "price": "1300.00",
+    "sources": [
+      {
+        "sku": 3512005977,
+        "source": "sds",
+        "created_at": "2026-02-07T19:27:16.844092Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 669164478,
+      "count": 9
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 39,
+        "return_amount": 85,
+        "sale_schema": "FBO",
+        "value": 401.31
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 45,
+        "return_amount": 191,
+        "sale_schema": "FBS",
+        "value": 463.05
+      },
+      {
+        "percent": 45,
+        "sale_schema": "RFBS",
+        "value": 463.05
+      },
+      {
+        "percent": 45,
+        "sale_schema": "FBP",
+        "value": 463.05
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 1.6,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": false,
+      "stocks": [
+        {
+          "present": 0,
+          "reserved": 0,
+          "sku": 3512005977,
+          "source": "fbo"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-02-09T00:26:48.593931Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": false
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+      "external_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-r/7640376507.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Готов к продаже",
+      "status_description": "Нет на складе",
+      "is_created": true,
+      "status_tooltip": "Товар можно привезти на склад Ozon или указать его количество на своем складе",
+      "status_updated_at": "2026-02-07T19:27:17.942645Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3512005977,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3512005977,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3614470852,
+    "name": "Гвозди усиленные 19*3.0 мм FOX для монтажного пистолета 1000шт.",
+    "offer_id": "Y19",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN1677237649"
+    ],
+    "description_category_id": 87889854,
+    "type_id": 94545,
+    "created_at": "2026-02-13T22:23:27.469931Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-y/7640375614.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7640375612.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-z/7640375615.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-x/7640375613.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-1/7640375617.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-0/7640375616.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-2/7640375618.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "",
+    "old_price": "2500.00",
+    "price": "1050.00",
+    "sources": [
+      {
+        "sku": 3531634481,
+        "source": "sds",
+        "created_at": "2026-02-13T22:23:37.092381Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 669164478,
+      "count": 9
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 39,
+        "return_amount": 85,
+        "sale_schema": "FBO",
+        "value": 405.21
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 45,
+        "return_amount": 191,
+        "sale_schema": "FBS",
+        "value": 467.55
+      },
+      {
+        "percent": 45,
+        "sale_schema": "RFBS",
+        "value": 467.55
+      },
+      {
+        "percent": 45,
+        "sale_schema": "FBP",
+        "value": 467.55
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 1,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": false,
+      "stocks": [
+        {
+          "present": 0,
+          "reserved": 0,
+          "sku": 3531634481,
+          "source": "fbo"
+        }
+      ]
+    },
+    "errors": [],
+    "updated_at": "2026-02-14T00:35:26.165571Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": false
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_SUPER",
+      "external_index_data": {
+        "minimal_price": "1627.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0.64
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-v/7640375611.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "pending",
+      "status_name": "Готов к продаже",
+      "status_description": "Нет на складе",
+      "is_created": true,
+      "status_tooltip": "Товар можно привезти на склад Ozon или указать его количество на своем складе",
+      "status_updated_at": "2026-02-13T22:23:37.458377Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3531634481,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3531634481,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 3778196258,
+    "name": "Аккумуляторный монтажный пистолет DCCN40A, гвоздезабивной пистолет по бетону",
+    "offer_id": "DCCN40A(2akb)",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN3657425008"
+    ],
+    "description_category_id": 17028653,
+    "type_id": 970944397,
+    "created_at": "2026-03-15T18:28:34.073482Z",
+    "images": [],
+    "currency_code": "RUB",
+    "min_price": "",
+    "old_price": "98000.00",
+    "price": "55000.00",
+    "sources": [
+      {
+        "sku": 3657425008,
+        "source": "sds",
+        "created_at": "2026-03-15T18:29:20.117615Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 858681333,
+      "count": 2
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 42,
+        "return_amount": 228,
+        "sale_schema": "FBO",
+        "value": 23100
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 48,
+        "return_amount": 1023,
+        "sale_schema": "FBS",
+        "value": 26400
+      },
+      {
+        "percent": 48,
+        "sale_schema": "RFBS",
+        "value": 26400
+      },
+      {
+        "percent": 47,
+        "sale_schema": "FBP",
+        "value": 25850
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 7,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": false,
+      "stocks": []
+    },
+    "errors": [],
+    "updated_at": "2026-03-15T18:29:26.389900Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": false
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_RED",
+      "external_index_data": {
+        "minimal_price": "29393.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 1.47
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-v/9322547107.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "success",
+      "status_name": "Готов к продаже",
+      "status_description": "Нет на складе",
+      "is_created": true,
+      "status_tooltip": "Товар можно привезти на склад Ozon или указать его количество на своем складе",
+      "status_updated_at": "2026-03-15T18:29:21.009252Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 3657425008,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 3657425008,
+        "source": "sds"
+      }
+    ]
+  },
+  {
+    "id": 2660630650,
+    "name": "Гвоздезабивной монтажный пистолет MAOVON RB-65 PRO в КЕЙСЕ, степлер строительный по бетону",
+    "offer_id": "MVRB-65PRO (BOX)",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "OZN2531177655"
+    ],
+    "description_category_id": 17028653,
+    "type_id": 970944397,
+    "created_at": "2025-09-06T08:38:32.998790Z",
+    "images": [
+      "https://ir.ozone.ru/s3/multimedia-1-t/7730511149.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-x/7730511153.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-k/7730525612.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-u/7730511150.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-v/7730511151.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-g/7765231804.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-3/7730511159.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-4/7730511160.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-e/7730511170.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-b/7730511167.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-7/7730511163.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-t/7730525621.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-0/7730511156.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-6/7730511162.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-a/7730511166.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-w/7723774040.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-5/7730511161.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-m/7723774030.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-y/7723774042.jpg",
+      "https://ir.ozone.ru/s3/multimedia-1-c/7730511168.jpg"
+    ],
+    "currency_code": "RUB",
+    "min_price": "19650.00",
+    "old_price": "48500.00",
+    "price": "19650.00",
+    "sources": [
+      {
+        "sku": 2815378241,
+        "source": "sds",
+        "created_at": "2025-09-06T08:38:58.083400Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 498088225,
+      "count": 6
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 42,
+        "return_amount": 255,
+        "sale_schema": "FBO",
+        "value": 8253
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 48,
+        "return_amount": 1150,
+        "sale_schema": "FBS",
+        "value": 9432
+      },
+      {
+        "percent": 48,
+        "sale_schema": "RFBS",
+        "value": 9432
+      },
+      {
+        "percent": 47,
+        "sale_schema": "FBP",
+        "value": 9235.5
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 8,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": true,
+      "stocks": [
+        {
+          "present": 17,
+          "reserved": 0,
+          "sku": 2815378241,
+          "source": "fbo"
+        }
+      ]
+    },
+    "errors": [
+      {
+        "code": "video_cover_link_invalid",
+        "field": "",
+        "attribute_id": 21845,
+        "state": "create_variant",
+        "level": "ERROR_LEVEL_WARNING",
+        "texts": {
+          "attribute_name": "Озон.Видеообложка: ссылка",
+          "description": "Ссылка на видеообложку недействительна. Убедитесь, что видео не нарушает требования",
+          "short_description": "",
+          "params": [
+            {
+              "name": "attribute_name",
+              "value": "Озон.Видеообложка: ссылка"
+            },
+            {
+              "name": "attribute_id",
+              "value": "21845"
+            }
+          ],
+          "message": "Ваша ссылка недействительна, создайте новую обложку. Убедитесь, что вы оплатили размещение видеообложки от своего лица и ознакомились с требованиями оформления по ссылке https://ozon.ru/t/qqVL2Mn"
+        }
+      }
+    ],
+    "updated_at": "2026-03-09T16:31:04.180980Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": true
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_YELLOW",
+      "external_index_data": {
+        "minimal_price": "14749.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0.79
+      },
+      "ozon_index_data": {
+        "minimal_price": "10046.00",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 1.14
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir.ozone.ru/s3/multimedia-1-a/7730577010.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "success",
+      "status_name": "Продается",
+      "status_description": "",
+      "is_created": true,
+      "status_tooltip": "",
+      "status_updated_at": "2026-03-09T16:31:29.762928Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 2815378241,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 2815378241,
+        "source": "sds"
+      }
+    ]
+  }
+]

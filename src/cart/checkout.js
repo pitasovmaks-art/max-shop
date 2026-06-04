@@ -340,8 +340,8 @@ function _checkCartItem(item, freshProducts) {
         const v = (p.variants || []).find(vr => vr.id === item.variantId);
         if (!v) return { ok: false, price: 0, reason: `Вариант «${item.name}» больше не доступен` };
         if (_deliveryMethod === 'russia') price = v.priceMskDelivery || 0;
-        else if (city === 'krd') price = v.priceKrdPickup || 0;
-        else price = v.priceMskPickup || 0;
+        else if (city === 'krd') price = v.salePrice > 0 ? v.salePrice : (v.priceKrdPickup || 0);
+        else price = v.salePrice > 0 ? v.salePrice : (v.priceMskPickup || 0);
     } else {
         if (_deliveryMethod === 'russia') price = p.priceMskDelivery || p.priceDelivery || p.price || 0;
         else if (city === 'krd') price = p.priceKrdPickup || p.priceKrd || p.price || 0;

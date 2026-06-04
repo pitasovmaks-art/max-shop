@@ -40,6 +40,11 @@ function renderVariantRowsKrd() {
                        placeholder="Цена самовывоз (₽)"
                        min="0"
                        oninput="_varFieldKrd(${i},'priceKrdPickup',+this.value||0)">
+                <input class="ff__input variant-row__price variant-row__price--sale" type="number"
+                       value="${v.salePrice || ''}"
+                       placeholder="Акц. цена (₽)"
+                       min="0"
+                       oninput="_varFieldKrd(${i},'salePrice',+this.value||0)">
             </div>
         </div>`).join('');
 }
@@ -77,19 +82,24 @@ function renderVariantRowsMsk() {
                        placeholder="Доставка по России (₽)"
                        min="0"
                        oninput="_varFieldMsk(${i},'priceMskDelivery',+this.value||0)">
+                <input class="ff__input variant-row__price variant-row__price--sale" type="number"
+                       value="${v.salePrice || ''}"
+                       placeholder="Акц. цена (₽)"
+                       min="0"
+                       oninput="_varFieldMsk(${i},'salePrice',+this.value||0)">
             </div>
         </div>`).join('');
 }
 
 function addVariantRowKrd() {
-    _formVariantsKrd.push({ label: '', priceKrdPickup: 0, isDefault: _formVariantsKrd.length === 0 });
+    _formVariantsKrd.push({ label: '', priceKrdPickup: 0, salePrice: 0, isDefault: _formVariantsKrd.length === 0 });
     renderVariantRowsKrd();
     const inputs = document.querySelectorAll('#variant-rows-krd .variant-row__label');
     if (inputs.length) inputs[inputs.length - 1].focus();
 }
 
 function addVariantRowMsk() {
-    _formVariantsMsk.push({ label: '', priceMskPickup: 0, priceMskDelivery: 0, isDefault: _formVariantsMsk.length === 0 });
+    _formVariantsMsk.push({ label: '', priceMskPickup: 0, priceMskDelivery: 0, salePrice: 0, isDefault: _formVariantsMsk.length === 0 });
     renderVariantRowsMsk();
     const inputs = document.querySelectorAll('#variant-rows-msk .variant-row__label');
     if (inputs.length) inputs[inputs.length - 1].focus();
@@ -124,6 +134,7 @@ function _collectVariants() {
             isKrd:           true,
             isDefault:       !!v.isDefault,
             sortOrder:       i,
+            salePrice:       v.salePrice || 0,
         }));
     const msk = _formVariantsMsk
         .filter(v => String(v.label).trim() || v.priceMskPickup > 0 || v.priceMskDelivery > 0)
@@ -136,6 +147,7 @@ function _collectVariants() {
             isKrd:           false,
             isDefault:       !!v.isDefault,
             sortOrder:       i,
+            salePrice:       v.salePrice || 0,
         }));
     return [...krd, ...msk];
 }
@@ -768,12 +780,14 @@ function fillForm(p) {
     _formVariantsKrd = (p.variants || []).filter(vr => vr.isKrd).map(vr => ({
         label:          vr.label,
         priceKrdPickup: vr.priceKrdPickup || 0,
+        salePrice:      vr.salePrice      || 0,
         isDefault:      vr.isDefault,
     }));
     _formVariantsMsk = (p.variants || []).filter(vr => !vr.isKrd).map(vr => ({
         label:           vr.label,
         priceMskPickup:  vr.priceMskPickup  || 0,
         priceMskDelivery:vr.priceMskDelivery|| 0,
+        salePrice:       vr.salePrice       || 0,
         isDefault:       vr.isDefault,
     }));
     renderVariantRowsKrd();
