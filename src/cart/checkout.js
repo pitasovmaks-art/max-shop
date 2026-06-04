@@ -185,8 +185,16 @@ function plural(n, one, few, many) {
 /* ─── Effective price for current city (shared with cart.js) ── */
 function effectiveItemPrice(item, city, deliveryMethod) {
     if (deliveryMethod === 'russia') {
-        const base = item.priceMskDelivery || item.priceDelivery || 0;
-        return base || null;
+        const delivery = item.priceMskDelivery || item.priceDelivery || 0;
+        if (!delivery) return null;
+        const sale   = item.salePriceMsk || 0;
+        const pickup = item.priceMskPickup || item.priceMsk || 0;
+        if (sale > 0 && pickup > 0) {
+            const surcharge  = delivery - pickup;           // delivery markup
+            const saleDelivery = sale + (surcharge > 0 ? surcharge : 0);
+            return Math.min(saleDelivery, delivery);        // never more than base delivery
+        }
+        return delivery;
     }
     if (city === 'krd') {
         const base = item.priceKrdPickup || item.priceKrd || 0;
@@ -345,29 +353,44 @@ function _checkCartItem(item, freshProducts) {
     const p = freshProducts.find(pr => pr.id === item.id);
     if (!p) return { ok: false, price: 0, reason: `«${item.name}» больше не существует` };
     if (!p.inStock && !p.isService) return { ok: false, price: 0, reason: `«${item.name}» нет в наличии` };
-    let price;
-    if (item.variantId) {
-        const v = (p.variants || []).find(vr => vr.id === item.variantId);
-        if (!v) return { ok: false, price: 0, reason: `Вариант «${item.name}» больше не доступен` };
-        if (_deliveryMethod === 'russia') price = v.priceMskDelivery || 0;
-        else if (city === 'krd') price = (v.salePrice > 0 ? v.salePrice : null) ?? v.priceKrdPickup ?? 0;
-        else price = (v.salePrice > 0 ? v.salePrice : null) ?? v.priceMskPickup ?? 0;
+
+    // Build a synthetic cart-item from fresh API data so effectiveItemPrice can be
+    // used as the single source of truth — same logic as cart.js render.
+    const label  = item.variantLabel ?? '';
+    const isKrd  = city === 'krd';
+    const hasVariants = (p.variants || []).length > 0;
+
+    let freshItem;
+    if (hasVariants) {
+        const krdVar = p.variants.find(v => v.isKrd  && v.label === label)
+                    || p.variants.find(v => v.isKrd);
+        const mskVar = p.variants.find(v => !v.isKrd && v.label === label)
+                    || p.variants.find(v => !v.isKrd);
+
+        // If the item needs a city variant and it doesn't exist → unavailable
+        if (isKrd && !krdVar) return { ok: false, price: 0, reason: `«${item.name}» недоступен в выбранном городе` };
+        if (!isKrd && _deliveryMethod !== 'russia' && !mskVar) return { ok: false, price: 0, reason: `«${item.name}» недоступен в выбранном городе` };
+
+        freshItem = {
+            priceKrdPickup:   krdVar?.priceKrdPickup   || 0,
+            priceMskPickup:   mskVar?.priceMskPickup   || 0,
+            priceMskDelivery: mskVar?.priceMskDelivery || 0,
+            priceDelivery:    mskVar?.priceMskDelivery || 0,
+            salePriceKrd:     krdVar?.salePrice        || 0,
+            salePriceMsk:     mskVar?.salePrice        || 0,
+        };
     } else {
-        if (_deliveryMethod === 'russia') price = p.priceMskDelivery || p.priceDelivery || p.price || 0;
-        else if (city === 'krd') price = p.priceKrdPickup || p.priceKrd || p.price || 0;
-        else price = p.priceMskPickup || p.priceMsk || p.price || 0;
-        if (price <= 0 && p.variants && p.variants.length) {
-            const v = _deliveryMethod === 'russia'
-                ? p.variants.find(vr => vr.priceMskDelivery > 0)
-                : city === 'krd'
-                    ? p.variants.find(vr => vr.priceKrdPickup > 0)
-                    : p.variants.find(vr => vr.priceMskPickup > 0);
-            if (v) price = _deliveryMethod === 'russia'
-                ? v.priceMskDelivery
-                : city === 'krd' ? v.priceKrdPickup : v.priceMskPickup;
-        }
+        freshItem = {
+            priceKrdPickup:   p.priceKrdPickup  || p.priceKrd  || p.price || 0,
+            priceMskPickup:   p.priceMskPickup  || p.priceMsk  || p.price || 0,
+            priceMskDelivery: p.priceMskDelivery|| p.priceDelivery || 0,
+            priceDelivery:    p.priceMskDelivery|| p.priceDelivery || 0,
+            salePriceKrd: 0, salePriceMsk: 0,
+        };
     }
-    if (price <= 0) return { ok: false, price: 0, reason: `Цена «${item.name}» не определена` };
+
+    const price = effectiveItemPrice(freshItem, city, _deliveryMethod);
+    if (!price || price <= 0) return { ok: false, price: 0, reason: `Цена «${item.name}» не определена` };
     return { ok: true, price };
 }
 

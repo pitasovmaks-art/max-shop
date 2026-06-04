@@ -69,8 +69,16 @@ function plural(n, one, few, many) {
 /* ─── Effective price for current city ─────────────────── */
 function effectiveItemPrice(item, city, deliveryMethod) {
     if (deliveryMethod === 'russia') {
-        const base = item.priceMskDelivery || item.priceDelivery || 0;
-        return base || null;
+        const delivery = item.priceMskDelivery || item.priceDelivery || 0;
+        if (!delivery) return null;
+        const sale   = item.salePriceMsk || 0;
+        const pickup = item.priceMskPickup || item.priceMsk || 0;
+        if (sale > 0 && pickup > 0) {
+            const surcharge    = delivery - pickup;
+            const saleDelivery = sale + (surcharge > 0 ? surcharge : 0);
+            return Math.min(saleDelivery, delivery);
+        }
+        return delivery;
     }
     if (city === 'krd') {
         const base = item.priceKrdPickup || item.priceKrd || 0;
