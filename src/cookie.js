@@ -1,9 +1,23 @@
 /* ─── Cookie consent banner ─────────────────────────────── */
 (function () {
-    const KEY = 'cookie_consent';
+    const KEY    = 'cookie_consent';
+    const MAX_AGE = 365 * 24 * 60 * 60 * 1000; // 1 year in ms
 
-    function getConsent() { return localStorage.getItem(KEY); }
-    function setConsent(val) { localStorage.setItem(KEY, val); }
+    function getConsent() {
+        try {
+            const raw = localStorage.getItem(KEY);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            if (!data.date || Date.now() - data.date > MAX_AGE) {
+                localStorage.removeItem(KEY);
+                return null;
+            }
+            return data.value;
+        } catch { return null; }
+    }
+    function setConsent(val) {
+        localStorage.setItem(KEY, JSON.stringify({ value: val, date: Date.now() }));
+    }
 
     function dismiss(banner) {
         banner.classList.add('cookie-banner--hidden');
