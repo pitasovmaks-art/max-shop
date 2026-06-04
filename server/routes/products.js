@@ -262,6 +262,12 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
     const variants  = req.body;
     if (!Array.isArray(variants)) return res.status(400).json({ error: 'Expected array' });
     try {
+        // Check current sale state before replacing
+        const hadSaleRow = await db.queryOne(
+            'SELECT 1 FROM product_variants WHERE product_id=$1 AND sale_price>0', [productId]
+        );
+        const hadSale = !!hadSaleRow;
+
         await db.inTransaction(async (client) => {
             await client.query('DELETE FROM product_variants WHERE product_id=$1', [productId]);
             for (let i = 0; i < variants.length; i++) {
@@ -278,11 +284,39 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
                 );
             }
         });
+
         const saved = await db.query(
             'SELECT * FROM product_variants WHERE product_id=$1 ORDER BY sort_order, id',
             [productId]
         );
         res.json(saved.map(normalizeVariant));
+
+        // Async sale notification after response
+        const hasSale = variants.some(v => (v.salePrice || 0) > 0);
+        if (hasSale && !hadSale) {
+            // New sale started — notify subscribers if not already notified
+            setImmediate(async () => {
+                try {
+                    const product = await db.queryOne('SELECT name, sale_notified FROM products WHERE id=$1', [productId]);
+                    if (!product || product.sale_notified === 1) return;
+                    const subscribers = await db.query('SELECT tg_id FROM promo_subscribers');
+                    if (!subscribers.length) return;
+                    const { notifyPromo } = require('../../bot');
+                    for (const s of subscribers) {
+                        await notifyPromo(s.tg_id, product.name);
+                        await new Promise(r => setTimeout(r, 250));
+                    }
+                    await db.execute('UPDATE products SET sale_notified=1 WHERE id=$1', [productId]);
+                    console.log(`[promo] Notified ${subscribers.length} subscriber(s) for product ${productId}`);
+                } catch (e) {
+                    console.error('[promo] Notify error:', e.message);
+                }
+            });
+        } else if (!hasSale && hadSale) {
+            // Sale removed — reset flag so next sale triggers notification again
+            db.execute('UPDATE products SET sale_notified=0 WHERE id=$1', [productId])
+              .catch(e => console.error('[promo] Reset sale_notified error:', e.message));
+        }
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

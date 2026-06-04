@@ -95,6 +95,13 @@ async function createSchema() {
     await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS sort_order_in_category INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`UPDATE products SET sort_order_in_category = sort_order WHERE sort_order_in_category = 0`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS sale_price INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_notified INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS promo_subscribers (
+            tg_id      BIGINT PRIMARY KEY,
+            consent_at TIMESTAMP DEFAULT NOW()
+        )
+    `);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_krd INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_msk INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_delivery INTEGER NOT NULL DEFAULT 0`);

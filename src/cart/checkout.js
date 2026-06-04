@@ -535,6 +535,15 @@ async function submitOrder() {
 
         document.getElementById('successScreen').classList.remove('hidden');
         localStorage.removeItem('cart');
+
+        // Subscribe to promo if user opted in
+        if (tgId && document.getElementById('agreePromo')?.checked) {
+            fetch('/api/promo/subscribe', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ tgId }),
+            }).catch(() => {});
+        }
     } catch (e) {
         console.error('Order error:', e);
         btn.disabled = false;
@@ -617,4 +626,10 @@ document.addEventListener('DOMContentLoaded', () => {
     checkCart();
     renderSummary();
     loadAndRenderStores();
+    // Hide promo checkbox if user is not in the bot (no tgId)
+    const tgId = getTgId();
+    if (!tgId) {
+        const wrap = document.getElementById('promoCheckWrap');
+        if (wrap) wrap.style.display = 'none';
+    }
 });

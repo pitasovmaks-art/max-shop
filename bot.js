@@ -166,6 +166,24 @@ async function processUpdate(update) {
             return;
         }
 
+        // Отписка от промо-рассылки
+        if (text.trim().toLowerCase() === 'стоп акции') {
+            try {
+                const base = process.env.WEBHOOK_URL
+                    ? process.env.WEBHOOK_URL.replace('/webhook', '')
+                    : 'http://localhost:3000';
+                await fetch(`${base}/api/promo/unsubscribe`, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ tgId: userId || chatId }),
+                });
+                await sendMessage(chatId, 'Вы отписались от уведомлений об акциях.');
+            } catch (e) {
+                console.error('[bot] promo unsubscribe error:', e.message);
+            }
+            return;
+        }
+
         // Отвечаем всем текстом
         try {
             await sendMessage(chatId, '👋 Спасибо за сообщение! Вы подписаны на уведомления о статусе ваших заказов.');
@@ -383,6 +401,37 @@ async function notifyStock(tgId, productName) {
     }
 }
 
+/* ─── Notify: promo sale ────────────────────────────────── */
+async function notifyPromo(tgId, productName) {
+    if (!TOKEN || !tgId) return;
+    const text = `🔥 Акция в Точке Монтажа!\n\nТовар «${productName}» теперь по специальной цене. Успейте заказать!\n\nЧтобы отписаться от акций, напишите боту: стоп акции`;
+    const trySend = async (id) => {
+        const result = await sendMessage(+id, text);
+        console.log(`[bot] notifyPromo OK: tg_id=${tgId} product=${productName}`, result);
+    };
+    try {
+        await trySend(tgId);
+    } catch (e) {
+        console.error(`[bot] notifyPromo FAIL first try: tg_id=${tgId}`, e.message);
+        try {
+            const base = process.env.WEBHOOK_URL
+                ? process.env.WEBHOOK_URL.replace('/webhook', '')
+                : 'http://localhost:3000';
+            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            if (r.ok) {
+                const data = await r.json();
+                if (data.chatId && data.chatId !== String(tgId)) {
+                    await trySend(data.chatId);
+                    return;
+                }
+            }
+        } catch (e2) {
+            console.error(`[bot] notifyPromo user_map lookup failed:`, e2.message);
+        }
+        console.error(`[bot] notifyPromo FAIL final: tg_id=${tgId} product=${productName}`, e.message);
+    }
+}
+
 /* ─── Start bot ─────────────────────────────────────────── */
 function startBot() {
     if (!TOKEN) {
@@ -393,4 +442,4 @@ function startBot() {
     registerWebhook();
 }
 
-module.exports = { startBot, notifyStore, processUpdate, notifyCustomer, notifyStock };
+module.exports = { startBot, notifyStore, processUpdate, notifyCustomer, notifyStock, notifyPromo };
