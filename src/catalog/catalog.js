@@ -277,11 +277,18 @@ function showToast(message) {
     setTimeout(() => toast.classList.remove('show'), 2000);
 }
 
+/* ─── Sale helpers ───────────────────────────────────────────── */
+function isSaleForCity(product, city) {
+    if (!product.variants) return false;
+    if (city === 'krd') return product.variants.some(v => v.isKrd  && v.salePrice > 0);
+    return product.variants.some(v => !v.isKrd && v.salePrice > 0);
+}
+
 /* ─── Category filters ──────────────────────────────────────── */
 function renderCategoryFilters() {
     const el = document.getElementById('categories');
     if (!el) return;
-    const hasSale = _products.some(p => p.isSale);
+    const hasSale = _products.some(p => isSaleForCity(p, _city));
     const salBtn  = hasSale
         ? `<button class="cat-btn cat-btn--sale ${state.categoryId === 'sale' ? 'active' : ''}" onclick="setCategory('sale',this)">🔥 Акция</button>`
         : '';
@@ -344,7 +351,7 @@ function clearSearch() {
 /* ─── Filter products ───────────────────────────────────────── */
 function getFiltered() {
     if (state.categoryId === 'sale') {
-        return _products.filter(p => p.isSale);
+        return _products.filter(p => isSaleForCity(p, _city));
     }
     const list = _products.filter(p => {
         if (state.categoryId !== null && p.categoryId !== state.categoryId) return false;
