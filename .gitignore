@@ -3,3 +3,6 @@ shop.db
 *.db-shm
 *.db-wal
 .env
+.DS_Store
+ozon-*.mjs
+ozon-data/
