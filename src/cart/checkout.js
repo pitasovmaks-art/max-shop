@@ -188,9 +188,13 @@ function plural(n, one, few, many) {
 /* ─── Render order summary ──────────────────────────────── */
 function itemPrice(item) {
     const city = localStorage.getItem('city');
+    // For russia delivery, salePrice doesn't apply (no sale variant for delivery)
     if (_deliveryMethod === 'russia') return item.priceMskDelivery || item.priceDelivery || item.price;
-    if (city === 'krd') return item.priceKrdPickup || item.priceKrd || item.price;
-    return item.priceMskPickup || item.priceMsk || item.price;
+    // item.price is already the effective price (salePrice if on sale, base otherwise)
+    // set at addToCart time — use it directly for pickup methods
+    return item.price || (city === 'krd'
+        ? (item.priceKrdPickup || item.priceKrd || 0)
+        : (item.priceMskPickup || item.priceMsk || 0));
 }
 
 function renderSummary() {
@@ -340,8 +344,8 @@ function _checkCartItem(item, freshProducts) {
         const v = (p.variants || []).find(vr => vr.id === item.variantId);
         if (!v) return { ok: false, price: 0, reason: `Вариант «${item.name}» больше не доступен` };
         if (_deliveryMethod === 'russia') price = v.priceMskDelivery || 0;
-        else if (city === 'krd') price = v.salePrice > 0 ? v.salePrice : (v.priceKrdPickup || 0);
-        else price = v.salePrice > 0 ? v.salePrice : (v.priceMskPickup || 0);
+        else if (city === 'krd') price = (v.salePrice > 0 ? v.salePrice : null) ?? v.priceKrdPickup ?? 0;
+        else price = (v.salePrice > 0 ? v.salePrice : null) ?? v.priceMskPickup ?? 0;
     } else {
         if (_deliveryMethod === 'russia') price = p.priceMskDelivery || p.priceDelivery || p.price || 0;
         else if (city === 'krd') price = p.priceKrdPickup || p.priceKrd || p.price || 0;
