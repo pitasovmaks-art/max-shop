@@ -66,6 +66,22 @@ function plural(n, one, few, many) {
     return `${n} ${many}`;
 }
 
+/* ─── Effective price for current city ─────────────────── */
+function effectiveItemPrice(item, city, deliveryMethod) {
+    if (deliveryMethod === 'russia') {
+        const base = item.priceMskDelivery || item.priceDelivery || 0;
+        return base || null;
+    }
+    if (city === 'krd') {
+        const base = item.priceKrdPickup || item.priceKrd || 0;
+        const sale = item.salePriceKrd || 0;
+        return base ? (sale > 0 ? sale : base) : null;
+    }
+    const base = item.priceMskPickup || item.priceMsk || 0;
+    const sale = item.salePriceMsk || 0;
+    return base ? (sale > 0 ? sale : base) : null;
+}
+
 /* ─── Render ────────────────────────────────────────────── */
 function render() {
     const cart = getCart();
@@ -91,9 +107,16 @@ function render() {
     footer.classList.remove('hidden');
     clearBtn.classList.remove('hidden');
 
-    // Total qty & price
+    const city = localStorage.getItem('city') || 'msk';
+    // compute effective price per item; null = unavailable in current city
+    const priced = cart.map(item => ({
+        item,
+        ep: effectiveItemPrice(item, city, null),
+    }));
+    const hasUnavailable = priced.some(({ ep }) => ep === null);
+
     const totalQty = cart.reduce((s, i) => s + i.qty, 0);
-    const total    = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const total    = priced.reduce((s, { item, ep }) => s + (ep ?? 0) * item.qty, 0);
 
     itemsLabel.textContent = plural(totalQty, 'товар', 'товара', 'товаров');
     totalPrice.textContent = fmt(total);
@@ -101,10 +124,47 @@ function render() {
     navBadge.textContent = totalQty > 99 ? '99+' : totalQty;
     navBadge.classList.remove('hidden');
 
-    list.innerHTML = cart.map(item => {
-        const meta      = CAT_META[item.category] || { icon: '📦', bg: 'img-bg--default' };
-        const lineTotal = fmt(item.price * item.qty);
-        const safeKey   = item.key.replace(/'/g, "\\'");
+    // disable checkout button if any item is unavailable
+    const checkoutBtn = document.querySelector('.checkout-btn');
+    if (checkoutBtn) {
+        checkoutBtn.disabled = hasUnavailable;
+        checkoutBtn.style.opacity = hasUnavailable ? '0.45' : '';
+    }
+
+    list.innerHTML = priced.map(({ item, ep }) => {
+        const meta    = CAT_META[item.category] || { icon: '📦', bg: 'img-bg--default' };
+        const safeKey = item.key.replace(/'/g, "\\'");
+
+        if (ep === null) {
+            return `
+            <div class="cart-item cart-item--unavailable" id="item-${item.key}">
+                ${item.image
+                    ? `<div class="cart-item__img"><img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;opacity:.4"></div>`
+                    : `<div class="cart-item__img ${meta.bg}" style="opacity:.4">${meta.icon}</div>`}
+                <div class="cart-item__info">
+                    <div class="cart-item__name">${item.name}</div>
+                    ${item.variantLabel ? `<div class="cart-item__variant">${item.variantLabel}</div>` : ''}
+                    <div class="cart-item__unit" style="color:#FF3B30;font-size:12px">Недоступен в выбранном городе</div>
+                </div>
+                <button class="remove-btn" onclick="removeItem('${safeKey}')" aria-label="Удалить">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M9 6V4h6v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>`;
+        }
+
+        const baseForDisplay = city === 'krd'
+            ? (item.priceKrdPickup || item.priceKrd || 0)
+            : (item.priceMskPickup || item.priceMsk || 0);
+        const isOnSale  = ep < baseForDisplay && baseForDisplay > 0;
+        const unitHtml  = isOnSale
+            ? `<s style="opacity:.5;font-size:11px">${fmt(baseForDisplay)}</s> <span style="color:#FF3B30">${fmt(ep)}</span>`
+            : fmt(ep);
+        const lineTotal = fmt(ep * item.qty);
 
         return `
         <div class="cart-item" id="item-${item.key}">
@@ -114,7 +174,7 @@ function render() {
             <div class="cart-item__info">
                 <div class="cart-item__name">${item.name}</div>
                 ${item.variantLabel ? `<div class="cart-item__variant">${item.variantLabel}</div>` : ''}
-                <div class="cart-item__unit">${fmt(item.price)}&nbsp;/ шт</div>
+                <div class="cart-item__unit">${unitHtml}&nbsp;/ шт</div>
                 <div class="cart-item__controls">
                     <button class="qty-btn qty-btn--dec" onclick="updateQty('${safeKey}', -1)" aria-label="Уменьшить">−</button>
                     <span class="qty-value">${item.qty}</span>

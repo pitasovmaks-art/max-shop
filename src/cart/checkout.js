@@ -121,10 +121,7 @@ function closePriceModal() {
 }
 
 function _itemPriceFor(item, method) {
-    const city = localStorage.getItem('city');
-    if (method === 'russia') return item.priceMskDelivery || item.priceDelivery || item.price;
-    if (city === 'krd') return item.priceKrdPickup || item.priceKrd || item.price;
-    return item.priceMskPickup || item.priceMsk || item.price;
+    return effectiveItemPrice(item, localStorage.getItem('city'), method) || 0;
 }
 
 /* ─── Delivery method ───────────────────────────────────── */
@@ -185,16 +182,25 @@ function plural(n, one, few, many) {
     return `${n} ${many}`;
 }
 
+/* ─── Effective price for current city (shared with cart.js) ── */
+function effectiveItemPrice(item, city, deliveryMethod) {
+    if (deliveryMethod === 'russia') {
+        const base = item.priceMskDelivery || item.priceDelivery || 0;
+        return base || null;
+    }
+    if (city === 'krd') {
+        const base = item.priceKrdPickup || item.priceKrd || 0;
+        const sale = item.salePriceKrd || 0;
+        return base ? (sale > 0 ? sale : base) : null;
+    }
+    const base = item.priceMskPickup || item.priceMsk || 0;
+    const sale = item.salePriceMsk || 0;
+    return base ? (sale > 0 ? sale : base) : null;
+}
+
 /* ─── Render order summary ──────────────────────────────── */
 function itemPrice(item) {
-    const city = localStorage.getItem('city');
-    // For russia delivery, salePrice doesn't apply (no sale variant for delivery)
-    if (_deliveryMethod === 'russia') return item.priceMskDelivery || item.priceDelivery || item.price;
-    // item.price is already the effective price (salePrice if on sale, base otherwise)
-    // set at addToCart time — use it directly for pickup methods
-    return item.price || (city === 'krd'
-        ? (item.priceKrdPickup || item.priceKrd || 0)
-        : (item.priceMskPickup || item.priceMsk || 0));
+    return effectiveItemPrice(item, localStorage.getItem('city'), _deliveryMethod) || 0;
 }
 
 function renderSummary() {

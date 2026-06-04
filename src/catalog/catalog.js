@@ -202,20 +202,22 @@ function addToCart(productId) {
 
     const city    = _city || localStorage.getItem('city');
     const variant = _effectiveVariant(product);
+    const label   = variant?.label ?? '';
 
-    let priceKrdPickup, priceMskPickup, priceMskDelivery, salePrice;
-    if (variant) {
-        priceKrdPickup   = variant.priceKrdPickup   || 0;
-        priceMskPickup   = variant.priceMskPickup   || 0;
-        priceMskDelivery = variant.priceMskDelivery || 0;
-        salePrice        = variant.salePrice        || 0;
-    } else {
-        priceKrdPickup   = product.priceKrd      || product.price || 0;
-        priceMskPickup   = product.priceMsk      || product.price || 0;
-        priceMskDelivery = product.priceDelivery || product.price || 0;
-        salePrice        = 0;
-    }
+    // Find both city variants with the same label to store all price data
+    const krdVar = (product.variants || []).find(v => v.isKrd  && v.label === label)
+                || (product.variants || []).find(v => v.isKrd);
+    const mskVar = (product.variants || []).find(v => !v.isKrd && v.label === label)
+                || (product.variants || []).find(v => !v.isKrd);
+
+    const priceKrdPickup   = krdVar?.priceKrdPickup   || product.priceKrd      || product.price || 0;
+    const priceMskPickup   = mskVar?.priceMskPickup   || product.priceMsk      || product.price || 0;
+    const priceMskDelivery = mskVar?.priceMskDelivery || product.priceDelivery || 0;
+    const salePriceKrd     = krdVar?.salePrice || 0;
+    const salePriceMsk     = mskVar?.salePrice || 0;
+
     const basePrice = city === 'krd' ? priceKrdPickup : priceMskPickup;
+    const salePrice = city === 'krd' ? salePriceKrd   : salePriceMsk;
     const price     = salePrice > 0 ? salePrice : basePrice;
 
     const key  = variant ? `${productId}_v${variant.id}` : String(productId);
@@ -228,10 +230,10 @@ function addToCart(productId) {
             key, id: productId, name: product.name,
             price, priceKrdPickup, priceMskPickup, priceMskDelivery,
             priceDelivery: priceMskDelivery,
+            salePriceKrd, salePriceMsk,
             qty: 1, categoryId: product.categoryId,
             image: product.image || undefined,
         };
-        if (salePrice > 0) item.salePrice = salePrice;
         if (variant) { item.variantId = variant.id; item.variantLabel = variant.label; }
         cart.push(item);
     }
