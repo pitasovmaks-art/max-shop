@@ -178,7 +178,7 @@ function selectVariant(productId, variantId) {
     const variant  = product && product.variants.find(v => v.id === variantId);
     if (variant) {
         const priceEl = card.querySelector('.product-card__price');
-        if (priceEl) priceEl.textContent = fmt(getEffectivePrice(variant, _city));
+        if (priceEl) priceEl.innerHTML = fmtPrice(getEffectivePrice(variant, _city), variant.salePrice || 0);
     }
 }
 
