@@ -60,7 +60,7 @@
             'position:fixed', 'inset:0', 'z-index:99999',
             'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center',
             'padding:32px 24px',
-            'background:linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%)',
+            'background:linear-gradient(135deg, #0F1A3D 0%, #16265C 50%, #1A2B5C 100%)',
             'color:#fff', 'text-align:center',
         ].join(';');
 

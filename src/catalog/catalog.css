@@ -15,6 +15,7 @@
     --radius:        14px;
     --nav-h:         64px;
     --header-h:      56px;
+    --bg-gradient:   linear-gradient(135deg, #0F1A3D 0%, #16265C 50%, #1A2B5C 100%);
 }
 
 /* ─── Reset & Base ──────────────────────────────────────── */
@@ -49,7 +50,7 @@ a      { text-decoration: none; color: inherit; }
     justify-content: space-between;
     padding: 0 16px;
     height: var(--header-h);
-    background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+    background: linear-gradient(135deg, #0F1A3D 0%, #16265C 50%, #1A2B5C 100%);
     box-shadow: 0 1px 8px rgba(0,0,0,0.2);
 }
 .header__logo {
@@ -93,7 +94,7 @@ a      { text-decoration: none; color: inherit; }
 /* ─── Search ────────────────────────────────────────────── */
 .search-wrap {
     padding: 12px 16px 8px;
-    background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+    background: linear-gradient(135deg, #0F1A3D 0%, #16265C 50%, #1A2B5C 100%);
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 .search-bar {
@@ -130,7 +131,7 @@ a      { text-decoration: none; color: inherit; }
 
 /* ─── Categories ────────────────────────────────────────── */
 .categories-scroll {
-    background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+    background: linear-gradient(135deg, #0F1A3D 0%, #16265C 50%, #1A2B5C 100%);
     border-bottom: 1px solid rgba(255,255,255,0.1);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -158,14 +159,14 @@ a      { text-decoration: none; color: inherit; }
 .cat-btn:active { opacity: .75; }
 .cat-btn.active {
     background: #FFFFFF;
-    color: #1a1a2e;
+    color: #0F1A3D;
     border-color: #FFFFFF;
     font-weight: 600;
 }
 
 /* ─── Subcategories ─────────────────────────────────────── */
 .sub-scroll {
-    background: linear-gradient(135deg,#1a1a2e 0%,#2d4a3e 40%,#4a3728 100%);
+    background: linear-gradient(135deg, #0F1A3D 0%, #16265C 50%, #1A2B5C 100%);
     border-bottom: 1px solid rgba(255,255,255,0.1);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -192,7 +193,7 @@ a      { text-decoration: none; color: inherit; }
 }
 .sub-btn.active {
     background: #FFFFFF;
-    color: #1a1a2e;
+    color: #0F1A3D;
     border-color: #FFFFFF;
 }
 
@@ -429,7 +430,7 @@ a      { text-decoration: none; color: inherit; }
     transform: translateX(-50%);
     width: 100%; max-width: 480px;
     height: var(--nav-h);
-    background: linear-gradient(135deg,#4a3728 0%,#2d4a3e 60%,#1a1a2e 100%);
+    background: linear-gradient(135deg, #1A2B5C 0%, #16265C 60%, #0F1A3D 100%);
     box-shadow: 0 -1px 8px rgba(0,0,0,0.2);
     display: flex;
     align-items: center;
