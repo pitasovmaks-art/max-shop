@@ -301,7 +301,7 @@ a      { text-decoration: none; color: inherit; }
     color: #FFFFFF;
     display: flex;
     align-items: baseline;
-    gap: 4px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 .product-card__price--service {
@@ -311,8 +311,8 @@ a      { text-decoration: none; color: inherit; }
 }
 .price-old {
     font-size: 12px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.45);
+    font-weight: 400;
+    color: #9CA3AF;
     text-decoration: line-through;
 }
 .price-sale {

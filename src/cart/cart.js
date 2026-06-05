@@ -170,7 +170,7 @@ function render() {
             : (item.priceMskPickup || item.priceMsk || 0);
         const isOnSale  = ep < baseForDisplay && baseForDisplay > 0;
         const unitHtml  = isOnSale
-            ? `<s style="opacity:.5;font-size:11px">${fmt(baseForDisplay)}</s> <span style="color:#FF3B30">${fmt(ep)}</span>`
+            ? `<s class="price-old">${fmt(baseForDisplay)}</s><span class="price-sale">${fmt(ep)}</span>`
             : fmt(ep);
         const lineTotal = fmt(ep * item.qty);
 

@@ -136,7 +136,9 @@ a      { text-decoration: none; color: inherit; }
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.cart-item__unit { font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 10px; }
+.cart-item__unit { font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.price-old { font-size: 11px; font-weight: 400; color: #9CA3AF; text-decoration: line-through; }
+.price-sale { font-size: 12px; font-weight: 700; color: #FF3B30; }
 .cart-item__controls { display: flex; align-items: center; gap: 0; }
 
 .qty-btn {
