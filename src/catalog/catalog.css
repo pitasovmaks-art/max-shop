@@ -336,7 +336,7 @@ a      { text-decoration: none; color: inherit; }
     transition: background .3s, border-color .3s, transform .1s;
     flex-shrink: 0;
 }
-.add-btn svg              { transition: stroke .3s; }
+.add-btn svg              { display: block; transition: stroke .3s; }
 .add-btn:active           { background: rgba(248,88,0,0.12); transform: scale(.9); }
 .add-btn--added           { background: #F85800; border-color: #F85800; }
 .add-btn--added svg       { stroke: #FFFFFF; }
