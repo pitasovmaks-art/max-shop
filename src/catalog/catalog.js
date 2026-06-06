@@ -237,6 +237,12 @@ function addToCart(productId) {
     }
     saveCart(cart);
     showToast('✓ Добавлено в корзину');
+
+    const cardBtn = document.querySelector(`#pcard-${productId} .add-btn`);
+    if (cardBtn) {
+        cardBtn.classList.add('add-btn--added');
+        setTimeout(() => cardBtn.classList.remove('add-btn--added'), 500);
+    }
 }
 
 function getTotalQty() {
@@ -458,14 +464,14 @@ function render() {
 
         let btn;
         if (p.inStock) {
-            btn = `<button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})" aria-label="В корзину">+</button>`;
+            btn = `<button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})" aria-label="В корзину">${CART_SVG}</button>`;
         } else if (tgId) {
             const subscribed = _subscriptions.has(p.id);
             btn = subscribed
                 ? `<button class="add-btn add-btn--subscribed" disabled aria-label="Вы подписаны">${_bellSvg(true)}</button>`
                 : `<button class="add-btn add-btn--notify" onclick="event.stopPropagation();subscribeNotify(${p.id})" aria-label="Уведомить о поступлении">${_bellSvg(false)}</button>`;
         } else {
-            btn = `<button class="add-btn add-btn--disabled" disabled>+</button>`;
+            btn = `<button class="add-btn add-btn--disabled" disabled>${CART_SVG}</button>`;
         }
 
         return `
@@ -510,6 +516,8 @@ async function toggleFav(productId) {
         applyFavState(wasFav);
     });
 }
+
+const CART_SVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.61L23 6H6"/></svg>`;
 
 /* ─── Stock notify ───────────────────────────────────────────── */
 function _bellSvg(filled) {
