@@ -126,10 +126,6 @@ function _itemPriceFor(item, method) {
 
 /* ─── Delivery method ───────────────────────────────────── */
 function setDelivery(method) {
-    if (method === 'russia' && _deliveryMethod !== 'russia') {
-        showPriceChangeModal(_deliveryMethod);
-        return;
-    }
     applyDelivery(method);
 }
 

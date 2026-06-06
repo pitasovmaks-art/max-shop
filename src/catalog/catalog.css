@@ -428,7 +428,9 @@ a      { text-decoration: none; color: inherit; }
     transform: translateX(-50%);
     width: 100%; max-width: 480px;
     height: var(--nav-h);
-    background: #FFFFFF;
+    background: rgba(220,238,255,0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 -1px 8px rgba(0,0,0,0.08);
     display: flex;
     align-items: center;
