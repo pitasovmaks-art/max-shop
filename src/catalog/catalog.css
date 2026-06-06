@@ -217,9 +217,11 @@ a      { text-decoration: none; color: inherit; }
 
 /* ─── Product card ──────────────────────────────────────── */
 .product-card {
-    background: #FFFFFF;
-    border: 1px solid rgba(0,0,0,0.06);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     border-radius: 16px;
     overflow: hidden;
     display: flex;
@@ -227,7 +229,7 @@ a      { text-decoration: none; color: inherit; }
     transition: background .15s, transform .15s;
     cursor: pointer;
 }
-.product-card:active { background: rgba(0,0,0,0.03); transform: scale(.98); }
+.product-card:active { background: rgba(255,255,255,0.40); transform: scale(.98); }
 
 .product-card__img {
     height: 110px;
