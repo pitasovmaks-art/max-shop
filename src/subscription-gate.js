@@ -60,16 +60,16 @@
             'position:fixed', 'inset:0', 'z-index:99999',
             'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center',
             'padding:32px 24px',
-            'background:linear-gradient(135deg, #0F1A3D 0%, #16265C 50%, #1A2B5C 100%)',
-            'color:#fff', 'text-align:center',
+            'background:linear-gradient(160deg,#DCEEFF 0%,#B9D9F7 100%)',
+            'color:#1C1C1E', 'text-align:center',
         ].join(';');
 
         overlay.innerHTML = `
             <div style="font-size:48px;margin-bottom:20px">📢</div>
-            <h2 style="font-size:22px;font-weight:700;margin-bottom:12px;line-height:1.3">
+            <h2 style="font-size:22px;font-weight:700;margin-bottom:12px;line-height:1.3;color:#0C447C">
                 Только для подписчиков
             </h2>
-            <p style="font-size:15px;line-height:1.6;color:rgba(255,255,255,0.8);margin-bottom:32px;max-width:320px">
+            <p style="font-size:15px;line-height:1.6;color:rgba(28,28,30,0.7);margin-bottom:32px;max-width:320px">
                 Подпишитесь на наш канал&nbsp;«Точка монтажа», чтобы пользоваться приложением
             </p>
             <button id="sub-gate-subscribe"
@@ -78,13 +78,13 @@
                 Подписаться на канал
             </button>
             <button id="sub-gate-check"
-                style="width:100%;max-width:320px;height:52px;background:rgba(255,255,255,0.12);
-                       border:1px solid rgba(255,255,255,0.25);border-radius:16px;
-                       color:#fff;font-size:15px;font-weight:600;cursor:pointer">
+                style="width:100%;max-width:320px;height:52px;background:rgba(255,255,255,0.85);
+                       border:1px solid rgba(0,0,0,0.12);border-radius:16px;
+                       color:#1C1C1E;font-size:15px;font-weight:600;cursor:pointer">
                 Я подписался ✓
             </button>
             <p id="sub-gate-retry-msg"
-               style="margin-top:16px;font-size:13px;color:rgba(255,255,255,0.5);min-height:20px"></p>
+               style="margin-top:16px;font-size:13px;color:rgba(28,28,30,0.5);min-height:20px"></p>
         `;
 
         document.body.appendChild(overlay);

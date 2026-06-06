@@ -9,46 +9,46 @@
     <script src="https://st.max.ru/js/max-web-app.js"></script>
     <script src="/src/utils/tgid.js?v=20260601"></script>
     <style>
-        body { background: linear-gradient(135deg, #0F1A3D 0%, #16265C 50%, #1A2B5C 100%); min-height: 100vh; }
+        body { background: linear-gradient(160deg, #DCEEFF 0%, #B9D9F7 100%); min-height: 100vh; }
         .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding-bottom: 80px; }
         .header {
             position: sticky; top: 0; z-index: 100;
             display: flex; align-items: center;
             height: 56px; padding: 0 8px 0 4px;
-            background: linear-gradient(135deg, #0F1A3D 0%, #16265C 50%, #1A2B5C 100%);
+            background: linear-gradient(160deg, #DCEEFF 0%, #B9D9F7 100%);
             box-shadow: 0 1px 8px rgba(0,0,0,0.2);
         }
         .header__back {
             width: 44px; height: 44px; display: flex; align-items: center;
-            justify-content: center; border-radius: 50%; color: #fff; flex-shrink: 0;
+            justify-content: center; border-radius: 50%; color: #0C447C; flex-shrink: 0;
         }
-        .header__back:active { background: rgba(255,255,255,.12); }
-        .header__title { flex: 1; font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -.3px; }
+        .header__back:active { background: rgba(12,68,124,.10); }
+        .header__title { flex: 1; font-size: 17px; font-weight: 700; color: #0C447C; letter-spacing: -.3px; }
         .header__cart {
             position: relative; width: 44px; height: 44px;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 50%; color: #fff; flex-shrink: 0;
+            border-radius: 50%; color: #0C447C; flex-shrink: 0;
         }
-        .header__cart:active { background: rgba(255,255,255,.08); }
+        .header__cart:active { background: rgba(12,68,124,.08); }
         .cart-badge {
             position: absolute; top: 4px; right: 4px;
-            min-width: 17px; height: 17px; background: #F85800; color: #fff;
+            min-width: 17px; height: 17px; background: #F85800; color: #0C447C;
             font-size: 10px; font-weight: 700; border-radius: 9px; padding: 0 3px;
             display: flex; align-items: center; justify-content: center;
         }
         .empty-state {
             display: flex; flex-direction: column; align-items: center;
-            padding: 80px 24px; gap: 12px; text-align: center; color: #fff;
+            padding: 80px 24px; gap: 12px; text-align: center; color: #1C1C1E;
         }
         .empty-state__icon { font-size: 56px; }
         .empty-state__title { font-size: 18px; font-weight: 700; }
         .empty-state__sub { font-size: 14px; opacity: .6; }
         .empty-state__btn {
             margin-top: 8px; padding: 12px 28px; background: #F85800;
-            color: #fff; border-radius: 14px; font-size: 15px; font-weight: 700;
+            color: #FFFFFF; border-radius: 14px; font-size: 15px; font-weight: 700;
             text-decoration: none; display: inline-block;
         }
-        .loading { text-align: center; padding: 60px 24px; font-size: 14px; color: rgba(255,255,255,.6); }
+        .loading { text-align: center; padding: 60px 24px; font-size: 14px; color: rgba(28,28,30,.55); }
         /* Override fav-btn for remove in favorites page */
         .fav-btn { color: #F85800; background: rgba(0,0,0,0.45); }
     </style>

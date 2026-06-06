@@ -51,7 +51,7 @@ function renderStoreList() {
     });
 
     if (!filtered.length) {
-        list.innerHTML = '<p style="padding:16px;color:rgba(255,255,255,0.5);font-size:14px">Нет доступных магазинов</p>';
+        list.innerHTML = '<p style="padding:16px;color:rgba(28,28,30,0.5);font-size:14px">Нет доступных магазинов</p>';
         return;
     }
 
@@ -435,7 +435,7 @@ async function submitOrder() {
             if (!warn) {
                 warn = document.createElement('div');
                 warn.id = 'priceCheckWarn';
-                warn.style.cssText = 'background:rgba(255,214,10,.12);border:1px solid rgba(255,214,10,.35);border-radius:12px;padding:12px 16px;margin:0 0 12px;font-size:13px;color:#FFD60A;line-height:1.5';
+                warn.style.cssText = 'background:#FFF4D6;border:1px solid rgba(138,101,0,0.25);border-radius:12px;padding:12px 16px;margin:0 0 12px;font-size:13px;color:#8A6500;line-height:1.5';
                 btn.parentNode.insertBefore(warn, btn);
             }
             warn.innerHTML = `⚠️ Цена изменилась.<br>`

@@ -19,7 +19,7 @@ function renderOrders(orders) {
                 <div class="empty-state__icon">📋</div>
                 <p class="empty-state__title">Заказов пока нет</p>
                 <p class="empty-state__sub">Ваши заказы появятся здесь после оформления</p>
-                <div style="color:rgba(255,255,255,0.5);padding:8px;font-size:11px;white-space:pre-line;margin:20px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;text-align:left">WebApp: ${typeof window.WebApp}
+                <div style="color:rgba(28,28,30,0.5);padding:8px;font-size:11px;white-space:pre-line;margin:20px;border:1px solid rgba(0,0,0,0.08);border-radius:8px;text-align:left">WebApp: ${typeof window.WebApp}
 platform: ${window.WebApp?.platform || '?'}
 version: ${window.WebApp?.version || '?'}
 initData: ${window.WebApp?.initData ? 'есть' : 'нет'}
@@ -32,7 +32,7 @@ tg_id: ${_tgId || 'НЕТ'}</div>
         return;
     }
 
-    content.innerHTML = `<div style="color:rgba(255,255,255,0.5);padding:8px 16px;font-size:12px">ID: ${_tgId || 'нет'}</div>` + orders.map(o => {
+    content.innerHTML = `<div style="color:rgba(28,28,30,0.5);padding:8px 16px;font-size:12px">ID: ${_tgId || 'нет'}</div>` + orders.map(o => {
         const st   = STATUS_CONFIG[o.status] || { label: o.status, cls: 'badge-new' };
         const date = new Date(o.createdAt).toLocaleString('ru-RU', {
             day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
@@ -83,7 +83,7 @@ async function init() {
     const content = document.getElementById('content');
 
     if (!_tgId) {
-        content.innerHTML = '<div style="color:rgba(255,255,255,0.5);padding:8px 16px;font-size:12px">ID: нет</div>';
+        content.innerHTML = '<div style="color:rgba(28,28,30,0.5);padding:8px 16px;font-size:12px">ID: нет</div>';
         renderOrders([]);
         return;
     }
