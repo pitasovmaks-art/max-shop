@@ -213,12 +213,13 @@ a      { text-decoration: none; color: inherit; }
     bottom: calc(var(--nav-h));
     left: 50%; transform: translateX(-50%);
     width: 100%; max-width: 480px;
-    background: rgba(255,255,255,0.95);
+    background: rgba(255,255,255,0.85);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-top: 1px solid rgba(0,0,0,0.06);
     padding: 14px 16px;
     z-index: 90;
-    box-shadow: 0 -1px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
 }
 .summary { margin-bottom: 12px; }
 .summary-row { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; }
