@@ -116,14 +116,34 @@ function readWorkbook(buffer, readOpts) {
     return XLSX.read(iconv.decode(buffer, 'cp1251'), { type: 'string', ...readOpts });
 }
 
+// Некоторые выгрузки — настоящие .xlsx (zip), но текстовые ячейки в них
+// записаны байтами CP1251, прочитанными как отдельные code units (мойибаке
+// вида "=0G8A;5=8O" вместо "начисления"). Перекодируем такую строку обратно.
+function decodeCell(cell) {
+    try {
+        const buf = Buffer.alloc(cell.length);
+        for (let i = 0; i < cell.length; i++) {
+            buf[i] = cell.charCodeAt(i) & 0xff;
+        }
+        return iconv.decode(buf, 'cp1251');
+    } catch (e) {
+        return cell;
+    }
+}
+
 /* ─── Чтение листа: поиск строки заголовков по известным именам ─ */
-function parseSheet(buffer, knownHeaders, sheetNameHint, readOpts) {
+function parseSheet(buffer, knownHeaders, sheetNameHint, readOpts, opts = {}) {
     const wb        = readWorkbook(buffer, readOpts);
     const sheetName = sheetNameHint
         ? (wb.SheetNames.find(n => n.trim() === sheetNameHint) || wb.SheetNames[0])
         : wb.SheetNames[0];
     const ws  = wb.Sheets[sheetName];
-    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    let raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    if (opts.decodeMojibake) {
+        raw = raw.map(row => Array.isArray(row)
+            ? row.map(cell => typeof cell === 'string' ? decodeCell(cell) : cell)
+            : row);
+    }
 
     // Строка заголовков должна содержать НЕСКОЛЬКО известных названий столбцов —
     // иначе строки вида "Категория: <название>" из шапки отчёта ложно матчатся
@@ -248,20 +268,7 @@ router.post('/transactions', requireAdmin, upload.single('file'), handleUpload('
     const account = detectAccount(filename);
     if (!account) throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
 
-    {
-        const workbook  = readWorkbook(buffer);
-        const sheet     = workbook.Sheets[workbook.SheetNames[0]];
-        const debugRaw  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-        console.log('=== НАЧИСЛЕНИЯ DEBUG ===');
-        console.log('Листов:', workbook.SheetNames);
-        console.log('Строк всего:', debugRaw.length);
-        debugRaw.slice(0, 10).forEach((row, i) => {
-            console.log(`Строка ${i}:`, JSON.stringify(row.slice(0, 6)));
-        });
-        console.log('=== END DEBUG ===');
-    }
-
-    const { raw, rows } = parseSheet(buffer, TRANSACTIONS_HEADERS);
+    const { raw, rows } = parseSheet(buffer, TRANSACTIONS_HEADERS, undefined, undefined, { decodeMojibake: true });
     const periodDate    = findPeriodDate(raw);
 
     let count = 0;
