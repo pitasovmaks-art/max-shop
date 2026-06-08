@@ -1,6 +1,7 @@
 const router  = require('express').Router();
 const multer  = require('multer');
 const XLSX    = require('xlsx');
+const iconv   = require('iconv-lite');
 const db      = require('../db');
 const { requireAdmin } = require('../middleware/auth');
 
@@ -104,17 +105,33 @@ function findPeriodRange(rawRows) {
     return { periodStart: null, periodEnd: null };
 }
 
+/* ─── Чтение книги с учётом кодировки ────────────────────── */
+// Выгрузки из ЛК продавца с расширением .xlsx часто на деле являются
+// HTML/CSV-файлами в кодировке Windows-1251, а не настоящим xlsx (zip-архивом).
+// Опция XLSX.read({ codepage: 1251 }) не декодирует такие буферы, поэтому
+// вручную перекодируем не-zip буфер из CP1251 в UTF-8 через iconv-lite.
+function readWorkbook(buffer, readOpts) {
+    const isZip = buffer.length > 1 && buffer[0] === 0x50 && buffer[1] === 0x4B; // сигнатура "PK"
+    if (isZip) return XLSX.read(buffer, { type: 'buffer', ...readOpts });
+    return XLSX.read(iconv.decode(buffer, 'cp1251'), { type: 'string', ...readOpts });
+}
+
 /* ─── Чтение листа: поиск строки заголовков по известным именам ─ */
 function parseSheet(buffer, knownHeaders, sheetNameHint, readOpts) {
-    const wb        = XLSX.read(buffer, { type: 'buffer', ...readOpts });
+    const wb        = readWorkbook(buffer, readOpts);
     const sheetName = sheetNameHint
         ? (wb.SheetNames.find(n => n.trim() === sheetNameHint) || wb.SheetNames[0])
         : wb.SheetNames[0];
     const ws  = wb.Sheets[sheetName];
     const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
+    // Строка заголовков должна содержать НЕСКОЛЬКО известных названий столбцов —
+    // иначе строки вида "Категория: <название>" из шапки отчёта ложно матчатся
+    // по одному совпадению ("Категория") раньше настоящей строки заголовков.
+    const minMatches = Math.min(2, knownHeaders.length);
     const headerRowIdx = raw.findIndex(row =>
-        Array.isArray(row) && row.some(cell => knownHeaders.some(h => String(cell).trim().includes(h)))
+        Array.isArray(row) &&
+        knownHeaders.filter(h => row.some(cell => String(cell).trim().includes(h))).length >= minMatches
     );
     if (headerRowIdx === -1) {
         console.log('Первые строки файла:', raw.slice(0, 5));
@@ -231,7 +248,7 @@ router.post('/transactions', requireAdmin, upload.single('file'), handleUpload('
     const account = detectAccount(filename);
     if (!account) throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
 
-    const { raw, rows } = parseSheet(buffer, TRANSACTIONS_HEADERS, null, { codepage: 1251 });
+    const { raw, rows } = parseSheet(buffer, TRANSACTIONS_HEADERS);
     const periodDate    = findPeriodDate(raw);
 
     let count = 0;
@@ -308,7 +325,7 @@ router.post('/financial', requireAdmin, upload.single('file'), handleUpload('fin
 
     const { periodStart, periodEnd } = parsePeriodFromFilename(filename);
 
-    const wb        = XLSX.read(buffer, { type: 'buffer' });
+    const wb        = readWorkbook(buffer);
     const sheetName = wb.SheetNames.find(n => n.trim() === 'Ozon - new') || wb.SheetNames[0];
     const ws        = wb.Sheets[sheetName];
     const raw       = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
