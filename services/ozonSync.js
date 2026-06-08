@@ -1,10 +1,17 @@
 const cron = require('node-cron');
 const fs   = require('fs');
 const path = require('path');
+const XLSX = require('xlsx');
 const db   = require('../server/db');
 
 const BASE_URL    = 'https://api-seller.ozon.ru';
-const REPORTS_DIR = path.join(__dirname, '..', 'reports');
+const EXPORTS_DIR = path.join(__dirname, '..', 'exports');
+
+const MONTHS_RU = [
+    'январь', 'февраль', 'март',     'апрель', 'май',    'июнь',
+    'июль',   'август',  'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
+];
+const monthYearLabel = d => `${MONTHS_RU[d.getMonth()]}${d.getFullYear()}`;
 
 const ACCOUNTS = [
     { name: 'БМ',        clientId: process.env.BM_CLIENT_ID,       apiKey: process.env.BM_API_KEY       },
@@ -38,7 +45,53 @@ async function logSync(account, dataType, status, count, errorMessage) {
     );
 }
 
+async function logExport(account, dataType, filePath, count) {
+    await db.execute(
+        `INSERT INTO sync_log (account, data_type, sync_date, status, records_count, file_path)
+         VALUES ($1, $2, CURRENT_DATE, 'exported', $3, $4)`,
+        [account.name, dataType, count, filePath]
+    );
+}
+
 const fmtDate = d => d.toISOString().slice(0, 10);
+
+/* ─── Формирование Excel-файлов в exports/ ───────────────── */
+function writeExcel(fileName, headers, rows) {
+    fs.mkdirSync(EXPORTS_DIR, { recursive: true });
+    const filePath = path.join(EXPORTS_DIR, fileName);
+    const sheet    = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const book     = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, 'Данные');
+    XLSX.writeFile(book, filePath);
+    return filePath;
+}
+
+async function exportToExcel(account, dataType, fileName, headers, rows) {
+    try {
+        const filePath = writeExcel(fileName, headers, rows);
+        await logExport(account, dataType, filePath, rows.length);
+        console.log(`[ozonSync] Excel (${dataType}, ${account.name}): ${filePath} (${rows.length} строк)`);
+    } catch (e) {
+        console.error(`[ozonSync] Ошибка формирования Excel (${dataType}, ${account.name}):`, e.message);
+    }
+}
+
+function buildStockRows(items) {
+    const bySku = new Map();
+    for (const item of items) {
+        for (const stock of (item.stocks || [])) {
+            const sku = stock.sku ?? item.product_id ?? item.offer_id;
+            if (!bySku.has(sku)) {
+                bySku.set(sku, { sku, name: item.offer_id ?? '', fbo: 0, fbs: 0 });
+            }
+            const row = bySku.get(sku);
+            if      (stock.type === 'fbo') row.fbo += stock.present ?? 0;
+            else if (stock.type === 'fbs') row.fbs += stock.present ?? 0;
+        }
+    }
+    const today = fmtDate(new Date());
+    return [...bySku.values()].map(r => [r.sku, r.name, r.fbo, r.fbs, today]);
+}
 
 /* ─── 1. Остатки FBO/FBS ─────────────────────────────────── */
 async function syncStocks() {
@@ -76,6 +129,13 @@ async function syncStocks() {
             }
             await logSync(account, 'stocks', 'success', count);
             console.log(`[ozonSync] Остатки (${account.name}): сохранено ${count} запис.`);
+
+            await exportToExcel(
+                account, 'stocks',
+                `остатки_${account.name}_${fmtDate(new Date())}.xlsx`,
+                ['SKU', 'Название', 'FBO остаток', 'FBS остаток', 'Дата'],
+                buildStockRows(items)
+            );
         } catch (e) {
             await logSync(account, 'stocks', 'error', count, e.message);
             console.error(`[ozonSync] Ошибка остатков (${account.name}):`, e.message);
@@ -89,7 +149,10 @@ async function syncAnalytics() {
     const dateFrom = new Date(dateTo);
     dateFrom.setDate(dateFrom.getDate() - 28);
 
-    const metrics = ['revenue', 'ordered_units', 'returns', 'cancellations', 'delivered_units'];
+    const metrics = [
+        'revenue', 'ordered_units', 'returns', 'cancellations', 'delivered_units',
+        'hits_view', 'hits_tocart',
+    ];
 
     for (const account of ACCOUNTS) {
         let count = 0;
@@ -108,8 +171,8 @@ async function syncAnalytics() {
                 const vals = row.metrics     || [];
                 await db.execute(
                     `INSERT INTO ozon_analytics
-                        (account, date_from, date_to, sku, revenue, ordered_units, returns, cancellations, delivered_units, synced_at)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
+                        (account, date_from, date_to, sku, revenue, ordered_units, returns, cancellations, delivered_units, impressions, add_to_cart, synced_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
                     [
                         account.name,
                         fmtDate(dateFrom),
@@ -120,12 +183,36 @@ async function syncAnalytics() {
                         vals[2] ?? 0,
                         vals[3] ?? 0,
                         vals[4] ?? 0,
+                        vals[5] ?? 0,
+                        vals[6] ?? 0,
                     ]
                 );
                 count++;
             }
             await logSync(account, 'analytics', 'success', count);
             console.log(`[ozonSync] Аналитика (${account.name}): сохранено ${count} запис.`);
+
+            const periodLabel = `${fmtDate(dateFrom)} – ${fmtDate(dateTo)}`;
+            await exportToExcel(
+                account, 'analytics',
+                `аналитика_${account.name}_${fmtDate(new Date())}.xlsx`,
+                ['SKU', 'Выручка', 'Заказы', 'Возвраты', 'Отмены', 'Доставлено', 'Показы', 'В корзину', 'Период'],
+                rows.map(row => {
+                    const dims = row.dimensions || [];
+                    const vals = row.metrics     || [];
+                    return [
+                        dims[0]?.id ?? '',
+                        vals[0] ?? 0,
+                        vals[1] ?? 0,
+                        vals[2] ?? 0,
+                        vals[3] ?? 0,
+                        vals[4] ?? 0,
+                        vals[5] ?? 0,
+                        vals[6] ?? 0,
+                        periodLabel,
+                    ];
+                })
+            );
         } catch (e) {
             await logSync(account, 'analytics', 'error', count, e.message);
             console.error(`[ozonSync] Ошибка аналитики (${account.name}):`, e.message);
@@ -144,7 +231,8 @@ async function syncTransactions() {
     const pageSize         = 1000;
 
     for (const account of ACCOUNTS) {
-        let count = 0;
+        let count   = 0;
+        let allOps  = [];
         try {
             let page = 1;
             while (true) {
@@ -160,6 +248,7 @@ async function syncTransactions() {
                     page_size: pageSize,
                 });
                 const ops = data.result?.operations || [];
+                allOps.push(...ops);
                 for (const op of ops) {
                     await db.execute(
                         `INSERT INTO ozon_transactions
@@ -184,6 +273,20 @@ async function syncTransactions() {
             }
             await logSync(account, 'transactions', 'success', count);
             console.log(`[ozonSync] Транзакции (${account.name}): сохранено ${count} запис.`);
+
+            await exportToExcel(
+                account, 'transactions',
+                `начисления_${account.name}_${monthYearLabel(firstDayLastMo)}.xlsx`,
+                ['Дата', 'Номер заказа', 'Тип операции', 'Сумма', 'Комиссия', 'Логистика'],
+                allOps.map(op => [
+                    op.operation_date ?? '',
+                    op.posting?.order_number ?? op.posting_number ?? '',
+                    op.operation_type_name ?? op.operation_type ?? '',
+                    op.amount ?? 0,
+                    op.sale_commission ?? 0,
+                    op.delivery_charge ?? op.posting?.delivery_charge ?? 0,
+                ])
+            );
         } catch (e) {
             await logSync(account, 'transactions', 'error', count, e.message);
             console.error(`[ozonSync] Ошибка транзакций (${account.name}):`, e.message);
@@ -204,7 +307,7 @@ async function waitForReport(account, code, { intervalMs = 10000, maxAttempts = 
 }
 
 async function syncReports() {
-    fs.mkdirSync(REPORTS_DIR, { recursive: true });
+    fs.mkdirSync(EXPORTS_DIR, { recursive: true });
 
     for (const account of ACCOUNTS) {
         let reportCode = null;
@@ -227,8 +330,8 @@ async function syncReports() {
             if (!fileRes.ok) throw new Error(`Не удалось скачать файл отчёта: ${fileRes.status}`);
             const buffer = Buffer.from(await fileRes.arrayBuffer());
 
-            const fileName = `${account.name}_товары_${fmtDate(new Date())}.xlsx`;
-            const filePath = path.join(REPORTS_DIR, fileName);
+            const fileName = `отчет_${account.name}_${fmtDate(new Date())}.xlsx`;
+            const filePath = path.join(EXPORTS_DIR, fileName);
             fs.writeFileSync(filePath, buffer);
 
             await db.execute(
@@ -237,6 +340,7 @@ async function syncReports() {
                 [account.name, reportCode, filePath, 'success']
             );
             await logSync(account, 'reports', 'success', 1);
+            await logExport(account, 'reports', filePath, 1);
             console.log(`[ozonSync] Отчёт по товарам (${account.name}): сохранён в ${filePath}`);
         } catch (e) {
             await db.execute(
@@ -281,6 +385,8 @@ async function ensureTables() {
             synced_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     `);
+    await db.execute(`ALTER TABLE ozon_analytics ADD COLUMN IF NOT EXISTS impressions INTEGER NOT NULL DEFAULT 0`);
+    await db.execute(`ALTER TABLE ozon_analytics ADD COLUMN IF NOT EXISTS add_to_cart INTEGER NOT NULL DEFAULT 0`);
     await db.execute(`
         CREATE TABLE IF NOT EXISTS ozon_transactions (
             id                  SERIAL PRIMARY KEY,
@@ -318,6 +424,7 @@ async function ensureTables() {
             created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     `);
+    await db.execute(`ALTER TABLE sync_log ADD COLUMN IF NOT EXISTS file_path TEXT`);
 }
 
 /* ─── Расписание ──────────────────────────────────────────── */
