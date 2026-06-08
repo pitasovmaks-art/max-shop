@@ -332,11 +332,13 @@ function switchTab(tab) {
     const isCategories = tab === 'categories';
     const isOrders     = tab === 'orders';
     const isStores     = tab === 'stores';
+    const isUploads    = tab === 'uploads';
 
     document.getElementById('sectionProducts').classList.toggle('hidden',   !isProducts);
     document.getElementById('sectionCategories').classList.toggle('hidden', !isCategories);
     document.getElementById('sectionOrders').classList.toggle('hidden',     !isOrders);
     document.getElementById('sectionStores').classList.toggle('hidden',     !isStores);
+    document.getElementById('sectionUploads').classList.toggle('hidden',    !isUploads);
 
     document.getElementById('fabProducts').classList.toggle('hidden',   !isProducts);
     document.getElementById('fabImport').classList.toggle('hidden',     !isProducts);
@@ -347,10 +349,12 @@ function switchTab(tab) {
     document.getElementById('tabCategories').classList.toggle('active', isCategories);
     document.getElementById('tabOrders').classList.toggle('active',     isOrders);
     document.getElementById('tabStores').classList.toggle('active',     isStores);
+    document.getElementById('tabUploads').classList.toggle('active',    isUploads);
 
     if (isCategories) renderCategories();
     if (isOrders)     renderOrders();
     if (isStores)     renderStores();
+    if (isUploads)    renderFileUploader();
 }
 
 /* ─── Format ────────────────────────────────────────────── */

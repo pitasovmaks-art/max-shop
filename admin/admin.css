@@ -1241,3 +1241,46 @@ button.product-row__stock:active  { opacity: .7; }
 .tracking-btn:active { opacity: .8; }
 .order-status--shipped { background: rgba(248,88,0,.15); color: #F85800; }
 .variant-block .ff__hint { font-size: 11px; }
+
+/* ─── File uploader (seller-cabinet: Загрузка данных) ────── */
+.uploader-list { padding: 12px 12px 8px; display:flex; flex-direction:column; gap:10px; }
+.uploader-card { background:var(--white); border-radius:var(--radius); box-shadow:var(--card-shadow); padding:14px; }
+.uploader-card__title { font-size:15px; font-weight:600; margin-bottom:4px; }
+.uploader-card__desc  { font-size:12px; color:var(--gray); line-height:1.4; }
+.uploader-card__body  { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-top:12px; }
+.uploader-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    height:40px; padding:0 16px;
+    background:#FFFFFF; color:#000000;
+    border-radius:10px; font-size:13px; font-weight:600;
+    cursor:pointer; transition:background .15s, transform .1s;
+}
+.uploader-btn:active { background:#DDDDDD; transform:scale(.97); }
+.uploader-result { font-size:13px; }
+.uploader-result__pending { color:var(--gray); }
+.uploader-result__ok {
+    display:inline-flex; align-items:center; gap:6px;
+    color:var(--green); font-weight:600;
+}
+.uploader-result__error { color:var(--red); }
+
+.uploader-history { padding: 4px 12px calc(var(--nav-h) + 24px); }
+.uploader-history__title { font-size:15px; font-weight:600; margin:8px 0 10px; }
+.uploader-history__table {
+    background:var(--white); border-radius:var(--radius); box-shadow:var(--card-shadow);
+    overflow:hidden; font-size:12px;
+}
+.uploader-history__row {
+    display:grid; grid-template-columns: 1.1fr 1fr 1.4fr .6fr .9fr;
+    gap:8px; padding:10px 12px; align-items:center;
+    border-bottom:1px solid var(--border);
+}
+.uploader-history__row:last-child { border-bottom:none; }
+.uploader-history__row--head { color:var(--gray); font-weight:600; font-size:11px; text-transform:uppercase; }
+.uploader-history__filename {
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.uploader-history__status { font-weight:600; }
+.uploader-history__status--success { color:var(--green); }
+.uploader-history__status--error   { color:var(--red); }
+.uploader-history__empty { padding:20px 12px; text-align:center; color:var(--gray); font-size:13px; }

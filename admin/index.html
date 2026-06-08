@@ -79,6 +79,7 @@
         <button class="tab-btn" id="tabCategories" onclick="switchTab('categories')">Категории</button>
         <button class="tab-btn" id="tabOrders" onclick="switchTab('orders')">Заказы</button>
         <button class="tab-btn" id="tabStores" onclick="switchTab('stores')">Магазины</button>
+        <button class="tab-btn" id="tabUploads" onclick="switchTab('uploads')">📤 Загрузка данных</button>
     </div>
 
     <!-- Products section -->
@@ -166,6 +167,9 @@
             </svg>
         </button>
     </div><!-- /sectionStores -->
+
+    <!-- Uploads section -->
+    <div id="sectionUploads" class="hidden"></div><!-- /sectionUploads -->
 
     <!-- Bottom nav -->
     <nav class="bottom-nav">
@@ -517,6 +521,7 @@
 <script src="lib/xlsx.full.min.js"></script>
 <script src="categories.js"></script>
 <script src="stores.js"></script>
+<script src="../src/components/FileUploader.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>

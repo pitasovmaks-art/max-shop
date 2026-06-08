@@ -7,3 +7,4 @@ shop.db
 ozon-*.mjs
 ozon-data/
 exports/
+tmp/

@@ -195,6 +195,73 @@ async function createSchema() {
             sort_order INTEGER NOT NULL DEFAULT 0
         )
     `);
+
+    /* ─── Загрузки данных продавца (seller-cabinet) ──────── */
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS ozon_competitors (
+            id           SERIAL PRIMARY KEY,
+            product_name TEXT,
+            seller       TEXT,
+            brand        TEXT,
+            category     TEXT,
+            price        DECIMAL(10,2),
+            orders       INTEGER,
+            revenue      DECIMAL(12,2),
+            period_date  DATE,
+            uploaded_at  TIMESTAMP DEFAULT NOW()
+        )
+    `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS product_costs (
+            id          SERIAL PRIMARY KEY,
+            sku         TEXT,
+            article     TEXT,
+            name        TEXT,
+            barcode     TEXT,
+            cost_price  DECIMAL(10,2),
+            updated_at  TIMESTAMP DEFAULT NOW(),
+            UNIQUE(article)
+        )
+    `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS unit_economics (
+            id           SERIAL PRIMARY KEY,
+            account      VARCHAR(20),
+            period_start DATE,
+            period_end   DATE,
+            sku          TEXT,
+            article      TEXT,
+            name         TEXT,
+            scheme       VARCHAR(10),
+            cost_price   DECIMAL(10,2),
+            revenue      DECIMAL(12,2),
+            profit       DECIMAL(12,2),
+            margin       DECIMAL(5,2),
+            uploaded_at  TIMESTAMP DEFAULT NOW()
+        )
+    `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS financial_reports (
+            id           SERIAL PRIMARY KEY,
+            account      VARCHAR(20),
+            period_start DATE,
+            period_end   DATE,
+            metric       TEXT,
+            amount       DECIMAL(12,2),
+            uploaded_at  TIMESTAMP DEFAULT NOW()
+        )
+    `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS upload_history (
+            id            SERIAL PRIMARY KEY,
+            file_type     TEXT,
+            filename      TEXT,
+            rows_imported INTEGER,
+            status        TEXT,
+            error_message TEXT,
+            uploaded_at   TIMESTAMP DEFAULT NOW()
+        )
+    `);
 }
 
 /* ─── Seed default data ──────────────────────────────────── */
