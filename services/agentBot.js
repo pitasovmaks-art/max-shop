@@ -10,8 +10,8 @@ const PROMPTS = require('../agents/prompts');
 
 const BOT_TOKEN       = process.env.AGENT_BOT_TOKEN;
 const GROUP_CHAT_ID   = process.env.AGENT_GROUP_CHAT_ID;
-const ANTHROPIC_KEY   = process.env.ANTHROPIC_API_KEY;
-const CLAUDE_MODEL    = 'claude-sonnet-4-6';
+const OPENROUTER_KEY  = process.env.OPENROUTER_API_KEY;
+const CLAUDE_MODEL    = 'anthropic/claude-sonnet-4-6';
 const TELEGRAM_LIMIT  = 4096;
 
 const AGENT_LABELS = {
@@ -57,18 +57,21 @@ async function sendToGroup(text) {
 /* ---------- Claude API (raw fetch) ---------- */
 
 async function callClaude(systemPrompt, userMessage) {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-            'x-api-key':         ANTHROPIC_KEY,
-            'anthropic-version': '2023-06-01',
-            'content-type':      'application/json',
+            'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            'Content-Type':  'application/json',
+            'HTTP-Referer':  'https://pitasovmaks-art-max-shop-c149.twc1.net',
+            'X-Title':       'Точка Монтажа Агенты',
         },
         body: JSON.stringify({
             model:      CLAUDE_MODEL,
             max_tokens: 2000,
-            system:     systemPrompt,
-            messages:   [{ role: 'user', content: userMessage }],
+            messages:   [
+                { role: 'system', content: systemPrompt },
+                { role: 'user',   content: userMessage },
+            ],
         }),
     });
     if (!res.ok) {
@@ -76,7 +79,8 @@ async function callClaude(systemPrompt, userMessage) {
         throw new Error(`Claude API ${res.status}: ${text.slice(0, 300)}`);
     }
     const data = await res.json();
-    return (data.content || []).map(b => b.text || '').join('').trim();
+    const choice = (data.choices || [])[0];
+    return ((choice && choice.message && choice.message.content) || '').trim();
 }
 
 /* ---------- Контекст из PostgreSQL для промптов ---------- */
@@ -335,8 +339,8 @@ async function pollLoop() {
 /* ---------- Запуск ---------- */
 
 function start() {
-    if (!BOT_TOKEN || !GROUP_CHAT_ID || !ANTHROPIC_KEY) {
-        console.log('[agentBot] не запущен: не заданы AGENT_BOT_TOKEN / AGENT_GROUP_CHAT_ID / ANTHROPIC_API_KEY');
+    if (!BOT_TOKEN || !GROUP_CHAT_ID || !OPENROUTER_KEY) {
+        console.log('[agentBot] не запущен: не заданы AGENT_BOT_TOKEN / AGENT_GROUP_CHAT_ID / OPENROUTER_API_KEY');
         return;
     }
 
