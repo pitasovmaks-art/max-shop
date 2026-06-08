@@ -104,6 +104,11 @@ app.listen(PORT, '0.0.0.0', () => {
             } catch (e) {
                 console.error('[ozonSync] start error:', e.message);
             }
+            try {
+                require('../services/agentBot').start();
+            } catch (e) {
+                console.error('[agentBot] start error:', e.message);
+            }
         })
         .catch((e) => {
             console.error('[STARTUP] Критическая ошибка инициализации БД:', e.message);
