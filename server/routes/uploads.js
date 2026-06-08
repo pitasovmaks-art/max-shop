@@ -248,6 +248,19 @@ router.post('/transactions', requireAdmin, upload.single('file'), handleUpload('
     const account = detectAccount(filename);
     if (!account) throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
 
+    {
+        const workbook  = readWorkbook(buffer);
+        const sheet     = workbook.Sheets[workbook.SheetNames[0]];
+        const debugRaw  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        console.log('=== НАЧИСЛЕНИЯ DEBUG ===');
+        console.log('Листов:', workbook.SheetNames);
+        console.log('Строк всего:', debugRaw.length);
+        debugRaw.slice(0, 10).forEach((row, i) => {
+            console.log(`Строка ${i}:`, JSON.stringify(row.slice(0, 6)));
+        });
+        console.log('=== END DEBUG ===');
+    }
+
     const { raw, rows } = parseSheet(buffer, TRANSACTIONS_HEADERS);
     const periodDate    = findPeriodDate(raw);
 
