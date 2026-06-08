@@ -303,4 +303,17 @@ router.get('/history', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+/* ─── Очистка всех загруженных данных ────────────────────── */
+router.delete('/clear-all', requireAdmin, async (req, res) => {
+    try {
+        await db.execute(`TRUNCATE TABLE
+            upload_history, ozon_competitors, product_costs,
+            unit_economics, financial_reports, ozon_transactions
+            RESTART IDENTITY`);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 module.exports = router;

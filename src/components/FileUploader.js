@@ -55,7 +55,10 @@ function renderFileUploader() {
             ${UPLOAD_SECTIONS.map(renderSection).join('')}
         </div>
         <div class="uploader-history">
-            <h3 class="uploader-history__title">История загрузок</h3>
+            <div class="uploader-history__header">
+                <h3 class="uploader-history__title">История загрузок</h3>
+                <button type="button" class="uploader-btn uploader-btn--danger" id="clearAllUploadsBtn">Очистить все загрузки</button>
+            </div>
             <div class="uploader-history__table" id="uploadHistoryTable">
                 <div class="uploader-history__row uploader-history__row--head">
                     <span>Дата</span>
@@ -73,7 +76,38 @@ function renderFileUploader() {
         if (input) input.addEventListener('change', () => handleUpload(section, input));
     });
 
+    const clearBtn = document.getElementById('clearAllUploadsBtn');
+    if (clearBtn) clearBtn.addEventListener('click', handleClearAllUploads);
+
     refreshUploadHistory();
+}
+
+/* ─── Очистка всех загруженных данных ────────────────────── */
+async function handleClearAllUploads() {
+    if (!confirm('Удалить все загруженные данные (конкуренты, себестоимость, начисления, юнит-экономика, финансовые отчёты и историю загрузок)? Действие необратимо.')) return;
+
+    const btn = document.getElementById('clearAllUploadsBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Очистка…'; }
+
+    try {
+        const res = await fetch('/api/uploads/clear-all', {
+            method:  'DELETE',
+            headers: { 'Authorization': `Bearer ${getToken()}` },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) throw new Error(data.error || 'Не удалось очистить данные');
+
+        if (typeof showToast === 'function') showToast('✅ Все загруженные данные удалены');
+        UPLOAD_SECTIONS.forEach(section => {
+            const resultEl = document.getElementById(`uploaderResult-${section.key}`);
+            if (resultEl) resultEl.innerHTML = '';
+        });
+        refreshUploadHistory();
+    } catch (err) {
+        if (typeof showToast === 'function') showToast(`❌ ${err.message || 'Ошибка очистки данных'}`);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Очистить все загрузки'; }
+    }
 }
 
 function renderSection(section) {

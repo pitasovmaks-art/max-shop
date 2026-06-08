@@ -1256,6 +1256,9 @@ button.product-row__stock:active  { opacity: .7; }
     cursor:pointer; transition:background .15s, transform .1s;
 }
 .uploader-btn:active { background:#DDDDDD; transform:scale(.97); }
+.uploader-btn--danger { background:var(--red); color:#FFFFFF; border:none; }
+.uploader-btn--danger:active { background:#C8302A; }
+.uploader-btn--danger:disabled { opacity:.5; cursor:default; }
 .uploader-result { font-size:13px; }
 .uploader-result__pending { color:var(--gray); }
 .uploader-result__ok {
@@ -1265,7 +1268,11 @@ button.product-row__stock:active  { opacity: .7; }
 .uploader-result__error { color:var(--red); }
 
 .uploader-history { padding: 4px 12px calc(var(--nav-h) + 24px); }
-.uploader-history__title { font-size:15px; font-weight:600; margin:8px 0 10px; }
+.uploader-history__header {
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin:8px 0 10px;
+}
+.uploader-history__title { font-size:15px; font-weight:600; margin:0; }
 .uploader-history__table {
     background:var(--white); border-radius:var(--radius); box-shadow:var(--card-shadow);
     overflow:hidden; font-size:12px;
