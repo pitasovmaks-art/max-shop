@@ -109,6 +109,7 @@ function parseSheet(buffer, knownHeaders, sheetNameHint) {
         Array.isArray(row) && row.some(cell => knownHeaders.some(h => String(cell).trim().includes(h)))
     );
     if (headerRowIdx === -1) {
+        console.log('Первые строки файла:', raw.slice(0, 5));
         throw new Error(`Строка заголовков не найдена. Ожидаются столбцы: ${knownHeaders.join(', ')}`);
     }
 
@@ -254,7 +255,11 @@ const UNIT_ECONOMICS_HEADERS = ['SKU', 'Артикул', 'Название', 'С
 
 router.post('/unit-economics', requireAdmin, upload.single('file'), handleUpload('unit-economics', async (buffer, filename) => {
     const account = detectAccount(filename);
-    if (!account) throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
+    if (!account) {
+        console.log('Имя файла:', filename);
+        console.log('Lower:', filename.toLowerCase());
+        throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
+    }
 
     const { periodStart, periodEnd } = parsePeriodFromFilename(filename);
     const { rows } = parseSheet(buffer, UNIT_ECONOMICS_HEADERS);
@@ -287,7 +292,11 @@ router.post('/unit-economics', requireAdmin, upload.single('file'), handleUpload
 /* ─── 5. Финансовые отчёты (Точка банк, лист "Ozon - new") ─ */
 router.post('/financial', requireAdmin, upload.single('file'), handleUpload('financial', async (buffer, filename) => {
     const account = detectAccount(filename);
-    if (!account) throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
+    if (!account) {
+        console.log('Имя файла:', filename);
+        console.log('Lower:', filename.toLowerCase());
+        throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
+    }
 
     const { periodStart, periodEnd } = parsePeriodFromFilename(filename);
 
@@ -318,7 +327,11 @@ const PRODUCTS_HEADERS = ['Артикул', 'Ozon Product ID', 'SKU', 'Barcode',
 
 router.post('/products', requireAdmin, upload.single('file'), handleUpload('products', async (buffer, filename) => {
     const account = detectAccount(filename);
-    if (!account) throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
+    if (!account) {
+        console.log('Имя файла:', filename);
+        console.log('Lower:', filename.toLowerCase());
+        throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
+    }
 
     const { rows } = parseSheet(buffer, PRODUCTS_HEADERS, 'Товары');
 
