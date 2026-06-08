@@ -6,3 +6,4 @@ shop.db
 .DS_Store
 ozon-*.mjs
 ozon-data/
+reports/
