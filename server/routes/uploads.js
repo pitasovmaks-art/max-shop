@@ -45,8 +45,16 @@ function parseExcelDate(value) {
     return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function fixEncoding(str) {
+    try {
+        return Buffer.from(str, 'latin1').toString('utf8');
+    } catch (e) {
+        return str;
+    }
+}
+
 function detectAccount(filename) {
-    const lower = filename.toLowerCase();
+    const lower = fixEncoding(filename).toLowerCase();
     if (lower.includes('бм'))        return 'БМ';
     if (lower.includes('fix'))       return 'FIX';
     if (lower.includes('деталькин')) return 'Деталькин';
@@ -54,7 +62,7 @@ function detectAccount(filename) {
 }
 
 function parsePeriodFromFilename(filename) {
-    const lower    = filename.toLowerCase();
+    const lower    = fixEncoding(filename).toLowerCase();
     const monthIdx = MONTHS_RU.findIndex(m => lower.includes(m));
     if (monthIdx === -1) return { periodStart: null, periodEnd: null };
 
@@ -97,8 +105,8 @@ function findPeriodRange(rawRows) {
 }
 
 /* ─── Чтение листа: поиск строки заголовков по известным именам ─ */
-function parseSheet(buffer, knownHeaders, sheetNameHint) {
-    const wb        = XLSX.read(buffer, { type: 'buffer' });
+function parseSheet(buffer, knownHeaders, sheetNameHint, readOpts) {
+    const wb        = XLSX.read(buffer, { type: 'buffer', ...readOpts });
     const sheetName = sheetNameHint
         ? (wb.SheetNames.find(n => n.trim() === sheetNameHint) || wb.SheetNames[0])
         : wb.SheetNames[0];
@@ -223,7 +231,7 @@ router.post('/transactions', requireAdmin, upload.single('file'), handleUpload('
     const account = detectAccount(filename);
     if (!account) throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
 
-    const { raw, rows } = parseSheet(buffer, TRANSACTIONS_HEADERS);
+    const { raw, rows } = parseSheet(buffer, TRANSACTIONS_HEADERS, null, { codepage: 1251 });
     const periodDate    = findPeriodDate(raw);
 
     let count = 0;
