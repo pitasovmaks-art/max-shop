@@ -24,6 +24,13 @@ function parseNumber(value) {
     return Number.isFinite(n) ? n : 0;
 }
 
+function isNumericCell(value) {
+    if (typeof value === 'number') return Number.isFinite(value);
+    if (value === '' || value === null || value === undefined) return false;
+    const s = String(value).trim().replace(/\s/g, '').replace(',', '.');
+    return /^-?\d+(\.\d+)?$/.test(s);
+}
+
 function parseExcelDate(value) {
     if (value === '' || value === null || value === undefined) return null;
     if (typeof value === 'number') {
@@ -81,7 +88,7 @@ function parseSheet(buffer, knownHeaders) {
     const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
     const headerRowIdx = raw.findIndex(row =>
-        Array.isArray(row) && row.some(cell => knownHeaders.includes(String(cell).trim()))
+        Array.isArray(row) && row.some(cell => knownHeaders.some(h => String(cell).trim().includes(h)))
     );
     if (headerRowIdx === -1) {
         throw new Error(`Строка заголовков не найдена. Ожидаются столбцы: ${knownHeaders.join(', ')}`);
@@ -259,28 +266,29 @@ router.post('/unit-economics', requireAdmin, upload.single('file'), handleUpload
     return count;
 }));
 
-/* ─── 5. Финансовые отчёты ───────────────────────────────── */
-const FINANCIAL_HEADERS = ['Метрика', 'метрика', 'Сумма', 'сумма'];
-
+/* ─── 5. Финансовые отчёты (Точка банк, лист "Ozon - new") ─ */
 router.post('/financial', requireAdmin, upload.single('file'), handleUpload('financial', async (buffer, filename) => {
     const account = detectAccount(filename);
+    if (!account) throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
+
     const { periodStart, periodEnd } = parsePeriodFromFilename(filename);
-    const { rows } = parseSheet(buffer, FINANCIAL_HEADERS);
+
+    const wb        = XLSX.read(buffer, { type: 'buffer' });
+    const sheetName = wb.SheetNames.find(n => n.trim() === 'Ozon - new') || wb.SheetNames[0];
+    const ws        = wb.Sheets[sheetName];
+    const raw       = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
     let count = 0;
-    for (const r of rows) {
-        const metric = String(r['Метрика'] || r['метрика'] || '').trim();
-        if (!metric) continue;
+    for (const row of raw) {
+        if (!Array.isArray(row)) continue;
+        const metric    = String(row[0] ?? '').trim();
+        const amountRaw = row[1];
+        if (!metric || !isNumericCell(amountRaw)) continue;
+
         await db.execute(
             `INSERT INTO financial_reports (account, period_start, period_end, metric, amount, uploaded_at)
              VALUES ($1, $2, $3, $4, $5, NOW())`,
-            [
-                account,
-                periodStart,
-                periodEnd,
-                metric,
-                parseNumber(r['Сумма'] ?? r['сумма']),
-            ]
+            [account, periodStart, periodEnd, metric, parseNumber(amountRaw)]
         );
         count++;
     }
