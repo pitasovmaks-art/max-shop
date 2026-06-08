@@ -8,3 +8,4 @@ ozon-*.mjs
 ozon-data/
 exports/
 tmp/
+.claude/
