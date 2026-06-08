@@ -83,7 +83,9 @@ function parsePeriodFromFilename(filename) {
 function findPeriodDate(rawRows) {
     for (const row of rawRows) {
         for (const cell of (row || [])) {
-            const m = /Период:\s*(\d{2})\.(\d{2})\.(\d{4})/.exec(String(cell ?? ''));
+            // "Период[:к]" — decodeCell не всегда отличает ":" от буквы "к" (обе
+            // дают код 0x3A после сдвига), поэтому допускаем оба варианта
+            const m = /Период[:к]?\s*(\d{2})\.(\d{2})\.(\d{4})/.exec(String(cell ?? ''));
             if (m) return `${m[3]}-${m[2]}-${m[1]}`;
         }
     }
@@ -93,7 +95,9 @@ function findPeriodDate(rawRows) {
 function findPeriodRange(rawRows) {
     for (const row of rawRows) {
         for (const cell of (row || [])) {
-            const m = /Период:?\s*(\d{2})\.(\d{2})\.(\d{4})\s*[-–—]\s*(\d{2})\.(\d{2})\.(\d{4})/.exec(String(cell ?? ''));
+            // допускаем "к" вместо ":" и "Э" вместо "-" — артефакты той же
+            // эвристики decodeCell на одиночных символах-разделителях
+            const m = /Период[:к]?\s*(\d{2})\.(\d{2})\.(\d{4})\s*[-–—Э]\s*(\d{2})\.(\d{2})\.(\d{4})/.exec(String(cell ?? ''));
             if (m) {
                 return {
                     periodStart: `${m[3]}-${m[2]}-${m[1]}`,
@@ -117,18 +121,53 @@ function readWorkbook(buffer, readOpts) {
 }
 
 // Некоторые выгрузки — настоящие .xlsx (zip), но текстовые ячейки в них
-// записаны байтами CP1251, прочитанными как отдельные code units (мойибаке
-// вида "=0G8A;5=8O" вместо "начисления"). Перекодируем такую строку обратно.
+// повреждены иначе, чем казалось: исходный (корректно декодированный)
+// Unicode-код каждого кириллического символа (U+04xx) обрезан до младшего
+// байта — "начисления" (коды U+043D, U+0430…) превращается в "=0G8A;5=8O".
+// ASCII-символы (код < 0x80) при этом не меняются, поэтому "ID" остаётся "ID".
+// Чтобы восстановить текст, прибавляем обратно старший байт 0x0400 — но
+// только там, где результат действительно похож на кириллицу, а сама ячейка
+// похожа на повреждённую (иначе можно испортить числа, даты и артикулы,
+// которые визуально не меняются при таком повреждении).
+const RU_LETTER   = /[ЁА-яё]/;
+const HAS_CTRL    = /[\x00-\x1f\x7f]/;
+const DATE_OR_NUM = /^[\d](?:[\d.\-\/:, ]*[\d])?$/;
+const SHORT_CODE  = /^[A-Za-z0-9]{1,5}$/;
+
+function shiftToCyrillic(ch) {
+    const restored = String.fromCharCode(0x0400 + ch.charCodeAt(0));
+    return RU_LETTER.test(restored) ? restored : null;
+}
+
+function fullyShiftsToCyrillic(token) {
+    const shifted = [...token].map(shiftToCyrillic);
+    return shifted.every(Boolean) ? shifted.join('') : null;
+}
+
 function decodeCell(cell) {
-    try {
-        const buf = Buffer.alloc(cell.length);
-        for (let i = 0; i < cell.length; i++) {
-            buf[i] = cell.charCodeAt(i) & 0xff;
-        }
-        return iconv.decode(buf, 'cp1251');
-    } catch (e) {
-        return cell;
-    }
+    if (typeof cell !== 'string' || !cell) return cell;
+
+    const tokens = cell.split(/(\s+)/);
+    const isSpace = t => /^\s*$/.test(t);
+    const words   = tokens.filter(t => !isSpace(t));
+
+    // Признак повреждения: управляющие символы (никогда не бывают в обычном
+    // тексте) или достаточно длинное "слово", которое целиком и правдоподобно
+    // превращается в кириллицу при сдвиге — и не похоже на число/дату/код.
+    const looksCorrupted = words.some(t =>
+        HAS_CTRL.test(t) ||
+        (t.length >= 4 && !DATE_OR_NUM.test(t) && !SHORT_CODE.test(t) && fullyShiftsToCyrillic(t))
+    );
+    if (!looksCorrupted) return cell;
+
+    return tokens.map(t => {
+        if (isSpace(t)) return t;
+        if (t === 'ID') return t; // фиксированный префикс колонки Ozon "ID начисления"
+        if (HAS_CTRL.test(t)) return [...t].map(ch => shiftToCyrillic(ch) || ch).join('');
+        if (t.length >= 4 && DATE_OR_NUM.test(t)) return t;
+        if (t.length >= 3 && SHORT_CODE.test(t)) return t;
+        return fullyShiftsToCyrillic(t) || t;
+    }).join('');
 }
 
 /* ─── Чтение листа: поиск строки заголовков по известным именам ─ */
