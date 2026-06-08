@@ -252,6 +252,33 @@ async function createSchema() {
         )
     `);
     await pool.query(`
+        CREATE TABLE IF NOT EXISTS ozon_products (
+            id              SERIAL PRIMARY KEY,
+            account         VARCHAR(20),
+            article         TEXT,
+            ozon_product_id TEXT,
+            sku             TEXT,
+            barcode         TEXT,
+            name            TEXT,
+            updated_at      TIMESTAMP DEFAULT NOW(),
+            UNIQUE(account, article)
+        )
+    `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS ozon_category (
+            id             SERIAL PRIMARY KEY,
+            category       TEXT,
+            orders_amount  DECIMAL(12,2),
+            orders_dynamic DECIMAL(5,2),
+            orders_count   INTEGER,
+            avg_price      DECIMAL(10,2),
+            price_dynamic  DECIMAL(5,2),
+            period_start   DATE,
+            period_end     DATE,
+            uploaded_at    TIMESTAMP DEFAULT NOW()
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS upload_history (
             id            SERIAL PRIMARY KEY,
             file_type     TEXT,

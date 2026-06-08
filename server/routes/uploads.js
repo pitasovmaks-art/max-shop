@@ -81,10 +81,28 @@ function findPeriodDate(rawRows) {
     return null;
 }
 
+function findPeriodRange(rawRows) {
+    for (const row of rawRows) {
+        for (const cell of (row || [])) {
+            const m = /Период:?\s*(\d{2})\.(\d{2})\.(\d{4})\s*[-–—]\s*(\d{2})\.(\d{2})\.(\d{4})/.exec(String(cell ?? ''));
+            if (m) {
+                return {
+                    periodStart: `${m[3]}-${m[2]}-${m[1]}`,
+                    periodEnd:   `${m[6]}-${m[5]}-${m[4]}`,
+                };
+            }
+        }
+    }
+    return { periodStart: null, periodEnd: null };
+}
+
 /* ─── Чтение листа: поиск строки заголовков по известным именам ─ */
-function parseSheet(buffer, knownHeaders) {
-    const wb  = XLSX.read(buffer, { type: 'buffer' });
-    const ws  = wb.Sheets[wb.SheetNames[0]];
+function parseSheet(buffer, knownHeaders, sheetNameHint) {
+    const wb        = XLSX.read(buffer, { type: 'buffer' });
+    const sheetName = sheetNameHint
+        ? (wb.SheetNames.find(n => n.trim() === sheetNameHint) || wb.SheetNames[0])
+        : wb.SheetNames[0];
+    const ws  = wb.Sheets[sheetName];
     const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
     const headerRowIdx = raw.findIndex(row =>
@@ -295,6 +313,75 @@ router.post('/financial', requireAdmin, upload.single('file'), handleUpload('fin
     return count;
 }));
 
+/* ─── 6. Товары по аккаунтам ─────────────────────────────── */
+const PRODUCTS_HEADERS = ['Артикул', 'Ozon Product ID', 'SKU', 'Barcode', 'Название товара'];
+
+router.post('/products', requireAdmin, upload.single('file'), handleUpload('products', async (buffer, filename) => {
+    const account = detectAccount(filename);
+    if (!account) throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
+
+    const { rows } = parseSheet(buffer, PRODUCTS_HEADERS, 'Товары');
+
+    let count = 0;
+    for (const r of rows) {
+        const article = String(r['Артикул'] || '').trim();
+        if (!article) continue;
+
+        await db.execute(
+            `INSERT INTO ozon_products (account, article, ozon_product_id, sku, barcode, name, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, NOW())
+             ON CONFLICT (account, article) DO UPDATE SET
+                ozon_product_id = EXCLUDED.ozon_product_id,
+                sku             = EXCLUDED.sku,
+                barcode         = EXCLUDED.barcode,
+                name            = EXCLUDED.name,
+                updated_at      = NOW()`,
+            [
+                account,
+                article,
+                String(r['Ozon Product ID'] || '').trim(),
+                String(r['SKU']             || '').trim(),
+                String(r['Barcode']         || '').trim(),
+                String(r['Название товара'] || '').trim(),
+            ]
+        );
+        count++;
+    }
+    return count;
+}));
+
+/* ─── 7. Категория и объём рынка ─────────────────────────── */
+const CATEGORY_HEADERS = ['Категория', 'Заказано на сумму', 'Динамика суммы', 'Заказано товаров', 'Средняя цена', 'Динамика средней цены'];
+
+router.post('/category', requireAdmin, upload.single('file'), handleUpload('category', async (buffer) => {
+    const { raw, rows } = parseSheet(buffer, CATEGORY_HEADERS);
+    const { periodStart, periodEnd } = findPeriodRange(raw);
+
+    let count = 0;
+    for (const r of rows) {
+        const category = String(r['Категория'] || '').trim();
+        if (!category) continue;
+
+        await db.execute(
+            `INSERT INTO ozon_category
+                (category, orders_amount, orders_dynamic, orders_count, avg_price, price_dynamic, period_start, period_end, uploaded_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+            [
+                category,
+                parseNumber(r['Заказано на сумму']),
+                parseNumber(r['Динамика суммы']),
+                Math.round(parseNumber(r['Заказано товаров'])),
+                parseNumber(r['Средняя цена']),
+                parseNumber(r['Динамика средней цены']),
+                periodStart,
+                periodEnd,
+            ]
+        );
+        count++;
+    }
+    return count;
+}));
+
 /* ─── История загрузок ───────────────────────────────────── */
 router.get('/history', requireAdmin, async (req, res) => {
     try {
@@ -308,7 +395,8 @@ router.delete('/clear-all', requireAdmin, async (req, res) => {
     try {
         await db.execute(`TRUNCATE TABLE
             upload_history, ozon_competitors, product_costs,
-            unit_economics, financial_reports, ozon_transactions
+            unit_economics, financial_reports, ozon_transactions,
+            ozon_products, ozon_category
             RESTART IDENTITY`);
         res.json({ success: true });
     } catch (e) {

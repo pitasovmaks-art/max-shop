@@ -33,6 +33,18 @@ const UPLOAD_SECTIONS = [
         title:       'Финансовые отчёты',
         description: 'Финансовые отчёты из Точка банка.',
     },
+    {
+        key:         'products',
+        endpoint:    '/api/uploads/products',
+        title:       'Товары по аккаунтам',
+        description: 'Файлы товаров из Ozon Seller. Загружай по одному файлу на аккаунт: товары_БМ, товары_FIX, товары_Деталькин.',
+    },
+    {
+        key:         'category',
+        endpoint:    '/api/uploads/category',
+        title:       'Категория и объём рынка',
+        description: 'Файл из раздела Аналитика → Что продавать на Ozon → категория пистолетов за 28 дней. Обновлять еженедельно вместе с конкурентами.',
+    },
 ];
 
 const STATUS_LABELS = {
