@@ -39,6 +39,9 @@
 | `S3_SECRET_KEY` | Секретный ключ S3 |
 | `CDEK_CLIENT_ID` | Client ID для СДЭК API v2 |
 | `CDEK_CLIENT_SECRET` | Client Secret для СДЭК API v2 |
+| `AGENT_BOT_TOKEN` | Токен Telegram-бота для группового обсуждения агентами (`services/agentBot.js`) |
+| `AGENT_GROUP_CHAT_ID` | ID Telegram-группы, где бот слушает `/ask <вопрос>` |
+| `ANTHROPIC_API_KEY` | Ключ Claude API для агентов (оркестратор/аналитик/маркетолог/ассортиментщик/критик) |
 
 ---
 
