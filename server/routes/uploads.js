@@ -1,17 +1,12 @@
 const router  = require('express').Router();
-const fs      = require('fs');
-const path    = require('path');
 const multer  = require('multer');
 const XLSX    = require('xlsx');
 const db      = require('../db');
 const { requireAdmin } = require('../middleware/auth');
 
-const TMP_DIR = path.join(__dirname, '..', '..', 'tmp', 'uploads');
-fs.mkdirSync(TMP_DIR, { recursive: true });
-
 const upload = multer({
-    dest:   TMP_DIR,
-    limits: { fileSize: 25 * 1024 * 1024 },
+    storage: multer.memoryStorage(),
+    limits:  { fileSize: 25 * 1024 * 1024 },
 });
 
 const MONTHS_RU = [
@@ -80,8 +75,8 @@ function findPeriodDate(rawRows) {
 }
 
 /* ─── Чтение листа: поиск строки заголовков по известным именам ─ */
-function parseSheet(filePath, knownHeaders) {
-    const wb  = XLSX.readFile(filePath);
+function parseSheet(buffer, knownHeaders) {
+    const wb  = XLSX.read(buffer, { type: 'buffer' });
     const ws  = wb.Sheets[wb.SheetNames[0]];
     const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
@@ -119,14 +114,12 @@ function handleUpload(fileType, processFn) {
         const filename = req.file.originalname;
         let rowsImported = 0;
         try {
-            rowsImported = await processFn(req.file.path, filename);
+            rowsImported = await processFn(req.file.buffer, filename);
             await logUpload(fileType, filename, rowsImported, 'success');
             res.json({ success: true, rows_imported: rowsImported, filename, timestamp: new Date().toISOString() });
         } catch (e) {
             await logUpload(fileType, filename, rowsImported, 'error', e.message);
             res.status(400).json({ success: false, error: e.message, filename });
-        } finally {
-            fs.unlink(req.file.path, () => {});
         }
     };
 }
@@ -134,8 +127,8 @@ function handleUpload(fileType, processFn) {
 /* ─── 1. Конкуренты Ozon ─────────────────────────────────── */
 const COMPETITORS_HEADERS = ['Название товара', 'Продавец', 'Бренд', 'Категория', 'Цена', 'Заказано', 'Выручка'];
 
-router.post('/competitors', requireAdmin, upload.single('file'), handleUpload('competitors', async (filePath) => {
-    const { rows } = parseSheet(filePath, COMPETITORS_HEADERS);
+router.post('/competitors', requireAdmin, upload.single('file'), handleUpload('competitors', async (buffer) => {
+    const { rows } = parseSheet(buffer, COMPETITORS_HEADERS);
     const periodDate = fmtDate(new Date());
 
     await db.execute('DELETE FROM ozon_competitors WHERE period_date = $1', [periodDate]);
@@ -164,8 +157,8 @@ router.post('/competitors', requireAdmin, upload.single('file'), handleUpload('c
 /* ─── 2. Себестоимость товаров ───────────────────────────── */
 const COST_PRICE_HEADERS = ['Название', 'Артикул', 'Штрихкод', 'Себестоимость'];
 
-router.post('/cost-price', requireAdmin, upload.single('file'), handleUpload('cost-price', async (filePath) => {
-    const { rows } = parseSheet(filePath, COST_PRICE_HEADERS);
+router.post('/cost-price', requireAdmin, upload.single('file'), handleUpload('cost-price', async (buffer) => {
+    const { rows } = parseSheet(buffer, COST_PRICE_HEADERS);
 
     let count = 0;
     for (const r of rows) {
@@ -200,11 +193,11 @@ router.post('/cost-price', requireAdmin, upload.single('file'), handleUpload('co
 /* ─── 3. Начисления ──────────────────────────────────────── */
 const TRANSACTIONS_HEADERS = ['ID начисления', 'Дата', 'Группа услуг', 'Тип начисления', 'Артикул', 'Сумма'];
 
-router.post('/transactions', requireAdmin, upload.single('file'), handleUpload('transactions', async (filePath, filename) => {
+router.post('/transactions', requireAdmin, upload.single('file'), handleUpload('transactions', async (buffer, filename) => {
     const account = detectAccount(filename);
     if (!account) throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
 
-    const { raw, rows } = parseSheet(filePath, TRANSACTIONS_HEADERS);
+    const { raw, rows } = parseSheet(buffer, TRANSACTIONS_HEADERS);
     const periodDate    = findPeriodDate(raw);
 
     let count = 0;
@@ -234,12 +227,12 @@ router.post('/transactions', requireAdmin, upload.single('file'), handleUpload('
 /* ─── 4. Юнит-экономика ──────────────────────────────────── */
 const UNIT_ECONOMICS_HEADERS = ['SKU', 'Артикул', 'Название', 'Схема', 'Себестоимость', 'Выручка', 'Прибыль', 'Маржа'];
 
-router.post('/unit-economics', requireAdmin, upload.single('file'), handleUpload('unit-economics', async (filePath, filename) => {
+router.post('/unit-economics', requireAdmin, upload.single('file'), handleUpload('unit-economics', async (buffer, filename) => {
     const account = detectAccount(filename);
     if (!account) throw new Error('Не удалось определить аккаунт по имени файла (ожидается "бм", "fix" или "деталькин")');
 
     const { periodStart, periodEnd } = parsePeriodFromFilename(filename);
-    const { rows } = parseSheet(filePath, UNIT_ECONOMICS_HEADERS);
+    const { rows } = parseSheet(buffer, UNIT_ECONOMICS_HEADERS);
 
     let count = 0;
     for (const r of rows) {
@@ -269,10 +262,10 @@ router.post('/unit-economics', requireAdmin, upload.single('file'), handleUpload
 /* ─── 5. Финансовые отчёты ───────────────────────────────── */
 const FINANCIAL_HEADERS = ['Метрика', 'метрика', 'Сумма', 'сумма'];
 
-router.post('/financial', requireAdmin, upload.single('file'), handleUpload('financial', async (filePath, filename) => {
+router.post('/financial', requireAdmin, upload.single('file'), handleUpload('financial', async (buffer, filename) => {
     const account = detectAccount(filename);
     const { periodStart, periodEnd } = parsePeriodFromFilename(filename);
-    const { rows } = parseSheet(filePath, FINANCIAL_HEADERS);
+    const { rows } = parseSheet(buffer, FINANCIAL_HEADERS);
 
     let count = 0;
     for (const r of rows) {
