@@ -391,7 +391,7 @@ async function ensureTables() {
         CREATE TABLE IF NOT EXISTS ozon_transactions (
             id                  SERIAL PRIMARY KEY,
             account             TEXT NOT NULL,
-            operation_id        BIGINT,
+            operation_id        TEXT,
             operation_type      TEXT,
             operation_type_name TEXT,
             operation_date      TIMESTAMPTZ,
@@ -402,6 +402,9 @@ async function ensureTables() {
             synced_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     `);
+    // ID начисления из выгрузок ЛК продавца — текст вида "75881837-0155",
+    // а не число; на старых базах колонка могла быть создана как BIGINT
+    await db.execute(`ALTER TABLE ozon_transactions ALTER COLUMN operation_id TYPE TEXT USING operation_id::TEXT`);
     await db.execute(`
         CREATE TABLE IF NOT EXISTS ozon_reports (
             id           SERIAL PRIMARY KEY,
