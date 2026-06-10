@@ -1,11 +1,20 @@
 const cron = require('node-cron');
-const fs   = require('fs');
-const path = require('path');
 const XLSX = require('xlsx');
 const db   = require('../server/db');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
-const BASE_URL    = 'https://api-seller.ozon.ru';
-const EXPORTS_DIR = process.env.EXPORT_DIR || '/tmp/exports';
+const BASE_URL  = 'https://api-seller.ozon.ru';
+const S3_BUCKET = process.env.S3_BUCKET || '';
+
+const s3 = new S3Client({
+    region:   'ru-1',
+    endpoint: 'https://s3.twcstorage.ru',
+    credentials: {
+        accessKeyId:     process.env.S3_ACCESS_KEY || '',
+        secretAccessKey: process.env.S3_SECRET_KEY || '',
+    },
+    forcePathStyle: true,
+});
 
 const MONTHS_RU = [
     'январь', 'февраль', 'март',     'апрель', 'май',    'июнь',
@@ -57,24 +66,24 @@ async function logExport(account, dataType, filePath, count) {
 
 const fmtDate = d => d.toISOString().slice(0, 10);
 
-/* ─── Формирование Excel-файлов в exports/ ───────────────── */
-function writeExcel(fileName, headers, rows) {
-    fs.mkdirSync(EXPORTS_DIR, { recursive: true });
-    const filePath = path.join(EXPORTS_DIR, fileName);
-    const sheet    = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    const book     = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(book, sheet, 'Данные');
-    XLSX.writeFile(book, filePath);
-    return filePath;
-}
-
+/* ─── Загрузка Excel в S3 ────────────────────────────────── */
 async function exportToExcel(account, dataType, fileName, headers, rows) {
     try {
-        const filePath = writeExcel(fileName, headers, rows);
-        await logExport(account, dataType, filePath, rows.length);
-        console.log(`[ozonSync] Excel (${dataType}, ${account.name}): ${filePath} (${rows.length} строк)`);
+        const sheet  = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+        const book   = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(book, sheet, 'Данные');
+        const buffer = XLSX.write(book, { type: 'buffer', bookType: 'xlsx' });
+        const key    = `exports/${fileName}`;
+        await s3.send(new PutObjectCommand({
+            Bucket:      S3_BUCKET,
+            Key:         key,
+            Body:        buffer,
+            ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }));
+        await logExport(account, dataType, key, rows.length);
+        console.log(`[ozonSync] S3 (${dataType}, ${account.name}): exports/${fileName} (${rows.length} строк)`);
     } catch (e) {
-        console.error(`[ozonSync] Ошибка формирования Excel (${dataType}, ${account.name}):`, e.message);
+        console.error(`[ozonSync] Ошибка загрузки Excel в S3 (${dataType}, ${account.name}):`, e.message);
     }
 }
 
@@ -313,8 +322,6 @@ async function waitForReport(account, code, { intervalMs = 10000, maxAttempts = 
 }
 
 async function syncReports() {
-    fs.mkdirSync(EXPORTS_DIR, { recursive: true });
-
     for (const account of ACCOUNTS) {
         let reportCode = null;
         try {
@@ -334,20 +341,25 @@ async function syncReports() {
 
             const fileRes = await fetch(fileUrl);
             if (!fileRes.ok) throw new Error(`Не удалось скачать файл отчёта: ${fileRes.status}`);
-            const buffer = Buffer.from(await fileRes.arrayBuffer());
-
+            const buffer   = Buffer.from(await fileRes.arrayBuffer());
             const fileName = `отчет_${account.name}_${fmtDate(new Date())}.xlsx`;
-            const filePath = path.join(EXPORTS_DIR, fileName);
-            fs.writeFileSync(filePath, buffer);
+            const key      = `exports/${fileName}`;
+
+            await s3.send(new PutObjectCommand({
+                Bucket:      S3_BUCKET,
+                Key:         key,
+                Body:        buffer,
+                ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            }));
 
             await db.execute(
                 `INSERT INTO ozon_reports (account, report_code, file_path, status, created_at)
                  VALUES ($1, $2, $3, $4, NOW())`,
-                [account.name, reportCode, filePath, 'success']
+                [account.name, reportCode, key, 'success']
             );
             await logSync(account, 'reports', 'success', 1);
-            await logExport(account, 'reports', filePath, 1);
-            console.log(`[ozonSync] Отчёт по товарам (${account.name}): сохранён в ${filePath}`);
+            await logExport(account, 'reports', key, 1);
+            console.log(`[ozonSync] Отчёт по товарам (${account.name}): загружен в S3 ${key}`);
         } catch (e) {
             await db.execute(
                 `INSERT INTO ozon_reports (account, report_code, file_path, status, created_at)
