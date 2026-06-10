@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { S3Client, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const { requireAdmin } = require('../middleware/auth');
 
 const S3_BUCKET = process.env.S3_BUCKET || '';
 
@@ -15,7 +16,7 @@ const s3 = new S3Client({
 });
 
 /* GET /api/exports/list */
-router.get('/list', async (req, res) => {
+router.get('/list', requireAdmin, async (req, res) => {
     try {
         if (!S3_BUCKET) return res.json([]);
 

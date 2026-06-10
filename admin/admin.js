@@ -333,12 +333,14 @@ function switchTab(tab) {
     const isOrders     = tab === 'orders';
     const isStores     = tab === 'stores';
     const isUploads    = tab === 'uploads';
+    const isExports    = tab === 'exports';
 
     document.getElementById('sectionProducts').classList.toggle('hidden',   !isProducts);
     document.getElementById('sectionCategories').classList.toggle('hidden', !isCategories);
     document.getElementById('sectionOrders').classList.toggle('hidden',     !isOrders);
     document.getElementById('sectionStores').classList.toggle('hidden',     !isStores);
     document.getElementById('sectionUploads').classList.toggle('hidden',    !isUploads);
+    document.getElementById('sectionExports').classList.toggle('hidden',    !isExports);
 
     document.getElementById('fabProducts').classList.toggle('hidden',   !isProducts);
     document.getElementById('fabImport').classList.toggle('hidden',     !isProducts);
@@ -350,11 +352,66 @@ function switchTab(tab) {
     document.getElementById('tabOrders').classList.toggle('active',     isOrders);
     document.getElementById('tabStores').classList.toggle('active',     isStores);
     document.getElementById('tabUploads').classList.toggle('active',    isUploads);
+    document.getElementById('tabExports').classList.toggle('active',    isExports);
 
     if (isCategories) renderCategories();
     if (isOrders)     renderOrders();
     if (isStores)     renderStores();
     if (isUploads)    renderFileUploader();
+    if (isExports)    renderExports();
+}
+
+/* ─── Exports ───────────────────────────────────────────── */
+async function renderExports() {
+    const el = document.getElementById('exportsList');
+    if (!el) return;
+    el.innerHTML = '<div class="exports-loading">Загрузка...</div>';
+    try {
+        const files = await apiAdmin('/api/exports/list');
+        if (!files || !files.length) {
+            el.innerHTML = '<div class="exports-empty">Экспортированных файлов нет</div>';
+            return;
+        }
+        el.innerHTML = `
+            <table class="exports-table">
+                <thead>
+                    <tr>
+                        <th>Имя файла</th>
+                        <th>Размер</th>
+                        <th>Дата</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${files.map(f => `
+                    <tr>
+                        <td class="exports-table__name">${f.name}</td>
+                        <td class="exports-table__size">${_fmtSize(f.size)}</td>
+                        <td class="exports-table__date">${_fmtDate(f.modifiedAt)}</td>
+                        <td class="exports-table__action">
+                            <a href="${f.url}" target="_blank" download class="exports-dl-btn">Скачать</a>
+                        </td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>`;
+    } catch {
+        el.innerHTML = '<div class="exports-empty" style="color:var(--red)">Ошибка загрузки списка файлов</div>';
+    }
+}
+
+function _fmtSize(bytes) {
+    if (!bytes) return '—';
+    if (bytes < 1024)       return bytes + ' Б';
+    if (bytes < 1048576)    return (bytes / 1024).toFixed(1) + ' КБ';
+    return (bytes / 1048576).toFixed(1) + ' МБ';
+}
+
+function _fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleString('ru-RU', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+    });
 }
 
 /* ─── Format ────────────────────────────────────────────── */
