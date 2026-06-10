@@ -28,14 +28,10 @@ async function ozonRequest(account, endpoint, body) {
         'Content-Type': 'application/json',
     };
     const bodyStr = JSON.stringify(body);
-    console.log(`[ozonSync] >>> URL: ${url}`);
-    console.log(`[ozonSync] >>> Headers: Client-Id=${account.clientId} Api-Key=${account.apiKey ? account.apiKey.slice(0,8)+'...' : 'MISSING'} Content-Type=application/json`);
-    console.log(`[ozonSync] >>> Body: ${bodyStr}`);
+    console.log(`[ozonSync] REQ [${account.name}] POST ${url}`);
 
     const res  = await fetch(url, { method: 'POST', headers, body: bodyStr });
     const text = await res.text();
-    console.log(`[ozonSync] <<< Status: ${res.status}`);
-    console.log(`[ozonSync] <<< Body: ${text.slice(0, 500)}`);
 
     if (!res.ok) {
         throw new Error(`Ozon API ${endpoint} → ${res.status}: ${text.slice(0, 300)}`);

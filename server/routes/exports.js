@@ -2,7 +2,7 @@ const router = require('express').Router();
 const fs     = require('fs');
 const path   = require('path');
 
-const EXPORTS_DIR = path.join(__dirname, '..', '..', 'exports');
+const EXPORTS_DIR = process.env.EXPORT_DIR || '/tmp/exports';
 
 /* GET /api/exports/list */
 router.get('/list', (req, res) => {
