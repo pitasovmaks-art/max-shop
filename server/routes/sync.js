@@ -15,11 +15,10 @@ router.get('/test-stocks', async (req, res) => {
 
     let logs = [];
     try {
-        const result = await db.execute(
+        logs = await db.query(
             `SELECT account, data_type, status, records_count, error_message, created_at
              FROM sync_log ORDER BY created_at DESC LIMIT 10`
         );
-        logs = result.rows || result;
     } catch {}
 
     res.json({ ok: !syncError, duration_ms, error: syncError || undefined, recent_logs: logs });
