@@ -107,7 +107,7 @@ async function syncStocks() {
             const items  = [];
             let   lastId = '';
             do {
-                const data  = await ozonRequest(account, '/v2/product/info/stocks', {
+                const data  = await ozonRequest(account, '/v4/product/info/stocks', {
                     filter:  { offer_id: [], product_id: [], visibility: 'ALL' },
                     last_id: lastId,
                     limit:   100,
