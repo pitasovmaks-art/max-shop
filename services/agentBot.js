@@ -303,8 +303,15 @@ async function runDiscussion(question) {
 
 /* ---------- Long polling Telegram ---------- */
 
-let pollOffset = 0;
-let polling    = false;
+let pollOffset         = 0;
+let polling            = false;
+let consecutiveErrors  = 0;
+let lastErrorLogTime   = 0;
+
+const POLL_ERROR_DELAY      = 30_000;       // 30 с между попытками при ошибке
+const POLL_PAUSE_DELAY      = 5 * 60_000;   // 5 мин пауза после 3 ошибок подряд
+const MAX_CONSECUTIVE_ERRORS = 3;
+const ERROR_LOG_INTERVAL    = 5 * 60_000;   // логировать не чаще раза в 5 мин
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -315,6 +322,7 @@ async function pollLoop() {
     while (polling) {
         try {
             const updates = await tg('getUpdates', { offset: pollOffset, timeout: 30 });
+            consecutiveErrors = 0;
             for (const update of updates) {
                 pollOffset = update.update_id + 1;
                 const msg = update.message;
@@ -330,8 +338,18 @@ async function pollLoop() {
                 runDiscussion(question).catch(e => console.error('[agentBot] runDiscussion error:', e.message));
             }
         } catch (e) {
-            console.error('[agentBot] poll error:', e.message);
-            await sleep(5000);
+            consecutiveErrors++;
+            const now = Date.now();
+            if (now - lastErrorLogTime >= ERROR_LOG_INTERVAL) {
+                console.error('[agentBot] poll error:', e.message);
+                lastErrorLogTime = now;
+            }
+            if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+                consecutiveErrors = 0;
+                await sleep(POLL_PAUSE_DELAY);
+            } else {
+                await sleep(POLL_ERROR_DELAY);
+            }
         }
     }
 }

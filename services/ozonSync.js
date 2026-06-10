@@ -99,14 +99,18 @@ async function syncStocks() {
         let count = 0;
         try {
             const items  = [];
-            let   cursor = '';
+            let   lastId = '';
             do {
-                const data  = await ozonRequest(account, '/v3/product/info/stocks', { cursor, filter: {}, limit: 1000 });
-                const batch = data.items || data.result?.items || [];
+                const data  = await ozonRequest(account, '/v2/product/info/stocks', {
+                    filter:  { offer_id: [], product_id: [], visibility: 'ALL' },
+                    last_id: lastId,
+                    limit:   100,
+                });
+                const batch = data.result?.items || data.items || [];
                 items.push(...batch);
-                cursor = data.cursor || '';
-                if (!batch.length) break;
-            } while (cursor);
+                lastId = data.result?.last_id || '';
+                if (!batch.length || batch.length < 100) break;
+            } while (lastId);
 
             for (const item of items) {
                 for (const stock of (item.stocks || [])) {
