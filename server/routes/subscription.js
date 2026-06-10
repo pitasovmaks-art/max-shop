@@ -3,6 +3,10 @@ const https  = require('https');
 
 const API_BASE = 'platform-api.max.ru';
 
+const ADMIN_IDS = new Set(
+    (process.env.ADMIN_IDS || '').split(',').map(s => s.trim()).filter(Boolean).map(Number)
+);
+
 async function checkChannelMembership(userId) {
     const channelId = process.env.CHANNEL_CHAT_ID;
     const token     = process.env.MAX_BOT_TOKEN || '';
@@ -61,6 +65,9 @@ router.get('/', async (req, res) => {
     const userId = req.query.user_id;
     if (!userId) {
         return res.json({ subscribed: true }); // fail-open: no user_id
+    }
+    if (ADMIN_IDS.has(Number(userId))) {
+        return res.json({ subscribed: true }); // admin bypass
     }
     try {
         const subscribed = await checkChannelMembership(userId);
