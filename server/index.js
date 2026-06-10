@@ -65,7 +65,6 @@ app.use('/api/promo',             require('./routes/promo'));
 app.use('/api/check-subscription', require('./routes/subscription'));
 app.use('/api/exports',           require('./routes/exports'));
 app.use('/api/uploads',           require('./routes/uploads'));
-app.use('/api/sync',              require('./routes/sync'));
 
 /* Reset data to defaults (admin only) */
 app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, async (req, res) => {
