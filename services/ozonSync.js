@@ -5,7 +5,7 @@ const XLSX = require('xlsx');
 const db   = require('../server/db');
 
 const BASE_URL    = 'https://api-seller.ozon.ru';
-const EXPORTS_DIR = path.join(__dirname, '..', 'exports');
+const EXPORTS_DIR = process.env.EXPORT_DIR || '/tmp/exports';
 
 const MONTHS_RU = [
     'январь', 'февраль', 'март',     'апрель', 'май',    'июнь',
