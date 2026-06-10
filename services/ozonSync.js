@@ -21,23 +21,26 @@ const ACCOUNTS = [
 
 /* ─── Запрос к Ozon Seller API ───────────────────────────── */
 async function ozonRequest(account, endpoint, body) {
-    const url = BASE_URL + endpoint;
-    console.log(`[ozonSync] REQ [${account.name}] POST ${url} body=${JSON.stringify(body)}`);
-    const res = await fetch(url, {
-        method:  'POST',
-        headers: {
-            'Client-Id':    account.clientId,
-            'Api-Key':      account.apiKey,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-    });
+    const url     = BASE_URL + endpoint;
+    const headers = {
+        'Client-Id':    account.clientId,
+        'Api-Key':      account.apiKey,
+        'Content-Type': 'application/json',
+    };
+    const bodyStr = JSON.stringify(body);
+    console.log(`[ozonSync] >>> URL: ${url}`);
+    console.log(`[ozonSync] >>> Headers: Client-Id=${account.clientId} Api-Key=${account.apiKey ? account.apiKey.slice(0,8)+'...' : 'MISSING'} Content-Type=application/json`);
+    console.log(`[ozonSync] >>> Body: ${bodyStr}`);
+
+    const res  = await fetch(url, { method: 'POST', headers, body: bodyStr });
+    const text = await res.text();
+    console.log(`[ozonSync] <<< Status: ${res.status}`);
+    console.log(`[ozonSync] <<< Body: ${text.slice(0, 500)}`);
+
     if (!res.ok) {
-        const text = await res.text();
-        console.error(`[ozonSync] ERR [${account.name}] ${res.status} ${url} → ${text.slice(0, 500)}`);
         throw new Error(`Ozon API ${endpoint} → ${res.status}: ${text.slice(0, 300)}`);
     }
-    return res.json();
+    return JSON.parse(text);
 }
 
 async function logSync(account, dataType, status, count, errorMessage) {
@@ -101,18 +104,19 @@ async function syncStocks() {
     for (const account of ACCOUNTS) {
         let count = 0;
         try {
-            const items = [];
-            let   page  = 1;
-            while (true) {
-                const data  = await ozonRequest(account, '/v1/product/info/stocks', {
-                    page,
-                    page_size: 100,
+            const items  = [];
+            let   lastId = '';
+            do {
+                const data  = await ozonRequest(account, '/v2/product/info/stocks', {
+                    filter:  { offer_id: [], product_id: [], visibility: 'ALL' },
+                    last_id: lastId,
+                    limit:   100,
                 });
                 const batch = data.result?.items || data.items || [];
                 items.push(...batch);
-                if (batch.length < 100) break;
-                page++;
-            }
+                lastId = data.result?.last_id || '';
+                if (!batch.length || batch.length < 100) break;
+            } while (lastId);
 
             for (const item of items) {
                 for (const stock of (item.stocks || [])) {
