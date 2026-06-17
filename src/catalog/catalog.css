@@ -217,29 +217,17 @@ a      { text-decoration: none; color: inherit; }
 
 /* ─── Product card ──────────────────────────────────────── */
 .product-card {
-    background: rgba(255,255,255,0.55);
-    /* backdrop-filter moved to ::before so the img child renders at native DPR */
     border: 1px solid rgba(255,255,255,0.6);
     box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     border-radius: 16px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: background .15s, transform .15s;
+    transition: transform .15s;
     cursor: pointer;
     position: relative;
 }
-/* Blur layer lives on its own compositing surface, not shared with img */
-.product-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 16px;
-    pointer-events: none;
-}
-.product-card:active { background: rgba(255,255,255,0.40); transform: scale(.98); }
+.product-card:active { transform: scale(.98); }
 
 .product-card__img {
     height: 110px;
@@ -255,8 +243,6 @@ a      { text-decoration: none; color: inherit; }
     position: absolute; inset: 0;
     width: 100%; height: 100%;
     object-fit: cover;
-    /* Own GPU layer → renders at native screen DPR in WebView */
-    transform: translateZ(0);
 }
 .product-card__badge-out {
     position: absolute;
@@ -286,6 +272,9 @@ a      { text-decoration: none; color: inherit; }
     display: flex;
     flex-direction: column;
     gap: 4px;
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 .product-card__name {
     font-size: 13px;
