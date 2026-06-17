@@ -67,64 +67,6 @@ app.use('/api/exports',           require('./routes/exports'));
 app.use('/api/uploads',           require('./routes/uploads'));
 app.use('/api/sync',              require('./routes/sync'));
 
-/* Migrate base64 main photos to S3 (one-time, admin only) */
-app.post('/api/admin/migrate-images', require('./middleware/auth').requireAdmin, async (req, res) => {
-    const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-    const db = require('./db');
-    const bucket = process.env.S3_BUCKET;
-    if (!bucket) return res.status(500).json({ error: 'S3_BUCKET not configured' });
-
-    const s3 = new S3Client({
-        region:   'ru-1',
-        endpoint: 'https://s3.twcstorage.ru',
-        credentials: {
-            accessKeyId:     process.env.S3_ACCESS_KEY || '',
-            secretAccessKey: process.env.S3_SECRET_KEY || '',
-        },
-        forcePathStyle: true,
-    });
-
-    try {
-        const rows = await db.query("SELECT id FROM products WHERE image LIKE 'data:%'");
-        const results = [];
-
-        for (const row of rows) {
-            // Re-fetch individually to avoid huge JSON in memory
-            const p = await db.queryOne('SELECT id, image FROM products WHERE id=$1', [row.id]);
-            try {
-                const commaIdx = p.image.indexOf(',');
-                if (commaIdx === -1) throw new Error('Нет запятой в data URL');
-                const base64Data = p.image.slice(commaIdx + 1);
-                const buffer = Buffer.from(base64Data, 'base64');
-
-                const key = `products/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-                await s3.send(new PutObjectCommand({
-                    Bucket:      bucket,
-                    Key:         key,
-                    Body:        buffer,
-                    ContentType: 'image/jpeg',
-                    ACL:         'public-read',
-                }));
-
-                const url = `https://${bucket}.s3.twcstorage.ru/${key}`;
-                await db.execute('UPDATE products SET image=$1 WHERE id=$2', [url, p.id]);
-                results.push({ id: p.id, ok: true, url });
-
-                // 150 ms пауза между загрузками
-                await new Promise(r => setTimeout(r, 150));
-            } catch (e) {
-                results.push({ id: p.id, ok: false, error: e.message });
-            }
-        }
-
-        const ok  = results.filter(r => r.ok).length;
-        const bad = results.filter(r => !r.ok).length;
-        res.json({ total: rows.length, migrated: ok, failed: bad, results });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
 /* Reset data to defaults (admin only) */
 app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, async (req, res) => {
     try {
