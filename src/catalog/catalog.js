@@ -266,6 +266,10 @@ function updateBadges() {
 
 /* ─── Product page navigation ───────────────────────────────── */
 function openProduct(id) {
+    sessionStorage.setItem('catalog_scroll', String(Math.round(window.scrollY)));
+    sessionStorage.setItem('catalog_cat',    state.categoryId !== null ? String(state.categoryId) : '');
+    sessionStorage.setItem('catalog_sub',    state.subId      !== null ? String(state.subId)      : '');
+    sessionStorage.setItem('catalog_back',   '1');
     location.href = `src/catalog/product.html?id=${id}`;
 }
 
@@ -419,8 +423,6 @@ function render() {
 
         const outBadge = !p.inStock
             ? `<span class="product-card__badge-out">Нет в наличии</span>` : '';
-        const subBadge = sub
-            ? `<span class="product-card__badge-brand">${sub.name}</span>` : '';
 
         const cityVars  = _cityVariants(p.variants || []);
         const activeVar = _effectiveVariant(p);
@@ -451,7 +453,7 @@ function render() {
         if (p.isService) {
             return `
             <div class="product-card" id="pcard-${p.id}" onclick="openProduct(${p.id})">
-                <div class="product-card__img ${imgBg}">${imgIcon}${subBadge}${favBtn}</div>
+                <div class="product-card__img ${imgBg}">${imgIcon}${favBtn}</div>
                 <div class="product-card__body">
                     <div class="product-card__name">${p.name}</div>
                     <div class="product-card__footer">
@@ -476,7 +478,7 @@ function render() {
 
         return `
         <div class="product-card" id="pcard-${p.id}" onclick="openProduct(${p.id})">
-            <div class="product-card__img ${imgBg}">${imgIcon}${outBadge}${subBadge}${favBtn}</div>
+            <div class="product-card__img ${imgBg}">${imgIcon}${outBadge}${favBtn}</div>
             <div class="product-card__body">
                 <div class="product-card__name">${p.name}</div>
                 ${variantPills}
@@ -575,12 +577,33 @@ async function init() {
         document.getElementById('emptyState').classList.remove('hidden');
         document.getElementById('resultsCount').textContent = 'Ошибка загрузки';
     }
+
+    // Restore catalog position when coming back from a product page
+    let savedScroll = null;
+    if (sessionStorage.getItem('catalog_back')) {
+        const rawCat = sessionStorage.getItem('catalog_cat');
+        const rawSub = sessionStorage.getItem('catalog_sub');
+        savedScroll  = sessionStorage.getItem('catalog_scroll');
+        state.categoryId = rawCat === '' ? null : (rawCat === 'sale' ? 'sale' : +rawCat || null);
+        state.subId      = rawSub && rawSub !== '' ? (+rawSub || null) : null;
+        sessionStorage.removeItem('catalog_back');
+        sessionStorage.removeItem('catalog_cat');
+        sessionStorage.removeItem('catalog_sub');
+        sessionStorage.removeItem('catalog_scroll');
+    }
+
     localStorage.removeItem('favorites_changed');
     renderCategoryFilters();
     renderSubFilters();
     render();
     updateBadges();
     _startPolling();
+
+    if (savedScroll) {
+        requestAnimationFrame(() => requestAnimationFrame(() =>
+            window.scrollTo({ top: +savedScroll, behavior: 'instant' })
+        ));
+    }
 }
 
 /* ─── Reload favorites state (e.g. after bfcache restore) ───── */
@@ -665,7 +688,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (detectCity()) init();
 });
 
-window.addEventListener('pageshow', () => {
+window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+        // bfcache restore: JS state (incl. scroll + category) already preserved
+        sessionStorage.removeItem('catalog_back');
+        sessionStorage.removeItem('catalog_cat');
+        sessionStorage.removeItem('catalog_sub');
+        sessionStorage.removeItem('catalog_scroll');
+    }
     if (_products.length) reloadProductsAndSubscriptions();
     else if (localStorage.getItem('favorites_changed')) reloadFavorites();
 });

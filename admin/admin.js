@@ -123,32 +123,52 @@ function setDefaultVariantKrd(idx) { _formVariantsKrd.forEach((v, i) => { v.isDe
 function setDefaultVariantMsk(idx) { _formVariantsMsk.forEach((v, i) => { v.isDefault = i === idx; }); }
 
 function _collectVariants() {
-    const krd = _formVariantsKrd
-        .filter(v => String(v.label).trim() || v.priceKrdPickup > 0)
-        .map((v, i) => ({
-            label:           String(v.label).trim(),
-            price:           0, priceKrd: 0, priceMsk: 0, priceDelivery: 0,
-            priceKrdPickup:  v.priceKrdPickup || 0,
-            priceMskPickup:  0,
-            priceMskDelivery:0,
-            isKrd:           true,
-            isDefault:       !!v.isDefault,
-            sortOrder:       i,
-            salePrice:       v.salePrice || 0,
-        }));
-    const msk = _formVariantsMsk
-        .filter(v => String(v.label).trim() || v.priceMskPickup > 0 || v.priceMskDelivery > 0)
-        .map((v, i) => ({
-            label:           String(v.label).trim(),
-            price:           0, priceKrd: 0, priceMsk: 0, priceDelivery: 0,
-            priceKrdPickup:  0,
-            priceMskPickup:  v.priceMskPickup  || 0,
-            priceMskDelivery:v.priceMskDelivery|| 0,
-            isKrd:           false,
-            isDefault:       !!v.isDefault,
-            sortOrder:       i,
-            salePrice:       v.salePrice || 0,
-        }));
+    // Read values directly from DOM to capture whatever is currently visible in inputs
+    function readKrd() {
+        return [...document.querySelectorAll('#variant-rows-krd .variant-row')].map((row, i) => {
+            const label   = (row.querySelector('.variant-row__label')?.value ?? '').trim();
+            const prices  = [...row.querySelectorAll('.variant-row__price')];
+            const pickup  = parseFloat(prices[0]?.value) || 0;
+            const sale    = parseFloat(prices[1]?.value) || 0;
+            const isDefault = row.querySelector('input[type="radio"]')?.checked ?? (_formVariantsKrd[i]?.isDefault ?? false);
+            return { label, priceKrdPickup: pickup, salePrice: sale, isDefault };
+        }).filter(v => v.label || v.priceKrdPickup > 0);
+    }
+
+    function readMsk() {
+        return [...document.querySelectorAll('#variant-rows-msk .variant-row')].map((row, i) => {
+            const label    = (row.querySelector('.variant-row__label')?.value ?? '').trim();
+            const prices   = [...row.querySelectorAll('.variant-row__price')];
+            const pickup   = parseFloat(prices[0]?.value) || 0;
+            const delivery = parseFloat(prices[1]?.value) || 0;
+            const sale     = parseFloat(prices[2]?.value) || 0;
+            const isDefault = row.querySelector('input[type="radio"]')?.checked ?? (_formVariantsMsk[i]?.isDefault ?? false);
+            return { label, priceMskPickup: pickup, priceMskDelivery: delivery, salePrice: sale, isDefault };
+        }).filter(v => v.label || v.priceMskPickup > 0 || v.priceMskDelivery > 0);
+    }
+
+    const krd = readKrd().map((v, i) => ({
+        label:            v.label,
+        price: 0, priceKrd: 0, priceMsk: 0, priceDelivery: 0,
+        priceKrdPickup:   v.priceKrdPickup,
+        priceMskPickup:   0,
+        priceMskDelivery: 0,
+        isKrd:            true,
+        isDefault:        !!v.isDefault,
+        sortOrder:        i,
+        salePrice:        v.salePrice,
+    }));
+    const msk = readMsk().map((v, i) => ({
+        label:            v.label,
+        price: 0, priceKrd: 0, priceMsk: 0, priceDelivery: 0,
+        priceKrdPickup:   0,
+        priceMskPickup:   v.priceMskPickup,
+        priceMskDelivery: v.priceMskDelivery,
+        isKrd:            false,
+        isDefault:        !!v.isDefault,
+        sortOrder:        i,
+        salePrice:        v.salePrice,
+    }));
     return [...krd, ...msk];
 }
 
@@ -647,26 +667,30 @@ let currentPhotoBase64 = null;
 
 function triggerPhotoInput() { document.getElementById('photoInput').click(); }
 
-function handlePhotoSelect(e) {
+async function handlePhotoSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = evt => {
-        const img = new Image();
-        img.onload = () => {
-            const MAX = 800;
-            let w = img.width, h = img.height;
-            if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
-            else        { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
-            const canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            setPhotoPreview(canvas.toDataURL('image/jpeg', 0.78));
-        };
-        img.src = evt.target.result;
-    };
-    reader.readAsDataURL(file);
     e.target.value = '';
+
+    const area = document.getElementById('photoUpload');
+    if (area) { area.style.opacity = '0.5'; area.style.pointerEvents = 'none'; }
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res  = await fetch('/api/upload', {
+            method:  'POST',
+            headers: { 'Authorization': `Bearer ${getToken()}` },
+            body:    formData,
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Upload failed');
+        setPhotoPreview(data.url);
+    } catch {
+        showToast('Ошибка загрузки фото');
+    } finally {
+        if (area) { area.style.opacity = ''; area.style.pointerEvents = ''; }
+    }
 }
 
 function setPhotoPreview(base64) {
