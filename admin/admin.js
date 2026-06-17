@@ -936,6 +936,29 @@ async function saveProduct() {
     const subVisible = !ffSub.classList.contains('hidden');
     const subVal     = subVisible ? parseInt(document.getElementById('f-sub').value) || null : null;
 
+    // If image is still base64 (loaded from DB or set by old code path), upload to S3 first
+    if (currentPhotoBase64 && currentPhotoBase64.startsWith('data:')) {
+        const btn2 = document.querySelector('#formOverlay .save-btn');
+        if (btn2) { btn2.disabled = true; btn2.textContent = 'Загружаем фото...'; }
+        try {
+            const blob     = await fetch(currentPhotoBase64).then(r => r.blob());
+            const formData = new FormData();
+            formData.append('file', blob, 'photo.jpg');
+            const res  = await fetch('/api/upload', {
+                method:  'POST',
+                headers: { 'Authorization': `Bearer ${getToken()}` },
+                body:    formData,
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.error || 'Upload failed');
+            currentPhotoBase64 = data.url;
+        } catch {
+            showToast('Ошибка загрузки фото в S3');
+            if (btn2) { btn2.disabled = false; btn2.textContent = 'Сохранить'; }
+            return;
+        }
+    }
+
     const product = {
         name:          document.getElementById('f-name').value.trim(),
         desc:          document.getElementById('f-desc').value.trim() || null,
