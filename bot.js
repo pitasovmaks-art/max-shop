@@ -4,7 +4,6 @@
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
-const { generateToken } = require('./server/utils/shopToken');
 
 const API_BASE     = 'platform-api.max.ru';
 const TOKEN        = process.env.MAX_BOT_TOKEN || '';
@@ -100,10 +99,6 @@ async function handleStart(chatId, userName) {
 
     console.log('[bot] handleStart: chatId=', chatId);
     await sendMessage(chatId, `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\n✉️ Вы подписаны на уведомления о статусе заказов.`);
-
-    const token = generateToken(chatId);
-    const url   = `${SHOP_URL}/?token=${token}`;
-    await sendMessage(chatId, '🛍 Откройте каталог:', [[{ type: 'link', text: 'Открыть магазин', url }]]);
 }
 
 /* ─── Process one update ────────────────────────────────── */

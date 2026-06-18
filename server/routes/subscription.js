@@ -79,3 +79,5 @@ router.get('/', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.checkChannelMembership = checkChannelMembership;
+module.exports.ADMIN_IDS = ADMIN_IDS;
