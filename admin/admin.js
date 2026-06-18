@@ -287,11 +287,12 @@ async function apiAdmin(path, method = 'GET', body = null) {
 
 /* ─── Data refresh ──────────────────────────────────────── */
 async function refreshData() {
+    const authHeaders = { 'Authorization': `Bearer ${getToken()}` };
     const [cats, subs, prods, stores] = await Promise.all([
-        fetch('/api/categories').then(r => r.json()),
-        fetch('/api/subcategories').then(r => r.json()),
-        fetch('/api/products').then(r => r.json()),
-        fetch('/api/stores').then(r => r.json()),
+        fetch('/api/categories', { headers: authHeaders }).then(r => r.json()),
+        fetch('/api/subcategories', { headers: authHeaders }).then(r => r.json()),
+        fetch('/api/products', { headers: authHeaders }).then(r => r.json()),
+        fetch('/api/stores', { headers: authHeaders }).then(r => r.json()),
     ]);
     _categories    = cats;
     _subcategories = subs;
@@ -720,7 +721,9 @@ async function loadExtraImages(productId) {
     _extraImages = [];
     renderExtraImages();
     try {
-        const images = await fetch(`/api/products/${productId}/images`).then(r => r.json());
+        const images = await fetch(`/api/products/${productId}/images`, {
+            headers: { 'Authorization': `Bearer ${getToken()}` },
+        }).then(r => r.json());
         _extraImages = Array.isArray(images) ? images : [];
         renderExtraImages();
     } catch {

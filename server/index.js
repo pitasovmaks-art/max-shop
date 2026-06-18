@@ -47,6 +47,9 @@ app.use((req, res, next) => {
 app.get('/health',  (req, res) => res.status(200).send('OK'));
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
+/* Защита мини-приложения и API токеном, выдаваемым ботом (админка — отдельный пароль) */
+app.use(require('./middleware/shopGate'));
+
 app.use(express.static(path.join(__dirname, '..')));
 
 app.get('/api/config', (req, res) => {
