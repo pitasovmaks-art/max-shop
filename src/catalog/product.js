@@ -148,7 +148,7 @@ function renderGallery() {
     if (_allImages.length > 1) {
         stripEl.innerHTML = _allImages.map((img, i) => `
             <div class="gallery__thumb${i === 0 ? ' gallery__thumb--active' : ''}"
-                 id="thumb-${i}" onclick="setMainImage(${i})">
+                 id="thumb-${i}" onclick="setMainImage(${i}); openLightbox(${i})">
                 <img src="${img.url}" alt="">
             </div>`).join('');
         wrapEl.classList.remove('hidden');
@@ -162,7 +162,7 @@ function setMainImage(idx) {
     _currentImgIdx = idx;
     const mainEl = document.getElementById('galleryMain');
     mainEl.className = 'gallery__main';
-    mainEl.innerHTML = `<img src="${_allImages[idx].url}" alt="${_product.name}">`;
+    mainEl.innerHTML = `<img src="${_allImages[idx].url}" alt="${_product.name}" onclick="openLightbox(${idx})">`;
     if (!_product.inStock) {
         mainEl.innerHTML += '<span class="badge-out">Нет в наличии</span>';
     }
@@ -170,6 +170,131 @@ function setMainImage(idx) {
         el.classList.toggle('gallery__thumb--active', i === idx);
     });
     updateArrow();
+}
+
+/* ─── Lightbox ──────────────────────────────────────────────── */
+let _lbIdx          = 0;
+let _lbScale        = 1;
+let _lbTranslateX   = 0;
+let _lbTranslateY   = 0;
+let _lbStartDistance = 0;
+let _lbStartScale   = 1;
+let _lbPanStartX    = 0;
+let _lbPanStartY    = 0;
+let _lbStartTranslateX = 0;
+let _lbStartTranslateY = 0;
+let _lbTouchMode    = null; // 'pinch' | 'pan' | 'swipe'
+let _lbSwipeStartX  = 0;
+let _lbSwipeStartY  = 0;
+
+function openLightbox(idx) {
+    if (!_allImages.length) return;
+    _lbIdx = idx;
+    renderLightboxImage();
+    document.getElementById('lightbox').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function handleLightboxBackdropClick(e) {
+    if (e.target.id === 'lightbox' || e.target.id === 'lightboxStage') closeLightbox();
+}
+
+function resetLightboxTransform() {
+    _lbScale = 1;
+    _lbTranslateX = 0;
+    _lbTranslateY = 0;
+    applyLightboxTransform();
+}
+
+function applyLightboxTransform() {
+    const img = document.getElementById('lightboxImg');
+    if (!img) return;
+    img.style.transform = `translate(${_lbTranslateX}px, ${_lbTranslateY}px) scale(${_lbScale})`;
+}
+
+function renderLightboxImage() {
+    const img = document.getElementById('lightboxImg');
+    img.src = _allImages[_lbIdx].url;
+    document.getElementById('lightboxCounter').textContent = `${_lbIdx + 1} / ${_allImages.length}`;
+    resetLightboxTransform();
+}
+
+function lbNext() {
+    if (_lbIdx < _allImages.length - 1) {
+        _lbIdx++;
+        renderLightboxImage();
+    }
+}
+
+function lbPrev() {
+    if (_lbIdx > 0) {
+        _lbIdx--;
+        renderLightboxImage();
+    }
+}
+
+function touchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function initLightboxGestures() {
+    const stage = document.getElementById('lightboxStage');
+    if (!stage) return;
+
+    stage.addEventListener('touchstart', e => {
+        if (e.touches.length === 2) {
+            _lbTouchMode = 'pinch';
+            _lbStartDistance = touchDistance(e.touches);
+            _lbStartScale = _lbScale;
+        } else if (e.touches.length === 1) {
+            if (_lbScale > 1) {
+                _lbTouchMode = 'pan';
+                _lbPanStartX = e.touches[0].clientX;
+                _lbPanStartY = e.touches[0].clientY;
+                _lbStartTranslateX = _lbTranslateX;
+                _lbStartTranslateY = _lbTranslateY;
+            } else {
+                _lbTouchMode = 'swipe';
+                _lbSwipeStartX = e.touches[0].clientX;
+                _lbSwipeStartY = e.touches[0].clientY;
+            }
+        }
+    }, { passive: true });
+
+    stage.addEventListener('touchmove', e => {
+        if (_lbTouchMode === 'pinch' && e.touches.length === 2) {
+            const dist  = touchDistance(e.touches);
+            const ratio = dist / (_lbStartDistance || dist);
+            _lbScale = Math.min(Math.max(_lbStartScale * ratio, 1), 4);
+            applyLightboxTransform();
+        } else if (_lbTouchMode === 'pan' && e.touches.length === 1) {
+            _lbTranslateX = _lbStartTranslateX + (e.touches[0].clientX - _lbPanStartX);
+            _lbTranslateY = _lbStartTranslateY + (e.touches[0].clientY - _lbPanStartY);
+            applyLightboxTransform();
+        }
+    }, { passive: true });
+
+    stage.addEventListener('touchend', e => {
+        if (_lbTouchMode === 'swipe') {
+            const touch = e.changedTouches[0];
+            const dx = touch ? touch.clientX - _lbSwipeStartX : 0;
+            const dy = touch ? touch.clientY - _lbSwipeStartY : 0;
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+                if (dx < 0) lbNext(); else lbPrev();
+            }
+        }
+        if (_lbScale <= 1.02) {
+            resetLightboxTransform();
+        }
+        _lbTouchMode = null;
+    }, { passive: true });
 }
 
 /* ─── Swipe ─────────────────────────────────────────────────── */
@@ -349,5 +474,6 @@ async function init() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initSwipe();
+    initLightboxGestures();
     init();
 });
