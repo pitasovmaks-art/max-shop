@@ -939,6 +939,9 @@ async function saveProduct() {
     const subVisible = !ffSub.classList.contains('hidden');
     const subVal     = subVisible ? parseInt(document.getElementById('f-sub').value) || null : null;
 
+    console.log('[saveProduct] currentPhotoBase64 type:', typeof currentPhotoBase64,
+        'value:', currentPhotoBase64 ? currentPhotoBase64.slice(0, 80) : currentPhotoBase64);
+
     // If image is still base64 (loaded from DB or set by old code path), upload to S3 first
     if (currentPhotoBase64 && currentPhotoBase64.startsWith('data:')) {
         const btn2 = document.querySelector('#formOverlay .save-btn');

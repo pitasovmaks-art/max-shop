@@ -324,6 +324,9 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
 router.post('/', requireAdmin, async (req, res) => {
     const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, priceLabel, image } = req.body;
     if (!name) return res.status(400).json({ error: 'name required' });
+    if (typeof image === 'string' && image.startsWith('data:')) {
+        return res.status(400).json({ error: 'image must be S3 URL, not base64' });
+    }
     try {
         const [globalMax, catMax] = await Promise.all([
             db.queryOne('SELECT COALESCE(MAX(sort_order), 0) AS m FROM products'),
@@ -349,6 +352,9 @@ router.post('/', requireAdmin, async (req, res) => {
 /* PUT /api/products/:id */
 router.put('/:id', requireAdmin, async (req, res) => {
     const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, priceLabel, image } = req.body;
+    if (typeof image === 'string' && image.startsWith('data:')) {
+        return res.status(400).json({ error: 'image must be S3 URL, not base64' });
+    }
     try {
         const current = await db.queryOne('SELECT in_stock, category_id FROM products WHERE id=$1', [+req.params.id]);
         if (!current) return res.status(404).json({ error: 'Not found' });
