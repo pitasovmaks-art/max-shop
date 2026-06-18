@@ -18,8 +18,8 @@ router.post('/verify', async (req, res) => {
     const ua = req.headers['user-agent'] || '';
     console.log('[auth/verify] User-Agent:', ua);
 
-    /* TODO: эвристика не подтверждена реальным UA Max — смотрим в логи Timeweb и уточняем паттерн */
-    const isMax = /max/i.test(ua);
+    /* Подтверждено реальным UA Max-клиента: "...Mobile/15E148 MAX/26.17.3" */
+    const isMax = /MAX\//.test(ua);
     if (!isMax) {
         console.log('[auth/verify] отклонён как не-Max клиент, UA:', ua);
         return res.status(403).json({ ok: false, reason: 'not_max' });
