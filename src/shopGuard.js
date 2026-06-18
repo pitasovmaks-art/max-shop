@@ -28,14 +28,7 @@
 
     function showAccessDenied() {
         document.open();
-        document.write(
-            '<!DOCTYPE html><html><head><meta charset="utf-8">' +
-            '<title>404</title></head>' +
-            '<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;' +
-            'font-family:sans-serif;background:#fff;color:#000;text-align:center;">' +
-            '<div><h1>404</h1><p>Not Found</p></div>' +
-            '</body></html>'
-        );
+        document.write('404 Not Found');
         document.close();
     }
 
