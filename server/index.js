@@ -22,6 +22,28 @@ app.use((req, res, next) => {
     next();
 });
 
+/* Block direct desktop-browser access — mini-app is Max-only (mobile WebView) */
+app.use((req, res, next) => {
+    const p = req.path;
+    if (
+        p === '/health'    ||
+        p === '/healthz'   ||
+        p === '/robots.txt'||
+        p.startsWith('/webhook') ||
+        p.startsWith('/api/')    ||
+        p.startsWith('/admin')
+    ) return next();
+
+    const ua = req.headers['user-agent'] || '';
+    const isDesktopBrowser =
+        /Windows NT|Macintosh; Intel Mac|X11; Linux/.test(ua) &&
+        !/Android|iPhone|iPad|iPod/.test(ua);
+    if (isDesktopBrowser) {
+        return res.status(404).type('text/plain').send('Not Found');
+    }
+    next();
+});
+
 app.get('/health',  (req, res) => res.status(200).send('OK'));
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
