@@ -1,8 +1,7 @@
 const router = require('express').Router();
-const { ADMIN_PASSWORD }                           = require('../middleware/auth');
-const { verifyInitData }                           = require('../utils/initData');
-const { generateSessionToken }                     = require('../utils/sessionToken');
-const { checkChannelMembership, ADMIN_IDS }        = require('./subscription');
+const { ADMIN_PASSWORD }                    = require('../middleware/auth');
+const { verifyInitData }                    = require('../utils/initData');
+const { checkChannelMembership, ADMIN_IDS } = require('./subscription');
 
 router.post('/login', (req, res) => {
     const { password } = req.body || {};
@@ -13,8 +12,8 @@ router.post('/login', (req, res) => {
     }
 });
 
-/* POST /api/auth/verify — проверяет подпись initData Max Mini Apps и подписку на канал,
-   при успехе выдаёт cookie-сессию для доступа к остальному API */
+/* POST /api/auth/verify — проверяет подпись initData Max Mini Apps и подписку на канал.
+   Без cookie/сессии: вызывается заново при каждой загрузке каждой страницы. */
 router.post('/verify', async (req, res) => {
     const { initData } = req.body || {};
     const result = verifyInitData(initData, process.env.MAX_BOT_TOKEN || '');
@@ -30,8 +29,6 @@ router.post('/verify', async (req, res) => {
         return res.json({ ok: false, reason: 'not_subscribed' });
     }
 
-    const session = generateSessionToken(userId);
-    res.setHeader('Set-Cookie', `shop_session=${session}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`);
     res.json({ ok: true, userId });
 });
 
