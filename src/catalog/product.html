@@ -425,6 +425,29 @@
             border-radius: 999px;
         }
 
+        .lightbox__arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 5002;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(248,88,0,0.45);
+            color: #fff;
+            font-size: 26px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .lightbox__arrow.hidden { display: none; }
+        .lightbox__arrow:active { background: rgba(248,88,0,0.35); }
+        .lightbox__arrow--prev { left: 12px; padding-right: 2px; }
+        .lightbox__arrow--next { right: 12px; padding-left: 2px; }
+
         .lightbox__stage {
             width: 100%;
             height: 100%;
@@ -530,11 +553,13 @@
 <div class="lightbox hidden" id="lightbox" onclick="handleLightboxBackdropClick(event)">
     <button class="lightbox__close" onclick="closeLightbox()" aria-label="Закрыть">✕</button>
     <div class="lightbox__counter" id="lightboxCounter">1 / 1</div>
+    <button class="lightbox__arrow lightbox__arrow--prev hidden" id="lightboxArrowPrev" onclick="lbPrev()" aria-label="Предыдущее фото">‹</button>
+    <button class="lightbox__arrow lightbox__arrow--next hidden" id="lightboxArrowNext" onclick="lbNext()" aria-label="Следующее фото">›</button>
     <div class="lightbox__stage" id="lightboxStage">
         <img class="lightbox__img" id="lightboxImg" src="" alt="">
     </div>
 </div>
 
-<script src="product.js?v=20260618a"></script>
+<script src="product.js?v=20260618b"></script>
 </body>
 </html>

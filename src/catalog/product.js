@@ -148,7 +148,7 @@ function renderGallery() {
     if (_allImages.length > 1) {
         stripEl.innerHTML = _allImages.map((img, i) => `
             <div class="gallery__thumb${i === 0 ? ' gallery__thumb--active' : ''}"
-                 id="thumb-${i}" onclick="setMainImage(${i}); openLightbox(${i})">
+                 id="thumb-${i}" onclick="setMainImage(${i})">
                 <img src="${img.url}" alt="">
             </div>`).join('');
         wrapEl.classList.remove('hidden');
@@ -186,6 +186,7 @@ let _lbStartTranslateY = 0;
 let _lbTouchMode    = null; // 'pinch' | 'pan' | 'swipe'
 let _lbSwipeStartX  = 0;
 let _lbSwipeStartY  = 0;
+let _lbGestureMoved = false;
 
 function openLightbox(idx) {
     if (!_allImages.length) return;
@@ -201,6 +202,7 @@ function closeLightbox() {
 }
 
 function handleLightboxBackdropClick(e) {
+    if (_lbGestureMoved) { _lbGestureMoved = false; return; } // клик-эхо после свайпа/пинча — не закрывать
     if (e.target.id === 'lightbox' || e.target.id === 'lightboxStage') closeLightbox();
 }
 
@@ -222,6 +224,16 @@ function renderLightboxImage() {
     img.src = _allImages[_lbIdx].url;
     document.getElementById('lightboxCounter').textContent = `${_lbIdx + 1} / ${_allImages.length}`;
     resetLightboxTransform();
+    updateLightboxArrows();
+}
+
+function updateLightboxArrows() {
+    const prev = document.getElementById('lightboxArrowPrev');
+    const next = document.getElementById('lightboxArrowNext');
+    if (!prev || !next) return;
+    const multi = _allImages.length > 1;
+    prev.classList.toggle('hidden', !multi || _lbIdx === 0);
+    next.classList.toggle('hidden', !multi || _lbIdx === _allImages.length - 1);
 }
 
 function lbNext() {
@@ -249,6 +261,7 @@ function initLightboxGestures() {
     if (!stage) return;
 
     stage.addEventListener('touchstart', e => {
+        _lbGestureMoved = false;
         if (e.touches.length === 2) {
             _lbTouchMode = 'pinch';
             _lbStartDistance = touchDistance(e.touches);
@@ -270,14 +283,20 @@ function initLightboxGestures() {
 
     stage.addEventListener('touchmove', e => {
         if (_lbTouchMode === 'pinch' && e.touches.length === 2) {
+            _lbGestureMoved = true;
             const dist  = touchDistance(e.touches);
             const ratio = dist / (_lbStartDistance || dist);
             _lbScale = Math.min(Math.max(_lbStartScale * ratio, 1), 4);
             applyLightboxTransform();
         } else if (_lbTouchMode === 'pan' && e.touches.length === 1) {
+            _lbGestureMoved = true;
             _lbTranslateX = _lbStartTranslateX + (e.touches[0].clientX - _lbPanStartX);
             _lbTranslateY = _lbStartTranslateY + (e.touches[0].clientY - _lbPanStartY);
             applyLightboxTransform();
+        } else if (_lbTouchMode === 'swipe' && e.touches.length === 1) {
+            const dx = e.touches[0].clientX - _lbSwipeStartX;
+            const dy = e.touches[0].clientY - _lbSwipeStartY;
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) _lbGestureMoved = true;
         }
     }, { passive: true });
 
