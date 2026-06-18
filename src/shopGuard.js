@@ -1,17 +1,14 @@
 /* ─── Shop guard ──────────────────────────────────────────────
-   Подключается сразу после max-web-app.js, до остальных скриптов страницы.
-   Блокирует синхронным XHR парсинг остальной страницы, пока initData
-   не проверена сервером (/api/auth/verify). Если подписи нет/неверна
-   или пользователь не подписан на канал — страница заменяется заглушкой.
+   Первый скрипт после max-web-app.js на каждой странице — выполняется
+   до любых компонентов и роутинга приложения. Синхронным XHR блокирует
+   парсинг остальной страницы, пока initData не проверена сервером
+   (/api/auth/verify), на каждой загрузке страницы (без кэширования
+   результата). Если подписи нет/неверна — весь документ заменяется
+   на голую "404 Not Found" без стилей и разметки; если не подписан
+   на канал — заглушкой с предложением подписаться.
 ─────────────────────────────────────────────────────────────── */
 (function () {
     var CHANNEL_URL = 'https://max.ru/id635009278943_biz';
-
-    function hasCookie(name) {
-        return document.cookie.split(';').some(function (c) {
-            return c.trim().indexOf(name + '=') === 0;
-        });
-    }
 
     function writeStub(html) {
         document.open();
@@ -28,7 +25,7 @@
 
     function showAccessDenied() {
         document.open();
-        document.write('404 Not Found');
+        document.write('<html><body>404 Not Found</body></html>');
         document.close();
     }
 
@@ -48,8 +45,6 @@
             '</div>'
         );
     }
-
-    if (hasCookie('shop_session')) return; // уже проверены в этой сессии
 
     var initData = (window.WebApp && window.WebApp.initData) || '';
     if (!initData) {
