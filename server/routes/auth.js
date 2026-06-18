@@ -16,12 +16,12 @@ router.post('/login', (req, res) => {
    Без cookie/сессии: вызывается заново при каждой загрузке каждой страницы. */
 router.post('/verify', async (req, res) => {
     const ua = req.headers['user-agent'] || '';
-    console.log('[auth/verify] User-Agent:', ua);
 
     /* Подтверждено реальным UA Max-клиента: "...Mobile/15E148 MAX/26.17.3" */
     const isMax = /MAX\//.test(ua);
+    console.log(`[auth/verify] UA=${isMax ? 'MAX' : 'NOT_MAX'} "${ua}"`);
+
     if (!isMax) {
-        console.log('[auth/verify] отклонён как не-Max клиент, UA:', ua);
         return res.status(403).json({ ok: false, reason: 'not_max' });
     }
 
