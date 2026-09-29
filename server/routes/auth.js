@@ -3,6 +3,12 @@ const { ADMIN_PASSWORD }                    = require('../middleware/auth');
 const { verifyInitData }                    = require('../utils/initData');
 const { checkChannelMembership, ADMIN_IDS } = require('./subscription');
 
+// /api/auth/verify вызывается на каждой загрузке каждой страницы (см. её
+// комментарий ниже и src/shopGuard.js) — лог UA на каждый запрос засоряет
+// продакшен-логи. Включается явно через AUTH_DEBUG=true при отладке
+// проблем с определением MAX-клиента по User-Agent.
+const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true';
+
 router.post('/login', (req, res) => {
     const { password } = req.body || {};
     if (password === ADMIN_PASSWORD) {
@@ -19,7 +25,7 @@ router.post('/verify', async (req, res) => {
 
     /* Подтверждено реальным UA Max-клиента: "...Mobile/15E148 MAX/26.17.3" */
     const isMax = /MAX\//.test(ua);
-    console.log(`[auth/verify] UA=${isMax ? 'MAX' : 'NOT_MAX'} "${ua}"`);
+    if (AUTH_DEBUG) console.log(`[auth/verify] UA=${isMax ? 'MAX' : 'NOT_MAX'} "${ua}"`);
 
     if (!isMax) {
         return res.status(403).json({ ok: false, reason: 'not_max' });
