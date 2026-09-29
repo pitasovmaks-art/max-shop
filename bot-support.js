@@ -4,7 +4,7 @@
 const https = require('https');
 const path  = require('path');
 
-const API_BASE               = 'platform-api.max.ru';
+const API_BASE               = 'platform-api2.max.ru';
 const TOKEN                  = process.env.SUPPORT_BOT_TOKEN || '';
 const WEBHOOK_BASE           = (process.env.WEBHOOK_URL || 'https://pitasovmaks-art-max-shop-c149.twc1.net/webhook').replace('/webhook', '');
 const SUPPORT_WEBHOOK_URL    = WEBHOOK_BASE + '/webhook-support';

@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const https  = require('https');
 
-const API_BASE = 'platform-api.max.ru';
+const API_BASE = 'platform-api2.max.ru';
 
 const ADMIN_IDS = new Set(
     (process.env.ADMIN_IDS || '').split(',').map(s => s.trim()).filter(Boolean).map(Number)
