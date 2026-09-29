@@ -43,6 +43,10 @@ a      { text-decoration: none; color: inherit; }
 
 /* ─── App ───────────────────────────────────────────────── */
 .app {
+    /* скрыт по умолчанию в CSS, а не только через JS — так экран логина
+       (fixed, z-index:500) гарантированно перекрывает панель даже в долю
+       секунды до того, как отработает admin.js */
+    display: none;
     max-width: 480px;
     margin: 0 auto;
     min-height: 100dvh;

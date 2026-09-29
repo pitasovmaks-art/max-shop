@@ -173,29 +173,22 @@ function _collectVariants() {
 }
 
 /* ─── Auth ──────────────────────────────────────────────── */
-const TOKEN_KEY     = 'admin_token';
-const AUTH_KEY      = 'adminAuth';
-const AUTH_TIME_KEY = 'adminAuthTime';
-const SESSION_TTL   = 3600000; // 60 минут
+// Никакого "запомнить меня" — доступ даётся ТОЛЬКО за явно введённый и
+// проверенный на бэкенде (POST /api/auth/login) пароль. Токен живёт
+// исключительно в памяти текущей вкладки (обычная JS-переменная, не
+// localStorage/sessionStorage): любая перезагрузка страницы или новая
+// вкладка снова требует ввода пароля. Раньше факт входа кэшировался в
+// localStorage (adminAuth/adminAuthTime, TTL 60 минут) — это позволяло
+// зайти в панель без пароля кому угодно, кто откроет DevTools и выставит
+// localStorage.adminAuth = 'true' вручную, а также молча пускало обратно
+// в течение часа после любого предыдущего входа на этом устройстве.
+let _adminToken = '';
 
-function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+function getToken() { return _adminToken; }
 
-function checkAuth() {
-    const app   = document.getElementById('app');
-    const login = document.getElementById('loginScreen');
-    const auth  = localStorage.getItem(AUTH_KEY);
-    const ts    = parseInt(localStorage.getItem(AUTH_TIME_KEY) || '0', 10);
-    if (auth === 'true' && Date.now() - ts < SESSION_TTL) {
-        login.style.display = 'none';
-        app.style.display   = '';
-        adminInit();
-    } else {
-        localStorage.removeItem(AUTH_KEY);
-        localStorage.removeItem(AUTH_TIME_KEY);
-        localStorage.removeItem(TOKEN_KEY);
-        app.style.display   = 'none';
-        login.style.display = 'flex';
-    }
+function showLoginScreen() {
+    document.getElementById('app').style.display         = 'none';
+    document.getElementById('loginScreen').style.display  = 'flex';
 }
 
 async function attemptLogin() {
@@ -208,11 +201,9 @@ async function attemptLogin() {
         });
         const data = await r.json();
         if (data.ok) {
-            localStorage.setItem(TOKEN_KEY, data.token);
-            localStorage.setItem(AUTH_KEY, 'true');
-            localStorage.setItem(AUTH_TIME_KEY, String(Date.now()));
+            _adminToken = data.token;
             document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('app').style.display = '';
+            document.getElementById('app').style.display = 'block';
             input.value = '';
             adminInit();
         } else {
@@ -256,9 +247,7 @@ function toggleEye() {
 }
 
 function logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(AUTH_KEY);
-    localStorage.removeItem(AUTH_TIME_KEY);
+    _adminToken = '';
     document.getElementById('app').style.display   = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('loginInput').value = '';
@@ -1343,4 +1332,6 @@ function render() {
 }
 
 /* ─── Init ──────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', checkAuth);
+// Всегда стартуем с экрана логина — никакого автоматического входа по
+// сохранённому состоянию.
+document.addEventListener('DOMContentLoaded', showLoginScreen);
