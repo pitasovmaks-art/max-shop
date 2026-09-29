@@ -2,31 +2,29 @@
    Max Messenger Bot — Точка Монтажа
    ───────────────────────────────────────────────────────── */
 const https = require('https');
-const fs    = require('fs');
-const path  = require('path');
+const db    = require('./server/db');
 
 const API_BASE     = 'platform-api2.max.ru';
 const TOKEN        = process.env.MAX_BOT_TOKEN || '';
 const SHOP_URL     = process.env.SHOP_URL || 'https://max-shop-production.up.railway.app';
 const BOT_USERNAME = process.env.BOT_USERNAME || '';
 const WEBHOOK_URL  = process.env.WEBHOOK_URL || 'https://pitasovmaks-art-max-shop-c149.twc1.net/webhook';
-const ADMINS_FILE  = path.join(__dirname, 'bot_admins.json');
 
-/* ─── Admin chat IDs (persisted between restarts) ──────── */
-function loadAdmins() {
-    try { return JSON.parse(fs.readFileSync(ADMINS_FILE, 'utf8')); }
-    catch { return []; }
+/* ─── Admin chat IDs (persisted in Postgres, table bot_admins) ───
+   Раньше хранилось в bot_admins.json в корне проекта — на Timeweb App
+   Platform файловая система контейнера доступна только на чтение (кроме
+   временных директорий), запись давала EACCES. */
+async function loadAdmins() {
+    const rows = await db.query('SELECT chat_id FROM bot_admins');
+    return rows.map(r => Number(r.chat_id));
 }
 
-function saveAdmins(ids) {
-    fs.writeFileSync(ADMINS_FILE, JSON.stringify(ids));
-}
-
-function addAdmin(chatId) {
-    const ids = loadAdmins();
-    if (!ids.includes(chatId)) {
-        ids.push(chatId);
-        saveAdmins(ids);
+async function addAdmin(chatId) {
+    const changed = await db.execute(
+        'INSERT INTO bot_admins (chat_id) VALUES ($1) ON CONFLICT (chat_id) DO NOTHING',
+        [chatId]
+    );
+    if (changed > 0) {
         console.log(`[bot] Новый администратор: chat_id=${chatId}`);
     }
 }
@@ -95,7 +93,11 @@ function sendMessage(chatId, text, buttons = null) {
 
 /* ─── /start handler ────────────────────────────────────── */
 async function handleStart(chatId, userName) {
-    addAdmin(chatId);
+    try {
+        await addAdmin(chatId);
+    } catch (e) {
+        console.error('[bot] addAdmin error:', e.message);
+    }
 
     console.log('[bot] handleStart: chatId=', chatId);
     await sendMessage(chatId, `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\n✉️ Вы подписаны на уведомления о статусе заказов.`);
@@ -152,7 +154,7 @@ async function processUpdate(update) {
 
         // /reply ID текст — отправить ответ пользователю (только для админов)
         if (text.startsWith('/reply ')) {
-            const admins = loadAdmins();
+            const admins = await loadAdmins();
             if (!admins.includes(chatId)) return;
             const parts      = text.split(' ');
             const targetId   = Number(parts[1]);
@@ -192,7 +194,7 @@ async function processUpdate(update) {
         }
 
         // Пересылаем сообщение админам если отправитель не администратор
-        const admins = loadAdmins();
+        const admins = await loadAdmins();
         const isAdmin = admins.includes(chatId);
         if (!isAdmin) {
             for (const adminId of admins) {

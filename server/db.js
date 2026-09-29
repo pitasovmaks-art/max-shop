@@ -156,6 +156,12 @@ async function createSchema() {
         )
     `);
     await pool.query(`
+        CREATE TABLE IF NOT EXISTS bot_admins (
+            chat_id    BIGINT PRIMARY KEY,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS stock_subscriptions (
             id         SERIAL  PRIMARY KEY,
             tg_id      BIGINT  NOT NULL,

@@ -147,6 +147,18 @@ CREATE TABLE IF NOT EXISTS support_known (
     chat_id BIGINT PRIMARY KEY
 );
 
+-- Список chat_id основного бота (bot.js), кому пересылаются обращения
+-- клиентов и кто может использовать /reply. Раньше хранилось в
+-- bot_admins.json в корне проекта — заменено на таблицу, т.к. файловая
+-- система контейнера в проде доступна только на чтение (EACCES при
+-- попытке записи). Отдельная таблица от support_admins, т.к. это другой
+-- бот (свой BOT_TOKEN/вебхук) с другой семантикой (chat_id добавляется
+-- автоматически при каждом /start, а не явным upsert-эндпоинтом).
+CREATE TABLE IF NOT EXISTS bot_admins (
+    chat_id    BIGINT    PRIMARY KEY,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 
 -- ─── Загрузки данных продавца (Ozon seller-cabinet, /api/uploads/*) ─────
 
