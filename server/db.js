@@ -419,4 +419,4 @@ async function init() {
     console.log('[DB] PostgreSQL инициализирована и готова');
 }
 
-module.exports = { query, queryOne, execute, inTransaction, init, resetToDefaults };
+module.exports = { pool, query, queryOne, execute, inTransaction, init, resetToDefaults };

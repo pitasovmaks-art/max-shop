@@ -2,8 +2,23 @@ try { process.loadEnvFile(); } catch { /* .env отсутствует — пер
 
 const express = require('express');
 const path    = require('path');
+const fs      = require('fs');
 
 const app = express();
+
+/* Применяет schema.sql (только CREATE TABLE IF NOT EXISTS — идемпотентно и
+   безопасно) до того, как сервер начнёт принимать запросы. */
+async function applySchema() {
+    try {
+        const schemaPath = path.join(__dirname, '..', 'schema.sql');
+        const schemaSql  = fs.readFileSync(schemaPath, 'utf8');
+        await require('./db').pool.query(schemaSql);
+        console.log('[schema] schema.sql применена успешно');
+    } catch (e) {
+        console.error('[schema] Ошибка применения schema.sql:', e.message);
+        console.error(e.stack);
+    }
+}
 
 app.use(express.json({ limit: '15mb' }));
 
@@ -111,30 +126,35 @@ app.post('/api/admin/seed', require('./middleware/auth').requireAdmin, async (re
 
 const PORT = process.env.PORT || 3000;
 const db = require('./db');
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Точка Монтажа запущена на порту ${PORT}`);
 
-    db.init()
-        .then(() => {
-            require('../bot').startBot();
-            try {
-                require('../bot-support').startSupportBot();
-            } catch (e) {
-                console.error('[support] startSupportBot error:', e.message);
-            }
-            try {
-                require('../services/ozonSync').start();
-            } catch (e) {
-                console.error('[ozonSync] start error:', e.message);
-            }
-            try {
-                require('../services/agentBot').start();
-            } catch (e) {
-                console.error('[agentBot] start error:', e.message);
-            }
-        })
-        .catch((e) => {
-            console.error('[STARTUP] Критическая ошибка инициализации БД:', e.message);
-            console.error(e.stack);
-        });
-});
+(async () => {
+    await applySchema();
+
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Точка Монтажа запущена на порту ${PORT}`);
+
+        db.init()
+            .then(() => {
+                require('../bot').startBot();
+                try {
+                    require('../bot-support').startSupportBot();
+                } catch (e) {
+                    console.error('[support] startSupportBot error:', e.message);
+                }
+                try {
+                    require('../services/ozonSync').start();
+                } catch (e) {
+                    console.error('[ozonSync] start error:', e.message);
+                }
+                try {
+                    require('../services/agentBot').start();
+                } catch (e) {
+                    console.error('[agentBot] start error:', e.message);
+                }
+            })
+            .catch((e) => {
+                console.error('[STARTUP] Критическая ошибка инициализации БД:', e.message);
+                console.error(e.stack);
+            });
+    });
+})();
