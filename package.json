@@ -5,7 +5,9 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "dev": "node --watch server/index.js"
+    "dev": "node --watch server/index.js",
+    "seed:demo": "node server/scripts/seed-demo-data.js",
+    "truncate:demo-catalog": "node server/scripts/truncate-demo-catalog.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",

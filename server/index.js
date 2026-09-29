@@ -104,17 +104,17 @@ app.use('/api/exports',           require('./routes/exports'));
 app.use('/api/uploads',           require('./routes/uploads'));
 app.use('/api/sync',              require('./routes/sync'));
 
-/* Reset data to defaults (admin only) */
+/* Reset catalog tables (admin only) — TRUNCATE only, does NOT reseed demo data */
 app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, async (req, res) => {
     try {
-        await require('./db').resetToDefaults();
+        await require('./db').truncateAll();
         res.json({ ok: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
 });
 
-/* Seed database (admin only) */
+/* Seed database with demo data (admin only, explicit call) */
 app.post('/api/admin/seed', require('./middleware/auth').requireAdmin, async (req, res) => {
     try {
         await require('./db').resetToDefaults();

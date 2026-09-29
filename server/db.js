@@ -372,14 +372,29 @@ async function seedDefaults() {
 }
 
 /* ─── Reset to defaults ──────────────────────────────────── */
-async function resetToDefaults() {
+// Только TRUNCATE, без повторного заполнения демо-данными — используется
+// админ-роутом /api/admin/reset. Для truncate+seed см. resetToDefaults().
+async function truncateAll() {
     await pool.query(
         'TRUNCATE product_variants, products, subcategories, categories, orders, stores RESTART IDENTITY CASCADE'
     );
+}
+
+// TRUNCATE + повторное заполнение демо-каталогом — только для явного,
+// осознанного вызова разработчиком (см. /api/admin/seed и npm run seed:demo).
+// НИКОГДА не вызывается автоматически при старте сервера.
+async function resetToDefaults() {
+    await truncateAll();
     await seedDefaults();
 }
 
-/* ─── Init: schema + auto-seed ───────────────────────────── */
+/* ─── Init: только схема, без автозаполнения ─────────────── */
+// Демо-данные больше не заливаются автоматически при пустой таблице
+// products — это приводило к тому, что каждая новая (пустая) прод-база
+// сама собой наполнялась тестовым каталогом. Автозаполнение теперь
+// возможно только явно: через SEED_DEMO_DATA=true в окружении (для
+// одноразового первого запуска локального/staging-окружения) или через
+// защищённый POST /api/admin/seed / `npm run seed:demo`.
 async function init() {
     console.log(`[DB] Инициализация: ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}`);
 
@@ -393,30 +408,33 @@ async function init() {
         throw e;
     }
 
-    let prodCount;
-    try {
-        prodCount = await queryOne('SELECT COUNT(*) AS n FROM products');
-        console.log(`[DB] Продуктов в базе: ${prodCount.n}`);
-    } catch (e) {
-        console.error('[DB] ОШИБКА при проверке количества продуктов:', e.message);
-        console.error(e.stack);
-        throw e;
-    }
-
-    if (parseInt(prodCount.n, 10) === 0) {
-        console.log('[DB] База пустая — запускаю автозаполнение...');
+    if (process.env.SEED_DEMO_DATA === 'true') {
+        let prodCount;
         try {
-            await seedDefaults();
+            prodCount = await queryOne('SELECT COUNT(*) AS n FROM products');
         } catch (e) {
-            console.error('[DB] ОШИБКА при автозаполнении:', e.message);
+            console.error('[DB] ОШИБКА при проверке количества продуктов:', e.message);
             console.error(e.stack);
             throw e;
         }
+
+        if (parseInt(prodCount.n, 10) === 0) {
+            console.log('[DB] SEED_DEMO_DATA=true и таблица products пуста — запускаю автозаполнение демо-данными...');
+            try {
+                await seedDefaults();
+            } catch (e) {
+                console.error('[DB] ОШИБКА при автозаполнении:', e.message);
+                console.error(e.stack);
+                throw e;
+            }
+        } else {
+            console.log('[DB] SEED_DEMO_DATA=true, но данные уже есть — автозаполнение пропущено');
+        }
     } else {
-        console.log('[DB] Автозаполнение пропущено — данные уже есть');
+        console.log('[DB] Автозаполнение демо-данными отключено (SEED_DEMO_DATA не равен "true")');
     }
 
     console.log('[DB] PostgreSQL инициализирована и готова');
 }
 
-module.exports = { pool, query, queryOne, execute, inTransaction, init, resetToDefaults };
+module.exports = { pool, query, queryOne, execute, inTransaction, init, truncateAll, resetToDefaults };

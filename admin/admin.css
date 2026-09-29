@@ -323,7 +323,9 @@ a      { text-decoration: none; color: inherit; }
 
 /* ─── Main / list ───────────────────────────────────────── */
 .main {
-    padding: 10px 12px calc(var(--nav-h) + 80px);
+    /* нижний отступ должен перекрывать оба FAB (import выше основного) +
+       запас, иначе они закрывают последние товары в списке */
+    padding: 10px 12px calc(var(--nav-h) + 160px);
 }
 
 .product-list {
@@ -453,19 +455,28 @@ button.product-row__stock:active  { opacity: .7; }
     right: 50%;
     transform: translateX(calc(50% - 224px + 16px));
     width: 56px; height: 56px;
-    background: #FFFFFF;
+    /* тёмный фон под белую SVG-иконку (stroke="white" в разметке) —
+       раньше здесь был литеральный #FFFFFF, из-за чего белая иконка
+       становилась невидимой на белом фоне кнопки */
+    background: #2A2A2A;
+    border: 1px solid #3A3A3A;
     border-radius: 28px;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 4px 16px rgba(0,0,0,.4);
     z-index: 80;
     transition: transform .15s, background .15s;
 }
-.fab:active { background: #DDDDDD; transform: translateX(calc(50% - 224px + 16px)) scale(.92); }
+.fab:active { background: #3A3A3A; transform: translateX(calc(50% - 224px + 16px)) scale(.92); }
 .fab--import {
-    background: var(--accent, #FFD60A);
+    /* раньше был var(--accent, #FFD60A) — но --accent переопределён в
+       :root как #FFFFFF, поэтому фолбэк никогда не срабатывал и кнопка
+       тоже оставалась белой; используем цвет напрямую */
+    background: #FFD60A;
+    border-color: #FFD60A;
     bottom: calc(var(--nav-h) + 88px);
 }
-.fab--import:active { background: #e6c100; transform: translateX(calc(50% - 224px + 16px)) scale(.92); }
+.fab--import svg { stroke: #141414; }
+.fab--import:active { background: #e6c100; border-color: #e6c100; transform: translateX(calc(50% - 224px + 16px)) scale(.92); }
 
 .import-result {
     background: var(--bg-secondary, #1C1C1E);
