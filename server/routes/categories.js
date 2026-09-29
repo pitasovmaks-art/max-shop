@@ -14,12 +14,19 @@ router.post('/', requireAdmin, async (req, res) => {
     const { name, icon, color } = req.body;
     if (!name) return res.status(400).json({ error: 'name required' });
     try {
-        const maxRow = await db.queryOne('SELECT COALESCE(MAX(id),0) AS m FROM categories');
-        const id = maxRow.m + 1;
-        await db.execute(
-            'INSERT INTO categories (id,name,icon,color) VALUES ($1,$2,$3,$4)',
-            [id, name, icon || '📦', color || 1]
-        );
+        let id;
+        await db.inTransaction(async (client) => {
+            // Блокируем таблицу на время SELECT MAX(id) + INSERT, иначе два
+            // параллельных POST-запроса могут посчитать один и тот же
+            // следующий id и столкнуться на PRIMARY KEY.
+            await client.query('LOCK TABLE categories IN SHARE ROW EXCLUSIVE MODE');
+            const maxRes = await client.query('SELECT COALESCE(MAX(id),0) AS m FROM categories');
+            id = maxRes.rows[0].m + 1;
+            await client.query(
+                'INSERT INTO categories (id,name,icon,color) VALUES ($1,$2,$3,$4)',
+                [id, name, icon || '📦', color || 1]
+            );
+        });
         res.status(201).json(await db.queryOne('SELECT * FROM categories WHERE id=$1', [id]));
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
