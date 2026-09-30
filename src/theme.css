@@ -1,0 +1,110 @@
+/* ─── Точка Монтажа — единые токены дизайн-системы ──────────────
+   Направление «Классика маркетплейса». Один источник правды вместо
+   четырёх разъехавшихся :root (catalog.css, cart.css, checkout.css,
+   product.html). Подключается первым в каждом стилевом файле:
+   @import url('/src/theme.css');
+   ──────────────────────────────────────────────────────────────── */
+:root {
+    /* поверхности */
+    --bg-page:       #EEF3F1;
+    --bg-card:       #FFFFFF;
+    --bg-secondary:  #E1EAE6;
+    --bg-input:      #F3F7F5;
+    --border:        rgba(19,36,32,0.10);
+
+    /* текст */
+    --text-primary:   #132420;
+    --text-secondary: #5F7069;
+
+    /* RGB-триплеты для оттенков через rgba(var(--x-rgb), альфа) —
+       так весь код вида rgba(28,28,30,.55) остаётся читаемым и в
+       тёмной теме, а не только тогда, когда фон светлый */
+    --ink-rgb:  28,28,30;   /* оттенки текста поверх --bg-page/--bg-card */
+    --card-rgb: 255,255,255; /* полупрозрачные поверхности (шапки, футеры, поля) */
+
+    /* бренд / акцент */
+    --accent:        #0E7C6B;
+    --accent-press:  #0B6558;
+    --accent-ink:    #FFFFFF;
+
+    /* статусы */
+    --red:     #C0392B;
+    --success: #2F8F4E;
+    --info:    #2F6FBF;
+
+    /* фон карточек категорий (фото товара) — единое значение для
+       catalog.css/cart.css/product.html вместо трёх разных наборов */
+    --cat-bg-1: #F5F0E8;
+    --cat-bg-2: #E8F0F5;
+    --cat-bg-3: #E8F5EE;
+    --cat-bg-4: #F0E8F5;
+    --cat-bg-5: #F5E8E8;
+    --cat-bg-6: #F5F0E8;
+
+    /* типографика */
+    --font-display: 'Oswald', sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --text-2xl: 26px;
+    --text-xl:  20px;
+    --text-lg:  17px;
+    --text-md:  15px;
+    --text-base:14px;
+    --text-sm:  13px;
+    --text-xs:  12px;
+
+    /* отступы, шаг 4px */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    /* радиусы — 3 ступени + пилюля; --radius оставлен для обратной
+       совместимости с уже написанным border-radius: var(--radius) */
+    --radius-sm:   8px;
+    --radius-md:   14px;
+    --radius-lg:   20px;
+    --radius-pill: 999px;
+    --radius: var(--radius-md);
+
+    --card-shadow: 0 2px 12px rgba(19,36,32,0.08);
+
+    /* layout / доступность */
+    --header-h: 56px;
+    --nav-h:    64px;
+    --tap-min:  44px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-page:       #0E1613;
+        --bg-card:       #16211D;
+        --bg-secondary:  #131C18;
+        --bg-input:      #131C18;
+        --border:        rgba(234,241,238,0.12);
+
+        --text-primary:   #EAF1EE;
+        --text-secondary: #8FA69D;
+
+        --ink-rgb:  234,241,238;
+        --card-rgb: 22,33,29;
+
+        --accent:        #14947F;
+        --accent-press:  #1AAF97;
+        --accent-ink:    #FFFFFF;
+
+        --red:     #E1564B;
+        --success: #3FAE68;
+        --info:    #5B9BE0;
+
+        --cat-bg-1: #22271F;
+        --cat-bg-2: #1C2327;
+        --cat-bg-3: #1B2621;
+        --cat-bg-4: #211F27;
+        --cat-bg-5: #271F1F;
+        --cat-bg-6: #22271F;
+
+        --card-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    }
+}

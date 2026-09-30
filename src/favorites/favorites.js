@@ -18,10 +18,12 @@ function saveCart(c) { localStorage.setItem('cart', JSON.stringify(c)); }
 function updateCartBadge() {
     try {
         const qty = getCart().reduce((s, i) => s + i.qty, 0);
-        const b   = document.getElementById('cartBadge');
-        if (!b) return;
-        if (qty > 0) { b.textContent = qty > 99 ? '99+' : qty; b.classList.remove('hidden'); }
-        else b.classList.add('hidden');
+        const text = qty > 99 ? '99+' : qty;
+        [document.getElementById('cartBadge'), document.getElementById('navBadge')].forEach(b => {
+            if (!b) return;
+            if (qty > 0) { b.textContent = text; b.classList.remove('hidden'); }
+            else b.classList.add('hidden');
+        });
     } catch {}
 }
 
@@ -111,10 +113,10 @@ function renderFavorites(products) {
     if (!products.length) {
         main.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state__icon">🤍</div>
+                <div class="empty-state__icon">${iconSvg('heart', 48)}</div>
                 <p class="empty-state__title">В избранном пока ничего нет</p>
                 <p class="empty-state__sub">Добавляйте товары через ♡ на карточке</p>
-                <a href="../../index.html" class="empty-state__btn">Перейти в каталог</a>
+                <a href="../../catalog.html" class="empty-state__btn">Перейти в каталог</a>
             </div>`;
         return;
     }
@@ -126,7 +128,7 @@ function renderFavorites(products) {
 
         const price    = unavailable ? 0 : getPrice(p);
         const imgBg    = p.image ? '' : 'img-bg--default';
-        const imgIcon  = p.image ? `<img class="product-card__photo" src="${p.image}" alt="${p.name}">` : '📦';
+        const imgIcon  = p.image ? `<img class="product-card__photo" src="${p.image}" alt="${p.name}">` : iconSvg('image', 28);
         const priceStr = unavailable
             ? `<span style="display:flex;flex-direction:column;gap:2px">
                 <span style="color:rgba(28,28,30,0.55);font-size:11px;font-weight:500">Доступен в другом городе</span>
@@ -134,10 +136,11 @@ function renderFavorites(products) {
                </span>`
             : (price > 0 ? fmt(price) : (p.priceLabel || fmt(p.price || 0)));
         const addBtn   = (!unavailable && p.inStock)
-            ? `<button class="add-btn" onclick="event.stopPropagation();_addToCart(${p.id})" aria-label="В корзину">+</button>`
-            : `<button class="add-btn add-btn--disabled" disabled>+</button>`;
+            ? `<button class="add-btn" onclick="event.stopPropagation();_addToCart(${p.id})" aria-label="В корзину">В корзину</button>`
+            : `<button class="add-btn add-btn--disabled" disabled>Нет в наличии</button>`;
         return `
         <div class="product-card" id="fcard-${p.id}" onclick="location.href='../catalog/product.html?id=${p.id}'">
+            <div class="product-card__accent"></div>
             <div class="product-card__img ${imgBg}">
                 ${imgIcon}
                 <button class="fav-btn fav-btn--active" onclick="event.stopPropagation();_removeFav(${p.id})" aria-label="Убрать из избранного">
@@ -171,10 +174,10 @@ async function init() {
         main.style.display    = '';
         main.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state__icon">🤍</div>
+                <div class="empty-state__icon">${iconSvg('heart', 48)}</div>
                 <p class="empty-state__title">Избранное недоступно</p>
                 <p class="empty-state__sub">Откройте магазин через бота в Max Messenger</p>
-                <a href="../../index.html" class="empty-state__btn">В каталог</a>
+                <a href="../../catalog.html" class="empty-state__btn">В каталог</a>
             </div>`;
         return;
     }
@@ -191,7 +194,7 @@ async function init() {
         main.style.display    = '';
         main.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state__icon">⚠️</div>
+                <div class="empty-state__icon">${iconSvg('alert', 48)}</div>
                 <p class="empty-state__title">Ошибка загрузки</p>
                 <p class="empty-state__sub">Попробуйте открыть страницу снова</p>
             </div>`;

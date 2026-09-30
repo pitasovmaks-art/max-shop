@@ -7,6 +7,7 @@ function normalize(p) {
         id:                   p.id,
         name:                 p.name,
         desc:                 p.desc,
+        brand:                p.brand                   || undefined,
         categoryId:           p.category_id,
         subId:                p.sub_id,
         price:                p.price,

@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Точка Монтажа — Классика маркетплейса</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{-webkit-text-size-adjust:100%;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E7E5DF;color:#16171A;padding:28px 28px 90px;}
+  button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;}
+  a{text-decoration:none;color:inherit;}
+  .i{display:block;flex-shrink:0;}
+
+  /* ── page chrome ─────────────────────────────────────────── */
+  .page-head{max-width:1360px;margin:0 auto 14px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+  .page-head h1{font-size:22px;font-weight:800;letter-spacing:-.3px;}
+  .page-head p{font-size:14px;color:#63615C;margin-top:5px;max-width:640px;line-height:1.55;}
+  .theme-switch{display:flex;align-items:center;gap:10px;}
+  .theme-switch span{font-size:13px;color:#63615C;}
+  .switch-track{position:relative;width:52px;height:30px;background:#16171A;border-radius:999px;padding:3px;}
+  .switch-track input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .switch-knob{width:24px;height:24px;background:#fff;border-radius:50%;transition:transform .2s;}
+  html[data-theme="dark"] .switch-knob{transform:translateX(22px);}
+
+  .disclaimer{max-width:1360px;margin:0 auto 26px;background:#FFF7E0;border:1px solid #E8D48A;border-radius:10px;padding:12px 16px;font-size:12.5px;color:#5A4B10;line-height:1.6;}
+  .disclaimer b{font-weight:800;}
+
+  .stage{max-width:1360px;margin:0 auto;display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;}
+  .stage-info{width:270px;}
+  .crumbs{font-size:12.5px;font-weight:700;color:#16171A;background:#fff;border:1px solid #E2DFD6;border-radius:10px;padding:10px 12px;margin-bottom:12px;min-height:20px;}
+  .hint{font-size:12.5px;color:#63615C;line-height:1.6;}
+  .hint b{color:#16171A;}
+  .mode-block{margin-top:18px;}
+  .mode-block p{font-size:11.5px;font-weight:700;color:#8A887F;margin-bottom:6px;}
+  .mode-toggle{display:flex;gap:6px;}
+  .mode-btn{height:32px;padding:0 12px;border-radius:8px;border:1px solid #DDD9CE;background:#fff;font-size:12px;font-weight:700;color:#57554D;}
+  .mode-btn.on{background:#16171A;color:#fff;border-color:#16171A;}
+  .mode-note{font-size:11px;color:#8A887F;margin-top:8px;line-height:1.5;}
+
+  .phone{width:390px;height:760px;border-radius:26px;border:1px solid rgba(0,0,0,.14);overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.16);display:flex;flex-direction:column;position:relative;}
+  .phone-scroll{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;}
+  .phone-scroll::-webkit-scrollbar{width:0;}
+  .ex{font-size:9.5px;font-weight:700;color:#9A7B12;}
+  html[data-theme="dark"] .ex{color:#E0B84A;}
+
+  /* ══════════════════════════════════════════════════════════
+     Классика маркетплейса — палитра и токены
+     ══════════════════════════════════════════════════════════ */
+  .dir-v2{
+    --bg:#EEF3F1; --surface:#FFFFFF; --sunk:#E1EAE6; --border:#D3DED9;
+    --ink:#132420; --ink-muted:#5F7069;
+    --accent:#0E7C6B; --accent-ink:#FFFFFF;
+    --gold:#E8A33D; --gold-ink:#2B1D06;
+    --danger:#C0392B; --danger-bg:rgba(192,57,43,.10);
+    --chrome:#0E7C6B; --chrome-ink:#FFFFFF;
+    --r-card:12px; --r-btn:12px; --r-chip:10px;
+  }
+  html[data-theme="dark"] .dir-v2{
+    --bg:#0E1613; --surface:#16211D; --sunk:#131C18; --border:#28352F;
+    --ink:#EAF1EE; --ink-muted:#8FA69D;
+    --gold:#F0B65A; --gold-ink:#2B1D06;
+    --danger:#E1564B; --danger-bg:rgba(225,86,75,.16);
+    --chrome:#0B120F; --chrome-ink:#EAF1EE;
+  }
+  .v2-body{background:var(--bg);color:var(--ink);}
+
+  /* header / nav (persistent chrome) */
+  .v2-head{height:52px;flex-shrink:0;background:var(--chrome);color:var(--chrome-ink);display:flex;align-items:center;justify-content:space-between;padding:0 10px;position:sticky;top:0;z-index:5;}
+  .v2-loc{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;background:rgba(255,255,255,.16);border-radius:var(--r-chip);height:30px;padding:0 10px;}
+  .back-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .back-btn:active{background:rgba(255,255,255,.14);}
+  .head-cart{position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .head-badge{position:absolute;top:0;right:0;min-width:15px;height:15px;background:var(--gold);color:var(--gold-ink);font-size:9px;font-weight:800;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
+  .head-filter-btn{position:relative;display:flex;align-items:center;gap:5px;height:36px;padding:0 10px 0 8px;border-radius:999px;flex-shrink:0;color:var(--chrome-ink);}
+  .head-filter-btn:active{background:rgba(255,255,255,.14);}
+  .head-filter-btn span{font-size:12px;font-weight:700;}
+  .head-filter-badge{position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;background:var(--chrome-ink);color:var(--accent);font-size:9px;font-weight:800;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
+  .v2-nav{flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:8px 6px calc(6px + env(safe-area-inset-bottom));}
+  .v2-nav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:700;color:var(--ink-muted);}
+  .v2-nav-ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+  .v2-nav button.on .v2-nav-ic{background:var(--accent);color:#fff;}
+  .v2-nav button.on{color:var(--accent);}
+
+  .v2-search-wrap{padding:12px 14px 8px;}
+  .v2-search{height:46px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-btn);display:flex;align-items:center;gap:9px;padding:0 14px;color:var(--ink-muted);box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .v2-search span{font-size:13.5px;}
+
+  /* screens */
+  .screen{flex-direction:column;}
+
+  /* home: category rail */
+  .rail-caption{font-size:11px;font-weight:700;color:var(--ink-muted);padding:8px 14px 0;}
+  .cat-rail{display:flex;gap:10px;padding:10px 14px 4px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scroll-padding-left:14px;}
+  .cat-rail::-webkit-scrollbar{display:none;}
+  .cat-tile{scroll-snap-align:start;flex:0 0 104px;display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r-card);padding:14px 6px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+  .cat-tile:disabled{opacity:.5;}
+  .cat-tile .cat-ic{width:38px;height:38px;border-radius:11px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;}
+  .cat-tile span{font-size:11px;font-weight:700;text-align:center;line-height:1.25;}
+  .micro-note{font-size:10.5px;color:var(--ink-muted);padding:2px 14px 4px;line-height:1.5;}
+
+  /* banner carousel */
+  .banner-wrap{padding:10px 14px 4px;}
+  .banner-viewport{border-radius:var(--r-card);overflow:hidden;}
+  .banner-track{display:flex;will-change:transform;}
+  .banner-slide{flex:0 0 100%;min-height:76px;padding:14px 16px;display:flex;flex-direction:column;justify-content:center;color:#fff;}
+  .banner-slide b{font-size:14.5px;font-weight:800;line-height:1.25;}
+  .banner-slide span{font-size:12px;opacity:.9;margin-top:3px;display:block;}
+  .banner-slide--a{background:var(--accent);}
+  .banner-slide--b{background:#123B33;}
+  .banner-slide--c{background:var(--sunk);color:var(--ink-muted);border:1.5px dashed var(--border);}
+  .banner-dots{display:flex;gap:6px;justify-content:center;padding:8px 0 2px;}
+  .banner-dots button{width:6px;height:6px;border-radius:50%;background:var(--border);padding:0;}
+  .banner-dots button.on{background:var(--accent);width:16px;border-radius:3px;transition:width .2s,background .2s;}
+
+  /* subcats grid */
+  .subcat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px;}
+  .subcat-tile{background:var(--surface);border-radius:var(--r-card);padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);font-size:12.5px;font-weight:700;text-align:center;}
+  .subcat-ic{width:44px;height:44px;border-radius:12px;background:var(--sunk);display:flex;align-items:center;justify-content:center;color:var(--accent);}
+
+  /* products toolbar / chips / grid */
+  .products-toolbar{display:flex;gap:8px;padding:10px 14px 0;}
+  .tool-btn{flex:1;height:40px;border-radius:var(--r-btn);background:var(--surface);border:1px solid var(--border);font-size:12px;font-weight:700;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.04);padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .chips-row-wrap{padding:8px 14px 0;display:none;}
+  .chips-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .filter-chip{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px 0 11px;border-radius:999px;background:var(--sunk);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--ink);}
+  .filter-chip span{opacity:.6;font-size:10px;}
+  .results-count{font-size:11.5px;color:var(--ink-muted);padding:8px 14px 2px;}
+  .v2-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px 14px;}
+  .v2-card{background:var(--surface);border-radius:var(--r-card);overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.06);display:flex;flex-direction:column;}
+  .v2-card__accent{height:3px;background:var(--accent);}
+  .v2-card__photo{height:88px;background:var(--sunk);display:flex;align-items:center;justify-content:center;color:var(--ink-muted);font-size:10.5px;}
+  .v2-card__body{padding:8px 9px 10px;display:flex;flex-direction:column;gap:5px;flex:1;}
+  .v2-name{font-size:11.5px;font-weight:700;line-height:1.3;}
+  .spec-line{font-size:10px;color:var(--ink-muted);}
+  .v2-price-row{margin-top:auto;}
+  .v2-price{font-size:14px;font-weight:800;}
+  .v2-cta{height:30px;border-radius:var(--r-btn);background:var(--accent);color:#fff;font-size:11.5px;font-weight:800;margin-top:2px;}
+
+  /* empty states (shared shape) */
+  .v2-empty{padding:52px 24px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .v2-empty svg{color:var(--border);}
+  .v2-empty h3{font-size:16px;font-weight:800;}
+  .v2-empty p{font-size:12.5px;color:var(--ink-muted);line-height:1.5;max-width:250px;}
+  .v2-empty .v2-cta{width:200px;height:44px;font-size:13.5px;margin-top:4px;}
+
+  .ce-empty{display:none;}
+  [data-catalog="empty"] .ce-demo{display:none !important;}
+  [data-catalog="empty"] .ce-empty{display:flex;}
+
+  /* filter bottom sheet */
+  .sheet-scrim{position:absolute;inset:0;background:rgba(0,0,0,.42);z-index:40;opacity:0;transition:opacity .28s ease;}
+  .sheet-scrim.is-open{opacity:1;}
+  .filter-sheet{position:absolute;left:0;right:0;bottom:0;max-height:80%;background:var(--surface);color:var(--ink);border-radius:20px 20px 0 0;z-index:41;display:flex;flex-direction:column;box-shadow:0 -8px 24px rgba(0,0,0,.22);transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);touch-action:none;}
+  .filter-sheet.is-open{transform:translateY(0);}
+  .filter-sheet.dragging{transition:none;}
+  .sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:10px auto 2px;cursor:grab;}
+  .sheet-head{touch-action:none;}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:4px 16px 10px;border-bottom:1px solid var(--border);}
+  .sheet-head h4{font-size:14.5px;font-weight:800;}
+  .sheet-close{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);font-size:15px;}
+  .sheet-body{overflow-y:auto;padding:2px 16px;flex:1;}
+  .sheet-sect{padding:14px 0;border-bottom:1px solid var(--border);}
+  .sheet-sect:last-child{border-bottom:none;}
+  .sheet-sect__label{font-size:12.5px;font-weight:700;margin-bottom:10px;}
+  .range-row{display:flex;align-items:center;gap:8px;}
+  .range-input{flex:1;height:40px;min-width:0;border:1px solid var(--border);border-radius:10px;padding:0 10px;font-size:13px;color:var(--ink);background:var(--bg);font-family:inherit;}
+  .range-row span{color:var(--ink-muted);font-size:12px;}
+  .chip-choices,.check-list{display:flex;flex-wrap:wrap;gap:8px;}
+  .choice-chip{height:34px;padding:0 14px;border-radius:999px;border:1.5px solid var(--border);background:var(--bg);font-size:12.5px;font-weight:700;color:var(--ink);}
+  .choice-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .check-list{flex-direction:column;gap:10px;}
+  .check-row{display:flex;align-items:center;gap:10px;font-size:13px;}
+  .check-row input{width:18px;height:18px;accent-color:var(--accent);}
+  .sheet-foot{display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--border);}
+  .reset-btn{height:46px;padding:0 16px;border-radius:var(--r-btn);background:transparent;border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--ink);}
+  .show-btn{flex:1;height:46px;border-radius:var(--r-btn);background:var(--accent);color:#fff;font-size:14px;font-weight:800;}
+
+  @media (max-width:1360px){ .stage{justify-content:center;} .stage-info{width:390px;} }
+  @media (prefers-reduced-motion: reduce){ .banner-track,.filter-sheet,.sheet-scrim{transition:none !important;} }
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24" fill="none"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none"><path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 001 1h10a1 1 0 001-1v-9" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="15" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="2" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="15" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24" fill="none"><path d="M3 8l9-5 9 5-9 5-9-5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M3 8v8l9 5 9-5V8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 13v8" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24" fill="none"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.8 2.8-2-2 2.8-2.8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gun" viewBox="0 0 24 24" fill="none"><rect x="3" y="9" width="13" height="6" rx="1.5" stroke="currentColor" stroke-width="2"/><path d="M16 11h4v2h-4z" stroke="currentColor" stroke-width="2"/><path d="M7 15v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+</svg>
+
+<div class="page-head">
+  <div>
+    <h1>Точка Монтажа — «Классика маркетплейса»</h1>
+    <p>Рабочий прототип: рельсы категорий, карусель баннеров, путь категория → подкатегория → список товаров, фильтры нижней шторкой. Кликабельно.</p>
+  </div>
+  <div class="theme-switch">
+    <span id="themeLabel">Светлая</span>
+    <label class="switch-track"><input type="checkbox" id="themeToggle" aria-label="Переключить тему"><span class="switch-knob"></span></label>
+    <span>Тёмная</span>
+  </div>
+</div>
+
+<div class="disclaimer"><b>О данных на макете:</b> категории, подкатегории, товары, бренды и характеристики (Дж, Н·м, вольтаж, вес, цены) — пример для показа структуры навигации и фильтров: настоящих данных каталога в проекте ещё нет, они появятся позже. Текст про ремонт и чистку в баннере и их цены — реальные, из проекта. Третий слайд баннера — заглушка «[редактируемый текст]», потому что данных об акциях в проекте нет и мы их не придумываем.</div>
+
+<div class="stage">
+  <div class="stage-info">
+    <div class="crumbs" id="crumbs">Главная</div>
+    <p class="hint">Нажимайте на «Аккумуляторные инструменты» → подкатегорию → «Фильтры». <b>Сортировка</b> и подсчёт «Показать N товаров» — рабочие.</p>
+    <div class="mode-block">
+      <p>Состояние каталога</p>
+      <div class="mode-toggle">
+        <button class="mode-btn on" id="catDemoBtn">Пример данных</button>
+        <button class="mode-btn" id="catEmptyBtn">Каталог пуст</button>
+      </div>
+      <p class="mode-note">Переключает пустые состояния: нет категорий на главной, нет подкатегорий, нет товаров в подкатегории. Открой «УШМ» или «Лобзики» в примере — там нет данных по весу/вольтажу, и эти фильтры сами не показываются.</p>
+    </div>
+  </div>
+
+  <div class="phone dir-v2">
+    <div class="v2-body phone-scroll" id="phoneScroll">
+
+      <!-- ══ HOME ══ -->
+      <div class="screen" data-screen="home" style="display:flex;">
+        <div class="v2-head">
+          <span class="v2-loc"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z" stroke="currentColor" stroke-width="2"/></svg>Краснодар</span>
+          <button class="head-cart" aria-label="Корзина"><svg class="i" width="20" height="20"><use href="#i-cart"/></svg><span class="head-badge">2</span></button>
+        </div>
+        <div class="v2-search-wrap"><div class="v2-search"><svg class="i" width="16" height="16"><use href="#i-search"/></svg><span>Поиск по каталогу…</span></div></div>
+
+        <p class="rail-caption">Категории <span class="ex">рельсы, листайте пальцем</span></p>
+        <div class="cat-rail ce-demo" id="catRail">
+          <button class="cat-tile" id="goSubcatsFromAccum"><span class="cat-ic"><svg class="i" width="18" height="18"><use href="#i-bolt"/></svg></span><span>Аккумуляторные инструменты</span></button>
+          <button class="cat-tile" disabled><span class="cat-ic"><svg class="i" width="18" height="18"><use href="#i-gun"/></svg></span><span>Монтажные пистолеты</span></button>
+          <button class="cat-tile" disabled><span class="cat-ic"><svg class="i" width="18" height="18"><use href="#i-box"/></svg></span><span>Расходники</span></button>
+          <button class="cat-tile" disabled><span class="cat-ic"><svg class="i" width="18" height="18"><use href="#i-wrench"/></svg></span><span>Услуги</span></button>
+        </div>
+        <div class="v2-empty ce-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><use href="#i-box"/></svg>
+          <h3>Категорий пока нет</h3>
+          <p>Каталог ещё не заполнен — категории появятся здесь, как только их добавят</p>
+        </div>
+        <p class="micro-note ce-demo">Полностью работает только «Аккумуляторные инструменты <span class="ex">пример</span>» — остальные три показаны для реалистичности ленты.</p>
+
+        <div class="banner-wrap ce-demo">
+          <div class="banner-viewport"><div class="banner-track" id="bannerTrack">
+            <div class="banner-slide banner-slide--a"><b>Ремонт монтажных пистолетов</b><span>от 3 500 ₽ · диагностика и замена деталей</span></div>
+            <div class="banner-slide banner-slide--b"><b>Чистка монтажных пистолетов</b><span>от 1 500 ₽ · разборка, очистка, смазка</span></div>
+            <div class="banner-slide banner-slide--c"><b>[редактируемый текст]</b><span>[редактируемый текст] — в проекте нет данных об акциях</span></div>
+          </div></div>
+          <div class="banner-dots" id="bannerDots"></div>
+        </div>
+      </div>
+
+      <!-- ══ SUBCATS ══ -->
+      <div class="screen" data-screen="subcats" style="display:none;">
+        <div class="v2-head">
+          <button class="back-btn" id="backToHome" aria-label="Назад"><svg class="i" width="18" height="18" style="transform:scaleX(-1)"><use href="#i-chev"/></svg></button>
+          <span class="v2-loc">Аккумуляторные инструменты <span class="ex">пример</span></span>
+          <button class="head-cart" aria-label="Корзина"><svg class="i" width="20" height="20"><use href="#i-cart"/></svg><span class="head-badge">2</span></button>
+        </div>
+        <div class="subcat-grid ce-demo">
+          <button class="subcat-tile" data-open-subcat="perf"><span class="subcat-ic"><svg class="i" width="20" height="20"><use href="#i-bolt"/></svg></span>Перфораторы</button>
+          <button class="subcat-tile" data-open-subcat="screw"><span class="subcat-ic"><svg class="i" width="20" height="20"><use href="#i-bolt"/></svg></span>Шуруповёрты</button>
+          <button class="subcat-tile" data-open-subcat="grinder"><span class="subcat-ic"><svg class="i" width="20" height="20"><use href="#i-bolt"/></svg></span>УШМ</button>
+          <button class="subcat-tile" data-open-subcat="jigsaw"><span class="subcat-ic"><svg class="i" width="20" height="20"><use href="#i-bolt"/></svg></span>Лобзики</button>
+        </div>
+        <div class="v2-empty ce-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><use href="#i-box"/></svg>
+          <h3>Подкатегорий пока нет</h3>
+          <p>Для этой категории ещё не добавили подкатегории</p>
+        </div>
+      </div>
+
+      <!-- ══ PRODUCTS ══ -->
+      <div class="screen" data-screen="products" style="display:none;">
+        <div class="v2-head">
+          <button class="back-btn" id="backToSubcats" aria-label="Назад"><svg class="i" width="18" height="18" style="transform:scaleX(-1)"><use href="#i-chev"/></svg></button>
+          <span class="v2-loc" id="productsTitle">Подкатегория</span>
+          <button class="head-filter-btn" id="filterOpenBtn" aria-label="Фильтры">
+            <svg class="i" width="17" height="17"><use href="#i-filter"/></svg><span>Фильтры</span>
+            <span class="head-filter-badge" id="filterBadge" hidden>0</span>
+          </button>
+        </div>
+
+        <div class="ce-demo" style="display:flex;flex-direction:column;">
+          <div class="products-toolbar">
+            <button class="tool-btn" id="sortBtn">Сортировка: Популярные (пример)</button>
+          </div>
+          <div class="chips-row-wrap" id="chipsRowWrap"><div class="chips-row" id="chipsRow"></div></div>
+          <p class="results-count" id="resultsCount"></p>
+          <div class="v2-grid" id="productsGrid"></div>
+          <div class="v2-empty" id="productsEmptyLocal" style="display:none;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><use href="#i-search"/></svg>
+            <h3>Ничего не найдено по этим фильтрам</h3>
+            <p>Попробуйте расширить диапазон или сбросить фильтры</p>
+            <button class="v2-cta" id="emptyResetBtn" style="width:180px;height:42px;">Сбросить фильтры</button>
+          </div>
+        </div>
+
+        <div class="v2-empty ce-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><use href="#i-box"/></svg>
+          <h3>Товаров в этой подкатегории пока нет</h3>
+          <p>Как только товары добавят в каталог, они появятся здесь</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="v2-nav">
+      <button class="on"><span class="v2-nav-ic"><svg class="i" width="17" height="17"><use href="#i-home"/></svg></span>Главная</button>
+      <button><span class="v2-nav-ic"><svg class="i" width="17" height="17"><use href="#i-grid"/></svg></span>Каталог</button>
+      <button><span class="v2-nav-ic"><svg class="i" width="17" height="17"><use href="#i-cart"/></svg></span>Корзина</button>
+      <button><span class="v2-nav-ic"><svg class="i" width="17" height="17"><use href="#i-heart"/></svg></span>Избранное</button>
+      <button><span class="v2-nav-ic"><svg class="i" width="17" height="17"><use href="#i-wrench"/></svg></span>Поддержка</button>
+    </div>
+
+    <div class="sheet-scrim" id="sheetScrim" hidden></div>
+    <div class="filter-sheet" id="filterSheet" hidden>
+      <div class="sheet-handle"></div>
+      <div class="sheet-head"><h4 id="sheetTitle">Фильтры</h4><button class="sheet-close" id="sheetClose" aria-label="Закрыть фильтры">✕</button></div>
+      <div class="sheet-body" id="sheetBody"></div>
+      <div class="sheet-foot">
+        <button class="reset-btn" id="resetBtn">Сбросить</button>
+        <button class="show-btn" id="showBtn">Показать</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ── theme toggle ─────────────────────────────────────────── */
+  var themeToggle = document.getElementById('themeToggle');
+  var themeLabel = document.getElementById('themeLabel');
+  themeToggle.addEventListener('change', function(){
+    var dark = themeToggle.checked;
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    themeLabel.textContent = dark ? 'Тёмная' : 'Светлая';
+  });
+
+  /* ── catalog empty/demo toggle ────────────────────────────── */
+  var catDemoBtn = document.getElementById('catDemoBtn');
+  var catEmptyBtn = document.getElementById('catEmptyBtn');
+  function setCatalogMode(mode){
+    document.documentElement.setAttribute('data-catalog', mode);
+    catDemoBtn.classList.toggle('on', mode === 'demo');
+    catEmptyBtn.classList.toggle('on', mode === 'empty');
+  }
+  catDemoBtn.addEventListener('click', function(){ setCatalogMode('demo'); });
+  catEmptyBtn.addEventListener('click', function(){ setCatalogMode('empty'); });
+
+  /* ── screens / navigation ─────────────────────────────────── */
+  var screens = document.querySelectorAll('.screen');
+  var crumbsEl = document.getElementById('crumbs');
+  var phoneScroll = document.getElementById('phoneScroll');
+  function showScreen(name, crumbText){
+    screens.forEach(function(s){ s.style.display = (s.dataset.screen === name ? 'flex' : 'none'); });
+    crumbsEl.textContent = crumbText;
+    phoneScroll.scrollTop = 0;
+  }
+  document.getElementById('goSubcatsFromAccum').addEventListener('click', function(){
+    showScreen('subcats', 'Главная › Аккумуляторные инструменты (пример)');
+  });
+  document.getElementById('backToHome').addEventListener('click', function(){ showScreen('home', 'Главная'); });
+  document.getElementById('backToSubcats').addEventListener('click', function(){
+    showScreen('subcats', 'Главная › Аккумуляторные инструменты (пример)');
+  });
+
+  /* ── mock catalog data (example only) ─────────────────────── */
+  var SUBCATS = {
+    perf: { name:'Перфораторы', powerLabel:'Энергия удара', powerUnit:'Дж', items:[
+      {name:'Перфоратор, модель 1', brand:'Бренд А', price:15900, power:2.0, weight:2.6, voltage:18},
+      {name:'Перфоратор, модель 2', brand:'Бренд Б', price:22400, power:2.6, weight:3.1, voltage:20},
+      {name:'Перфоратор, модель 3', brand:'Бренд А', price:12300, power:1.6, weight:2.2, voltage:12},
+      {name:'Перфоратор, модель 4', brand:'Бренд В', price:27800, power:3.2, weight:3.6, voltage:20},
+      {name:'Перфоратор, модель 5', brand:'Бренд Б', price:9800,  power:1.2, weight:1.9, voltage:12},
+      {name:'Перфоратор, модель 6', brand:'Бренд В', price:18500, power:2.2, weight:2.8, voltage:18}
+    ]},
+    screw: { name:'Шуруповёрты', powerLabel:'Крутящий момент', powerUnit:'Н·м', items:[
+      {name:'Шуруповёрт, модель 1', brand:'Бренд А', price:6900,  power:40, weight:1.2, voltage:12},
+      {name:'Шуруповёрт, модель 2', brand:'Бренд Б', price:11500, power:65, weight:1.5, voltage:18},
+      {name:'Шуруповёрт, модель 3', brand:'Бренд В', price:8200,  power:45, weight:1.3, voltage:12},
+      {name:'Шуруповёрт, модель 4', brand:'Бренд А', price:14900, power:90, weight:1.8, voltage:20},
+      {name:'Шуруповёрт, модель 5', brand:'Бренд Б', price:5400,  power:30, weight:1.0, voltage:12},
+      {name:'Шуруповёрт, модель 6', brand:'Бренд В', price:12700, power:70, weight:1.6, voltage:18}
+    ]},
+    grinder: { name:'УШМ', items:[
+      {name:'УШМ, модель 1', brand:'Бренд А', price:13200},
+      {name:'УШМ, модель 2', brand:'Бренд Б', price:16700},
+      {name:'УШМ, модель 3', brand:'Бренд В', price:10400},
+      {name:'УШМ, модель 4', brand:'Бренд А', price:19900}
+    ]},
+    jigsaw: { name:'Лобзики', items:[
+      {name:'Лобзик, модель 1', brand:'Бренд Б', price:8700},
+      {name:'Лобзик, модель 2', brand:'Бренд В', price:11300},
+      {name:'Лобзик, модель 3', brand:'Бренд А', price:6600},
+      {name:'Лобзик, модель 4', brand:'Бренд Б', price:14200}
+    ]}
+  };
+
+  document.querySelectorAll('[data-open-subcat]').forEach(function(btn){
+    btn.addEventListener('click', function(){ openProducts(btn.dataset.openSubcat); });
+  });
+
+  var currentKey = null, filters = null, draftFilters = null, sortMode = 0;
+  var SORT_LABELS = ['Популярные (пример)', 'Сначала дешевле', 'Сначала дороже'];
+
+  function emptyFilters(){ return { brand:new Set(), voltage:new Set(), price:[null,null], power:[null,null], weight:[null,null] }; }
+  function cloneFilters(f){
+    return { brand:new Set(f.brand), voltage:new Set(f.voltage), price:f.price.slice(), power:f.power.slice(), weight:f.weight.slice() };
+  }
+  function countActive(f){
+    var n = f.brand.size + f.voltage.size;
+    if (f.price[0] != null || f.price[1] != null) n++;
+    if (f.power[0] != null || f.power[1] != null) n++;
+    if (f.weight[0] != null || f.weight[1] != null) n++;
+    return n;
+  }
+  function updateFilterBadge(){
+    var n = countActive(filters);
+    var badge = document.getElementById('filterBadge');
+    badge.hidden = n === 0;
+    badge.textContent = n;
+  }
+
+  function openProducts(key){
+    currentKey = key;
+    filters = emptyFilters();
+    sortMode = 0;
+    var sc = SUBCATS[key];
+    document.getElementById('productsTitle').textContent = sc.name + ' (пример)';
+    renderProducts();
+    updateFilterBadge();
+    showScreen('products', 'Главная › Аккумуляторные инструменты (пример) › ' + sc.name);
+  }
+
+  function fieldRange(items, key){
+    var vals = items.map(function(i){ return i[key]; }).filter(function(v){ return v != null; });
+    if (!vals.length) return null;
+    return [Math.min.apply(null, vals), Math.max.apply(null, vals)];
+  }
+
+  function matches(item, f){
+    if (f.brand.size && !f.brand.has(item.brand)) return false;
+    if (f.voltage.size && !f.voltage.has(item.voltage)) return false;
+    if (f.price[0] != null && item.price < f.price[0]) return false;
+    if (f.price[1] != null && item.price > f.price[1]) return false;
+    if ('power' in item) {
+      if (f.power[0] != null && item.power < f.power[0]) return false;
+      if (f.power[1] != null && item.power > f.power[1]) return false;
+    }
+    if ('weight' in item) {
+      if (f.weight[0] != null && item.weight < f.weight[0]) return false;
+      if (f.weight[1] != null && item.weight > f.weight[1]) return false;
+    }
+    return true;
+  }
+
+  function currentFiltered(){
+    var sc = SUBCATS[currentKey];
+    var list = sc.items.filter(function(item){ return matches(item, filters); });
+    if (sortMode === 1) list = list.slice().sort(function(a,b){ return a.price - b.price; });
+    if (sortMode === 2) list = list.slice().sort(function(a,b){ return b.price - a.price; });
+    return list;
+  }
+
+  function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function pluralTovar(n){
+    var m = n % 100;
+    if (m >= 11 && m <= 14) return 'товаров';
+    var l = n % 10;
+    if (l === 1) return 'товар';
+    if (l >= 2 && l <= 4) return 'товара';
+    return 'товаров';
+  }
+  function specLine(sc, item){
+    var parts = [];
+    if ('power' in item) parts.push(item.power + ' ' + sc.powerUnit);
+    if ('voltage' in item) parts.push(item.voltage + 'В');
+    parts.push(item.brand);
+    return parts.join(' · ');
+  }
+
+  function renderProducts(){
+    var sc = SUBCATS[currentKey];
+    var list = currentFiltered();
+    var grid = document.getElementById('productsGrid');
+    grid.innerHTML = '';
+    list.forEach(function(item){
+      var el = document.createElement('div');
+      el.className = 'v2-card';
+      el.innerHTML =
+        '<div class="v2-card__accent"></div><div class="v2-card__photo">фото</div>' +
+        '<div class="v2-card__body"><p class="v2-name">' + item.name + ' <span class="ex">пример</span></p>' +
+        '<p class="spec-line">' + specLine(sc, item) + '</p>' +
+        '<div class="v2-price-row"><span class="v2-price">' + fmt(item.price) + ' ₽</span></div>' +
+        '<button class="v2-cta">В корзину</button></div>';
+      grid.appendChild(el);
+    });
+    document.getElementById('resultsCount').textContent = list.length + ' ' + pluralTovar(list.length);
+    document.getElementById('productsEmptyLocal').style.display = list.length ? 'none' : 'flex';
+    grid.style.display = list.length ? 'grid' : 'none';
+    document.getElementById('sortBtn').textContent = 'Сортировка: ' + SORT_LABELS[sortMode];
+    renderChips();
+  }
+
+  function chip(label, onRemove){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'filter-chip';
+    b.innerHTML = label + ' <span aria-hidden="true">✕</span>';
+    b.addEventListener('click', onRemove);
+    return b;
+  }
+
+  function renderChips(){
+    var wrap = document.getElementById('chipsRow');
+    wrap.innerHTML = '';
+    var any = false;
+    var sc = SUBCATS[currentKey];
+    filters.brand.forEach(function(b){
+      any = true;
+      wrap.appendChild(chip(b, function(){ filters.brand.delete(b); renderProducts(); }));
+    });
+    filters.voltage.forEach(function(v){
+      any = true;
+      wrap.appendChild(chip(v + 'В', function(){ filters.voltage.delete(v); renderProducts(); }));
+    });
+    if (filters.price[0] != null || filters.price[1] != null) {
+      any = true;
+      var lbl = 'Цена: ' + (filters.price[0] != null ? fmt(filters.price[0]) : 'от') + '–' + (filters.price[1] != null ? fmt(filters.price[1]) : 'до') + ' ₽';
+      wrap.appendChild(chip(lbl, function(){ filters.price = [null, null]; renderProducts(); }));
+    }
+    if (sc.items.some(function(i){ return 'power' in i; }) && (filters.power[0] != null || filters.power[1] != null)) {
+      any = true;
+      var lblP = sc.powerLabel + ': ' + (filters.power[0] != null ? filters.power[0] : 'от') + '–' + (filters.power[1] != null ? filters.power[1] : 'до') + ' ' + sc.powerUnit;
+      wrap.appendChild(chip(lblP, function(){ filters.power = [null, null]; renderProducts(); }));
+    }
+    if (sc.items.some(function(i){ return 'weight' in i; }) && (filters.weight[0] != null || filters.weight[1] != null)) {
+      any = true;
+      var lblW = 'Вес: ' + (filters.weight[0] != null ? filters.weight[0] : 'от') + '–' + (filters.weight[1] != null ? filters.weight[1] : 'до') + ' кг';
+      wrap.appendChild(chip(lblW, function(){ filters.weight = [null, null]; renderProducts(); }));
+    }
+    document.getElementById('chipsRowWrap').style.display = any ? 'block' : 'none';
+  }
+
+  document.getElementById('sortBtn').addEventListener('click', function(){
+    sortMode = (sortMode + 1) % 3;
+    renderProducts();
+  });
+  document.getElementById('emptyResetBtn').addEventListener('click', function(){
+    filters = emptyFilters();
+    renderProducts();
+    updateFilterBadge();
+  });
+
+  /* ── filter sheet: работает с draftFilters, пока окно открыто;
+     committed filters меняются только по кнопке «Показать N товаров» ── */
+  function rangeSection(label, key, range, unit){
+    var wrap = document.createElement('div');
+    wrap.className = 'sheet-sect';
+    var curMin = draftFilters[key][0] != null ? draftFilters[key][0] : '';
+    var curMax = draftFilters[key][1] != null ? draftFilters[key][1] : '';
+    wrap.innerHTML =
+      '<p class="sheet-sect__label">' + label + '</p>' +
+      '<div class="range-row">' +
+      '<input type="number" inputmode="decimal" placeholder="от ' + range[0] + '" value="' + curMin + '" class="range-input" data-key="' + key + '" data-edge="0">' +
+      '<span>—</span>' +
+      '<input type="number" inputmode="decimal" placeholder="до ' + range[1] + '" value="' + curMax + '" class="range-input" data-key="' + key + '" data-edge="1">' +
+      (unit ? '<span>' + unit + '</span>' : '') +
+      '</div>';
+    wrap.querySelectorAll('input').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var v = inp.value === '' ? null : parseFloat(inp.value);
+        draftFilters[inp.dataset.key][parseInt(inp.dataset.edge, 10)] = v;
+        updateShowBtn();
+      });
+    });
+    return wrap;
+  }
+  function chipSection(label, key, values){
+    var wrap = document.createElement('div');
+    wrap.className = 'sheet-sect';
+    var html = '<p class="sheet-sect__label">' + label + '</p><div class="chip-choices">';
+    values.forEach(function(v){
+      var on = draftFilters[key].has(v);
+      html += '<button type="button" class="choice-chip' + (on ? ' on' : '') + '" data-val="' + v + '">' + v + 'В</button>';
+    });
+    html += '</div>';
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.choice-chip').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var v = parseFloat(btn.dataset.val);
+        if (draftFilters[key].has(v)) { draftFilters[key].delete(v); btn.classList.remove('on'); }
+        else { draftFilters[key].add(v); btn.classList.add('on'); }
+        updateShowBtn();
+      });
+    });
+    return wrap;
+  }
+  function checkSection(label, key, options){
+    var wrap = document.createElement('div');
+    wrap.className = 'sheet-sect';
+    var html = '<p class="sheet-sect__label">' + label + '</p><div class="check-list">';
+    options.forEach(function(o){
+      var on = draftFilters[key].has(o);
+      html += '<label class="check-row"><input type="checkbox" value="' + o + '" ' + (on ? 'checked' : '') + '><span>' + o + ' <span class="ex">пример</span></span></label>';
+    });
+    html += '</div>';
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        if (cb.checked) draftFilters[key].add(cb.value); else draftFilters[key].delete(cb.value);
+        updateShowBtn();
+      });
+    });
+    return wrap;
+  }
+
+  function buildSheetBody(){
+    var sc = SUBCATS[currentKey];
+    var body = document.getElementById('sheetBody');
+    body.innerHTML = '';
+    if (sc.items.some(function(i){ return 'power' in i; })) {
+      body.appendChild(rangeSection(sc.powerLabel + ' (' + sc.powerUnit + ')', 'power', fieldRange(sc.items, 'power')));
+    }
+    if (sc.items.some(function(i){ return 'weight' in i; })) {
+      body.appendChild(rangeSection('Вес', 'weight', fieldRange(sc.items, 'weight'), 'кг'));
+    }
+    if (sc.items.some(function(i){ return 'voltage' in i; })) {
+      var volts = Array.from(new Set(sc.items.map(function(i){ return i.voltage; }).filter(function(v){ return v != null; }))).sort(function(a,b){ return a-b; });
+      body.appendChild(chipSection('Вольтаж АКБ', 'voltage', volts));
+    }
+    var brands = Array.from(new Set(sc.items.map(function(i){ return i.brand; }))).sort();
+    body.appendChild(checkSection('Бренд', 'brand', brands));
+    body.appendChild(rangeSection('Цена', 'price', fieldRange(sc.items, 'price'), '₽'));
+    document.getElementById('sheetTitle').textContent = 'Фильтры · ' + sc.name;
+  }
+  function updateShowBtn(){
+    var n = SUBCATS[currentKey].items.filter(function(item){ return matches(item, draftFilters); }).length;
+    document.getElementById('showBtn').textContent = 'Показать ' + n + ' ' + pluralTovar(n);
+  }
+
+  /* ── открытие/закрытие окна: плавно, список под ним не трогаем,
+     пока не нажали «Показать N товаров» ── */
+  var sheetEl = document.getElementById('filterSheet');
+  var scrimEl = document.getElementById('sheetScrim');
+  var SHEET_ANIM_MS = 300;
+  var sheetCloseTimer = null;
+  var sheetReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function openSheet(){
+    draftFilters = cloneFilters(filters); // редактируем черновик, не применённые фильтры
+    buildSheetBody();
+    updateShowBtn();
+    clearTimeout(sheetCloseTimer);
+    scrimEl.hidden = false;
+    sheetEl.hidden = false;
+    if (sheetReduceMotion) {
+      scrimEl.classList.add('is-open');
+      sheetEl.classList.add('is-open');
+    } else {
+      void sheetEl.offsetHeight; // форс reflow, чтобы transition сработал от исходного translateY(100%)
+      requestAnimationFrame(function(){
+        scrimEl.classList.add('is-open');
+        sheetEl.classList.add('is-open');
+      });
+    }
+  }
+  /* Отмена: закрыть без применения — черновик просто отбрасывается,
+     renderProducts() здесь НЕ вызывается, список не перерисовывается */
+  function cancelSheet(){
+    closeSheetAnimated();
+  }
+  function confirmSheet(){
+    filters = draftFilters; // применяем черновик
+    renderProducts();
+    updateFilterBadge();
+    closeSheetAnimated();
+  }
+  function closeSheetAnimated(){
+    scrimEl.classList.remove('is-open');
+    sheetEl.classList.remove('is-open');
+    sheetEl.classList.remove('dragging');
+    sheetEl.style.transform = '';
+    var delay = sheetReduceMotion ? 0 : SHEET_ANIM_MS;
+    clearTimeout(sheetCloseTimer);
+    sheetCloseTimer = setTimeout(function(){
+      scrimEl.hidden = true;
+      sheetEl.hidden = true;
+    }, delay);
+  }
+
+  document.getElementById('filterOpenBtn').addEventListener('click', openSheet);
+  document.getElementById('sheetClose').addEventListener('click', cancelSheet);
+  document.getElementById('sheetScrim').addEventListener('click', cancelSheet);
+  document.getElementById('showBtn').addEventListener('click', confirmSheet);
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    draftFilters = emptyFilters();
+    buildSheetBody();
+    updateShowBtn();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !sheetEl.hidden) cancelSheet();
+  });
+
+  /* свайп вниз по шапке окна — закрывает без применения черновика */
+  (function(){
+    var dragHandleEls = [document.querySelector('.sheet-handle'), document.querySelector('.sheet-head')];
+    var startY = 0, dy = 0, dragging = false;
+    function onDown(e){
+      dragging = true;
+      startY = e.clientY;
+      sheetEl.classList.add('dragging');
+    }
+    function onMove(e){
+      if (!dragging) return;
+      dy = Math.max(0, e.clientY - startY);
+      sheetEl.style.transform = 'translateY(' + dy + 'px)';
+    }
+    function onUp(){
+      if (!dragging) return;
+      dragging = false;
+      sheetEl.classList.remove('dragging');
+      if (dy > 90) {
+        cancelSheet();
+      } else {
+        sheetEl.style.transform = '';
+      }
+      dy = 0;
+    }
+    dragHandleEls.forEach(function(el){
+      if (!el) return;
+      el.addEventListener('pointerdown', function(e){ el.setPointerCapture(e.pointerId); onDown(e); });
+      el.addEventListener('pointermove', onMove);
+      el.addEventListener('pointerup', onUp);
+      el.addEventListener('pointercancel', onUp);
+    });
+  })();
+
+  /* ── banner carousel: autoplay, dots, pause on touch/hidden, reduced motion ── */
+  (function(){
+    var track = document.getElementById('bannerTrack');
+    var dotsWrap = document.getElementById('bannerDots');
+    var slides = track.children;
+    var idx = 0, timer = null, paused = false;
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function go(i){
+      idx = (i + slides.length) % slides.length;
+      track.style.transition = reduce ? 'none' : 'transform .45s ease';
+      track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+      Array.from(dotsWrap.children).forEach(function(d, di){ d.classList.toggle('on', di === idx); });
+    }
+    Array.from(slides).forEach(function(_, i){
+      var d = document.createElement('button');
+      d.type = 'button';
+      d.setAttribute('aria-label', 'Слайд ' + (i + 1));
+      d.addEventListener('click', function(){ go(i); });
+      dotsWrap.appendChild(d);
+    });
+    go(0);
+
+    function tick(){ if (!paused && !document.hidden) go(idx + 1); }
+    function start(){ stop(); if (!reduce) timer = setInterval(tick, 3000); }
+    function stop(){ if (timer) clearInterval(timer); timer = null; }
+
+    if (!reduce) start();
+    track.addEventListener('pointerdown', function(){ paused = true; });
+    window.addEventListener('pointerup', function(){ paused = false; });
+    document.addEventListener('visibilitychange', function(){ if (document.hidden) stop(); else start(); });
+  })();
+
+  setCatalogMode('demo');
+})();
+</script>
+
+</body>
+</html>

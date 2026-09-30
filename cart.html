@@ -10,34 +10,48 @@
     <script src="/src/shopGuard.js"></script>
     <script src="/src/utils/tgid.js?v=20260530b"></script>
 </head>
-<body style="background:linear-gradient(160deg, #DCEEFF 0%, #B9D9F7 100%);min-height:100vh;">
+<body style="background:var(--bg-page);min-height:100vh;">
 <div class="app">
 
     <!-- Header -->
     <header class="header">
-        <div class="header__logo">
-            <button class="header__back" onclick="location.href='index.html'" aria-label="Назад">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-            <span class="header__logo-text">Точка Монтажа</span>
-        </div>
+        <button class="header__back" onclick="location.href='index.html'" aria-label="Назад">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <span class="header__title">Корзина</span>
         <button class="header__clear hidden" id="clearBtn" onclick="confirmClear()">Очистить</button>
     </header>
 
     <!-- Content -->
     <main class="main" id="main">
 
+        <!-- Orders link -->
+        <a href="src/orders/orders.html" class="orders-link" id="ordersLink">
+            <span class="orders-link__ic">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="2"/>
+                    <line x1="9" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="9" y1="16" x2="13" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <span class="orders-link__label">Мои заказы</span>
+            <svg class="orders-link__chev" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+
         <!-- Cart list -->
         <div class="cart-list hidden" id="cartList"></div>
 
         <!-- Empty state -->
         <div class="empty-state" id="emptyState">
-            <div class="empty-state__icon">🛒</div>
+            <div class="empty-state__icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/><path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             <p class="empty-state__title">Корзина пуста</p>
             <p class="empty-state__sub">Добавьте товары из каталога</p>
-            <a href="index.html" class="empty-state__btn">Перейти в каталог</a>
+            <a href="catalog.html" class="empty-state__btn">Перейти в каталог</a>
         </div>
 
 
@@ -62,57 +76,66 @@
     <!-- Bottom nav -->
     <nav class="bottom-nav">
         <a href="index.html" class="nav-item">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 10v9a1 1 0 001 1h10a1 1 0 001-1v-9" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Главная</span>
+        </a>
+        <a href="catalog.html" class="nav-item">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
                 <rect x="2" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                 <rect x="15" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                 <rect x="2" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                 <rect x="15" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-            </svg>
+            </svg></span>
             <span>Каталог</span>
         </a>
         <a href="cart.html" class="nav-item active">
-            <div class="nav-icon-wrap">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <span class="nav-ic">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
                     <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
                     <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
                 <span class="nav-badge hidden" id="navBadge">0</span>
-            </div>
+            </span>
             <span>Корзина</span>
         </a>
-        <a href="src/orders/orders.html" class="nav-item" id="navOrders">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="2"/>
-                <line x1="9" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="9" y1="16" x2="13" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span>Заказы</span>
-        </a>
+        <button class="nav-item" onclick="openFavoritesFromCart()">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Избранное</span>
+        </button>
         <button class="nav-item" onclick="openCartSupport()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            </svg></span>
             <span>Поддержка</span>
         </button>
     </nav>
 
 </div>
+<script src="/src/icons.js?v=20260930"></script>
 <script src="src/cart/cart.js?v=20260530b"></script>
 <script src="src/cookie.js?v=20260530b"></script>
 <script>
 (function() {
     const tgId = getTgId();
     if (!tgId) return;
-    const navOrders = document.getElementById('navOrders');
-    if (navOrders) navOrders.href = 'src/orders/orders.html?tg_id=' + tgId;
+    const ordersLink = document.getElementById('ordersLink');
+    if (ordersLink) ordersLink.href = 'src/orders/orders.html?tg_id=' + tgId;
 })();
 let _cartSupportBotUsername = 'id635009278943_1_bot';
 fetch('/api/config').then(r=>r.json()).then(cfg=>{ _cartSupportBotUsername = cfg.supportBotUsername||'id635009278943_1_bot'; }).catch(()=>{});
 function openCartSupport() {
     const url = 'https://max.ru/' + _cartSupportBotUsername;
     if (window.WebApp?.openLink) window.WebApp.openLink(url); else window.location.href = url;
+}
+function openFavoritesFromCart() {
+    const tgId = new URLSearchParams(location.search).get('tg_id') || sessionStorage.getItem('tg_id');
+    location.href = tgId ? `src/favorites/favorites.html?tg_id=${tgId}` : 'src/favorites/favorites.html';
 }
 </script>
 </body>

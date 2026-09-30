@@ -10,48 +10,23 @@
     <script src="/src/shopGuard.js"></script>
     <script src="/src/utils/tgid.js?v=20260601"></script>
     <style>
-        body { background: linear-gradient(160deg, #DCEEFF 0%, #B9D9F7 100%); min-height: 100vh; }
-        .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding-bottom: 80px; }
-        .header {
-            position: sticky; top: 0; z-index: 100;
-            display: flex; align-items: center;
-            height: 56px; padding: 0 8px 0 4px;
-            background: linear-gradient(160deg, #DCEEFF 0%, #B9D9F7 100%);
-            box-shadow: 0 1px 8px rgba(0,0,0,0.2);
-        }
-        .header__back {
-            width: 44px; height: 44px; display: flex; align-items: center;
-            justify-content: center; border-radius: 50%; color: #0C447C; flex-shrink: 0;
-        }
-        .header__back:active { background: rgba(12,68,124,.10); }
-        .header__title { flex: 1; font-size: 17px; font-weight: 700; color: #0C447C; letter-spacing: -.3px; }
-        .header__cart {
-            position: relative; width: 44px; height: 44px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 50%; color: #0C447C; flex-shrink: 0;
-        }
-        .header__cart:active { background: rgba(12,68,124,.08); }
-        .cart-badge {
-            position: absolute; top: 4px; right: 4px;
-            min-width: 17px; height: 17px; background: #F85800; color: #0C447C;
-            font-size: 10px; font-weight: 700; border-radius: 9px; padding: 0 3px;
-            display: flex; align-items: center; justify-content: center;
-        }
+        @import url('/src/theme.css');
+        body { background: var(--bg-page); min-height: 100vh; }
+        .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; }
         .empty-state {
             display: flex; flex-direction: column; align-items: center;
-            padding: 80px 24px; gap: 12px; text-align: center; color: #1C1C1E;
+            padding: 80px 24px; gap: 12px; text-align: center; color: var(--text-primary);
         }
-        .empty-state__icon { font-size: 56px; }
-        .empty-state__title { font-size: 18px; font-weight: 700; }
-        .empty-state__sub { font-size: 14px; opacity: .6; }
+        .empty-state__icon { display: flex; justify-content: center; color: var(--text-secondary); opacity: .5; }
+        .empty-state__title { font-size: 17px; font-weight: 700; }
+        .empty-state__sub { font-size: 13.5px; color: var(--text-secondary); }
         .empty-state__btn {
-            margin-top: 8px; padding: 12px 28px; background: #F85800;
-            color: #FFFFFF; border-radius: 14px; font-size: 15px; font-weight: 700;
+            margin-top: 8px; padding: 12px 28px; background: var(--accent);
+            color: var(--accent-ink); border-radius: var(--radius-md); font-size: 15px; font-weight: 700;
             text-decoration: none; display: inline-block;
         }
-        .loading { text-align: center; padding: 60px 24px; font-size: 14px; color: rgba(28,28,30,.55); }
-        /* Override fav-btn for remove in favorites page */
-        .fav-btn { color: #F85800; background: rgba(0,0,0,0.45); }
+        .loading { text-align: center; padding: 60px 24px; font-size: 14px; color: var(--text-secondary); }
+        .main { padding: 4px 12px calc(var(--nav-h) + 16px); }
     </style>
 </head>
 <body>
@@ -75,9 +50,68 @@
 
     <div id="loading" class="loading">Загружаем избранное...</div>
     <main class="main" id="main" style="display:none"></main>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+        <a href="../../index.html" class="nav-item">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 10v9a1 1 0 001 1h10a1 1 0 001-1v-9" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Главная</span>
+        </a>
+        <a href="../../catalog.html" class="nav-item" id="navCatalog">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="2" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+            </svg></span>
+            <span>Каталог</span>
+        </a>
+        <a href="../../cart.html" class="nav-item" id="navCart">
+            <span class="nav-ic">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
+                    <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="nav-badge hidden" id="navBadge">0</span>
+            </span>
+            <span>Корзина</span>
+        </a>
+        <a href="favorites.html" class="nav-item active">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Избранное</span>
+        </a>
+        <button class="nav-item" onclick="openFavSupport()">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Поддержка</span>
+        </button>
+    </nav>
 </div>
 
+<script src="/src/icons.js?v=20260930"></script>
 <script src="favorites.js?v=20260601"></script>
 <script src="../../src/cookie.js?v=20260601"></script>
+<script>
+(function() {
+    const tgId = getTgId();
+    if (tgId) {
+        const navCart = document.getElementById('navCart');
+        if (navCart) navCart.href = '../../cart.html?tg_id=' + tgId;
+    }
+})();
+let _favSupportBotUsername = 'id635009278943_1_bot';
+fetch('/api/config').then(r => r.json()).then(cfg => { _favSupportBotUsername = cfg.supportBotUsername || 'id635009278943_1_bot'; }).catch(() => {});
+function openFavSupport() {
+    const url = 'https://max.ru/' + _favSupportBotUsername;
+    if (window.WebApp && window.WebApp.openLink) window.WebApp.openLink(url); else window.location.href = url;
+}
+</script>
 </body>
 </html>

@@ -16,23 +16,15 @@ function renderOrders(orders) {
     if (!orders.length) {
         content.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state__icon">📋</div>
+                <div class="empty-state__icon">${iconSvg('orders', 48)}</div>
                 <p class="empty-state__title">Заказов пока нет</p>
                 <p class="empty-state__sub">Ваши заказы появятся здесь после оформления</p>
-                <div style="color:rgba(28,28,30,0.5);padding:8px;font-size:11px;white-space:pre-line;margin:20px;border:1px solid rgba(0,0,0,0.08);border-radius:8px;text-align:left">WebApp: ${typeof window.WebApp}
-platform: ${window.WebApp?.platform || '?'}
-version: ${window.WebApp?.version || '?'}
-initData: ${window.WebApp?.initData ? 'есть' : 'нет'}
-initDataUnsafe: ${window.WebApp?.initDataUnsafe ? 'есть' : 'нет'}
-user.id: ${window.WebApp?.initDataUnsafe?.user?.id || '?'}
-chat.id: ${window.WebApp?.initDataUnsafe?.chat?.id || '?'}
-tg_id: ${_tgId || 'НЕТ'}</div>
-                <a href="../../index.html" class="empty-state__btn">Перейти в каталог</a>
+                <a href="../../catalog.html" class="empty-state__btn">Перейти в каталог</a>
             </div>`;
         return;
     }
 
-    content.innerHTML = `<div style="color:rgba(28,28,30,0.5);padding:8px 16px;font-size:12px">ID: ${_tgId || 'нет'}</div>` + orders.map(o => {
+    content.innerHTML = orders.map(o => {
         const st   = STATUS_CONFIG[o.status] || { label: o.status, cls: 'badge-new' };
         const date = new Date(o.createdAt).toLocaleString('ru-RU', {
             day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
@@ -83,7 +75,6 @@ async function init() {
     const content = document.getElementById('content');
 
     if (!_tgId) {
-        content.innerHTML = '<div style="color:rgba(28,28,30,0.5);padding:8px 16px;font-size:12px">ID: нет</div>';
         renderOrders([]);
         return;
     }
@@ -96,7 +87,7 @@ async function init() {
     } catch {
         content.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state__icon">⚠️</div>
+                <div class="empty-state__icon">${iconSvg('alert', 48)}</div>
                 <p class="empty-state__title">Ошибка загрузки</p>
                 <p class="empty-state__sub">Попробуйте открыть страницу снова</p>
             </div>`;
@@ -126,10 +117,14 @@ function openSupport() {
 /* ─── Nav tg_id links ────────────────────────────────────── */
 function updateNavLinks() {
     if (!_tgId) return;
+    const navHome = document.getElementById('navHome');
+    if (navHome) navHome.href = `../../index.html?tg_id=${_tgId}`;
     const navCatalog = document.getElementById('navCatalog');
-    if (navCatalog) navCatalog.href = `../../index.html?tg_id=${_tgId}`;
+    if (navCatalog) navCatalog.href = `../../catalog.html?tg_id=${_tgId}`;
     const navCart = document.getElementById('navCart');
     if (navCart) navCart.href = `../../cart.html?tg_id=${_tgId}`;
+    const navFavorites = document.getElementById('navFavorites');
+    if (navFavorites) navFavorites.href = `../favorites/favorites.html?tg_id=${_tgId}`;
 }
 
 /* ─── Reorder ────────────────────────────────────────────── */

@@ -8,13 +8,13 @@
     <script src="/src/shopGuard.js"></script>
     <script src="/src/utils/tgid.js?v=20260530b"></script>
     <style>
+        @import url('/src/theme.css');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { -webkit-text-size-adjust: 100%; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(160deg, #DCEEFF 0%, #B9D9F7 100%);
-            background-attachment: fixed;
-            color: #1C1C1E;
+            font-family: var(--font-body);
+            background: var(--bg-page);
+            color: var(--text-primary);
             min-height: 100dvh;
             overscroll-behavior: none;
             -webkit-tap-highlight-color: transparent;
@@ -29,27 +29,25 @@
             position: sticky; top: 0; z-index: 100;
             display: flex; align-items: center;
             height: 56px; padding: 0 8px 0 4px;
-            background: linear-gradient(160deg, #DCEEFF 0%, #B9D9F7 100%);
-            box-shadow: 0 1px 8px rgba(0,0,0,0.2);
+            background: var(--accent);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.08);
         }
         .header__back {
             width: 44px; height: 44px; display: flex; align-items: center;
-            justify-content: center; border-radius: 50%; color: #0C447C; flex-shrink: 0;
+            justify-content: center; border-radius: 50%; color: var(--accent-ink); flex-shrink: 0;
         }
-        .header__back:active { background: rgba(12,68,124,.10); }
+        .header__back:active { background: rgba(255,255,255,.16); }
         .header__title {
-            flex: 1; font-size: 17px; font-weight: 700; letter-spacing: -.3px; color: #0C447C;
+            flex: 1; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: -.2px; color: var(--accent-ink);
         }
+        .header__placeholder { width: 44px; flex-shrink: 0; }
 
         .content { padding: 16px 12px 24px; display: flex; flex-direction: column; gap: 12px; }
 
         .order-card {
-            background: rgba(255,255,255,0.55);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.6);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-            border-radius: 16px;
+            background: var(--bg-card);
+            box-shadow: var(--card-shadow);
+            border-radius: var(--radius-md);
             padding: 16px;
             display: flex; flex-direction: column; gap: 10px;
         }
@@ -61,45 +59,45 @@
         .order-badge {
             font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 10px;
         }
-        .badge-new       { background: rgba(28,28,30,0.08); color: rgba(28,28,30,0.55); }
-        .badge-in_progress { background: rgba(77,158,255,.2); color: #4D9EFF; }
-        .badge-shipped   { background: rgba(248,88,0,.2);    color: #F85800; }
-        .badge-completed { background: rgba(52,199,89,.2);   color: #34C759; }
-        .badge-cancelled { background: rgba(239,68,68,.2);   color: #EF4444; }
+        .badge-new       { background: rgba(var(--ink-rgb),0.08); color: rgba(var(--ink-rgb),0.55); }
+        .badge-in_progress { background: rgba(47,111,191,.2); color: var(--info); }
+        .badge-shipped   { background: rgba(14,124,107,.15);   color: var(--accent); }
+        .badge-completed { background: rgba(47,143,78,.18);    color: var(--success); }
+        .badge-cancelled { background: rgba(192,57,43,.15);    color: var(--red); }
 
         .order-card__items { font-size: 13px; opacity: .75; line-height: 1.5; }
         .order-card__store { font-size: 13px; opacity: .65; }
-        .order-card__address { font-size: 13px; color: rgba(28,28,30,0.55); margin: 4px 0; }
-        .order-card__tracking { font-size: 13px; color: #F85800; margin: 4px 0; }
-        .order-card__total { font-size: 17px; font-weight: 700; color: #F85800; }
+        .order-card__address { font-size: 13px; color: rgba(var(--ink-rgb),0.55); margin: 4px 0; }
+        .order-card__tracking { font-size: 13px; color: var(--accent); margin: 4px 0; }
+        .order-card__total { font-size: 17px; font-weight: 700; color: var(--accent); }
 
         .track-btn {
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            height: 40px; background: rgba(248,88,0,0.2); border: 1px solid rgba(248,88,0,0.4);
-            border-radius: 12px; color: #F85800; font-size: 14px; font-weight: 600;
+            height: 44px; background: rgba(14,124,107,0.15); border: 1px solid rgba(14,124,107,0.4);
+            border-radius: var(--radius-md); color: var(--accent); font-size: 14px; font-weight: 600;
             width: 100%; text-decoration: none;
         }
-        .track-btn:active { background: rgba(248,88,0,0.35); }
+        .track-btn:active { background: rgba(14,124,107,0.3); }
 
         .reorder-btn {
             display: flex; align-items: center; justify-content: center;
-            height: 40px; width: 100%;
-            background: rgba(28,28,30,0.06); border: 1px solid rgba(0,0,0,0.06);
-            border-radius: 12px; color: #1C1C1E; font-size: 14px; font-weight: 600;
+            height: 44px; width: 100%;
+            background: rgba(var(--ink-rgb),0.06); border: 1px solid rgba(0,0,0,0.06);
+            border-radius: var(--radius-md); color: var(--text-primary); font-size: 14px; font-weight: 600;
             cursor: pointer;
         }
-        .reorder-btn:active { background: rgba(28,28,30,0.1); }
+        .reorder-btn:active { background: rgba(var(--ink-rgb),0.1); }
 
         .empty-state {
             display: flex; flex-direction: column; align-items: center;
             padding: 80px 24px; gap: 12px; text-align: center;
         }
-        .empty-state__icon { font-size: 56px; }
-        .empty-state__title { font-size: 18px; font-weight: 700; }
-        .empty-state__sub { font-size: 14px; opacity: .6; }
+        .empty-state__icon { display: flex; justify-content: center; color: var(--text-secondary); opacity: .5; }
+        .empty-state__title { font-size: 17px; font-weight: 700; }
+        .empty-state__sub { font-size: 13.5px; color: var(--text-secondary); }
         .empty-state__btn {
-            margin-top: 8px; padding: 12px 28px; background: #F85800;
-            color: #FFFFFF; border-radius: 14px; font-size: 15px; font-weight: 700;
+            margin-top: 8px; padding: 12px 28px; background: var(--accent);
+            color: var(--accent-ink); border-radius: 14px; font-size: 15px; font-weight: 700;
         }
 
         .loading { text-align: center; padding: 60px 24px; font-size: 14px; opacity: .6; }
@@ -107,23 +105,28 @@
         .bottom-nav {
             position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
             width: 100%; max-width: 480px; height: 64px;
-            background: #FFFFFF;
-            box-shadow: 0 -1px 8px rgba(0,0,0,0.2);
+            background: var(--bg-card);
+            box-shadow: 0 -1px 8px rgba(0,0,0,0.08);
             display: flex; align-items: center; justify-content: space-around;
             z-index: 100; padding-bottom: env(safe-area-inset-bottom);
         }
         .nav-item {
             flex: 1; display: flex; flex-direction: column; align-items: center;
             justify-content: center; gap: 3px; height: 100%;
-            color: rgba(28,28,30,0.4); font-size: 11px;
+            color: var(--text-secondary); font-size: 10.5px; font-weight: 600;
         }
-        .nav-item.active { color: #0C447C; }
+        .nav-item.active { color: var(--accent); font-weight: 700; }
         .nav-item:active { opacity: .7; }
-        .nav-icon-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+        .nav-ic {
+            position: relative; width: 30px; height: 30px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .15s;
+        }
+        .nav-item.active .nav-ic { background: var(--accent); color: var(--accent-ink); }
         .nav-badge {
             position: absolute; top: -6px; right: -8px;
-            min-width: 17px; height: 17px; background: #F85800; color: #1C1C1E;
-            font-size: 10px; font-weight: 700; border-radius: 9px; padding: 0 4px;
+            min-width: 16px; height: 16px; background: var(--red); color: #FFFFFF;
+            font-size: 9.5px; font-weight: 700; border-radius: 9px; padding: 0 4px;
             display: flex; align-items: center; justify-content: center;
         }
     </style>
@@ -137,6 +140,7 @@
             </svg>
         </button>
         <span class="header__title">Мои заказы</span>
+        <span class="header__placeholder"></span>
     </header>
 
     <div class="content" id="content">
@@ -144,49 +148,53 @@
     </div>
 
     <nav class="bottom-nav">
-        <a href="../../index.html" class="nav-item" id="navCatalog">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <a href="../../index.html" class="nav-item" id="navHome">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 10v9a1 1 0 001 1h10a1 1 0 001-1v-9" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Главная</span>
+        </a>
+        <a href="../../catalog.html" class="nav-item" id="navCatalog">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
                 <rect x="2" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                 <rect x="15" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                 <rect x="2" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                 <rect x="15" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-            </svg>
+            </svg></span>
             <span>Каталог</span>
         </a>
         <a href="../../cart.html" class="nav-item" id="navCart">
-            <div class="nav-icon-wrap">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <span class="nav-ic">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
                     <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
                     <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
                 <span class="nav-badge hidden" id="navBadge">0</span>
-            </div>
+            </span>
             <span>Корзина</span>
         </a>
-        <a href="orders.html" class="nav-item active" id="navOrders">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="2"/>
-                <line x1="9" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="9" y1="16" x2="13" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span>Заказы</span>
+        <a href="../favorites/favorites.html" class="nav-item" id="navFavorites">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Избранное</span>
         </a>
         <button class="nav-item" onclick="openSupport()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            </svg></span>
             <span>Поддержка</span>
         </button>
     </nav>
 </div>
 
 <style>
-.legal-footer { padding: 24px 16px; color: rgba(28,28,30,0.4); font-size: 11px; text-align: center; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 40px; margin-bottom: 80px; }
+.legal-footer { padding: 24px 16px; color: rgba(var(--ink-rgb),0.4); font-size: 11px; text-align: center; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 40px; margin-bottom: 80px; }
 .legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
 .legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
-.legal-footer__links a { color: #F85800; text-decoration: none; }
+.legal-footer__links a { color: var(--accent); text-decoration: none; }
 </style>
 <div class="legal-footer">
     <div class="legal-footer__info">
@@ -201,6 +209,7 @@
     </div>
 </div>
 
+<script src="/src/icons.js?v=20260930"></script>
 <script src="orders.js?v=20260530b"></script>
 </body>
 </html>

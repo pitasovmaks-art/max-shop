@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Точка Монтажа — Каталог</title>
+    <title>Точка Монтажа — Главная</title>
     <link rel="stylesheet" href="src/catalog/catalog.css">
     <link rel="stylesheet" href="src/cookie.css">
     <script src="https://st.max.ru/js/max-web-app.js"></script>
     <script src="/src/shopGuard.js"></script>
     <script src="/src/utils/tgid.js?v=20260530b"></script>
 </head>
-<body style="background:linear-gradient(160deg, #DCEEFF 0%, #B9D9F7 100%);min-height:100vh;">
+<body style="background:var(--bg-page);min-height:100vh;">
 
 <!-- City selection screen -->
-<div id="city-screen" style="position:fixed;inset:0;z-index:2000;background:linear-gradient(160deg,#DCEEFF 0%,#B9D9F7 100%);display:flex;flex-direction:column;align-items:center;padding:40px 20px 24px;overflow:hidden;">
-    <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:600;color:#0C447C;letter-spacing:-.5px;margin-bottom:4px;text-align:center;">Точка Монтажа</div>
+<div id="city-screen" style="position:fixed;inset:0;z-index:2000;background:var(--bg-page);display:flex;flex-direction:column;align-items:center;padding:40px 20px 24px;overflow:hidden;">
+    <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:600;color:var(--accent);letter-spacing:-.5px;margin-bottom:4px;text-align:center;">Точка Монтажа</div>
     <p style="font-size:16px;color:rgba(28,28,30,0.65);margin:0 0 20px;text-align:center;">Выберите ваш город</p>
     <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:0;flex:1;min-height:0;">
         <div style="position:relative;margin-bottom:10px;">
@@ -44,14 +44,9 @@
 
     <!-- Header -->
     <header class="header">
-        <div class="header__logo">
-            <span class="header__logo-text">Точка Монтажа</span>
-        </div>
-        <button id="headerCityBtn" onclick="showCityScreen()" style="display:flex;align-items:center;gap:3px;color:#0C447C;font-size:12px;background:rgba(12,68,124,0.10);border:1px solid rgba(12,68,124,0.2);border-radius:12px;cursor:pointer;padding:5px 9px;white-space:nowrap;font-family:inherit;flex-shrink:0;">📍 <span id="cityLabel">—</span></button>
-        <button class="header__fav" id="headerFavBtn" onclick="openFavorites()" aria-label="Избранное">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+        <button id="headerCityBtn" class="header__loc" onclick="showCityScreen()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z" stroke="currentColor" stroke-width="2"/></svg>
+            <span id="cityLabel">—</span>
         </button>
         <button class="header__cart" onclick="location.href='cart.html'" aria-label="Корзина">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -82,26 +77,24 @@
         </div>
     </div>
 
-    <!-- Categories -->
-    <div class="categories-scroll">
-        <div class="categories" id="categories"></div>
-    </div>
+    <!-- Categories rail -->
+    <p class="rail-caption">Категории</p>
+    <div class="cat-rail" id="catRail"></div>
 
-    <!-- Subcategories -->
-    <div class="sub-scroll hidden" id="subScroll">
-        <div class="subcategories" id="subcategories"></div>
-    </div>
-
-    <!-- Results count -->
-    <div class="results-bar">
-        <span id="resultsCount"></span>
+    <!-- Promo banner carousel -->
+    <div class="banner-wrap">
+        <div class="banner-viewport"><div class="banner-track" id="bannerTrack"></div></div>
+        <div class="banner-dots" id="bannerDots"></div>
     </div>
 
     <!-- Grid -->
     <main class="main">
+        <div class="section-head">
+            <h2 class="section-title">Популярные товары</h2>
+        </div>
         <div class="products-grid" id="productsGrid"></div>
         <div class="empty-state hidden" id="emptyState">
-            <div class="empty-state__icon">🔍</div>
+            <div class="empty-state__icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
             <p class="empty-state__title">Ничего не найдено</p>
             <p class="empty-state__sub">Попробуйте изменить запрос</p>
         </div>
@@ -127,50 +120,53 @@
     <!-- Bottom nav -->
     <nav class="bottom-nav">
         <a href="index.html" class="nav-item active">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 10v9a1 1 0 001 1h10a1 1 0 001-1v-9" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Главная</span>
+        </a>
+        <a href="catalog.html" class="nav-item">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
                 <rect x="2" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                 <rect x="15" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                 <rect x="2" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                 <rect x="15" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-            </svg>
+            </svg></span>
             <span>Каталог</span>
         </a>
         <a href="cart.html" class="nav-item">
-            <div class="nav-icon-wrap">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <span class="nav-ic">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
                     <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
                     <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <span class="cart-badge hidden" id="cartBadge">0</span>
-            </div>
+                <span class="nav-badge hidden" id="navBadge">0</span>
+            </span>
             <span>Корзина</span>
         </a>
-        <a href="src/orders/orders.html" class="nav-item" id="navOrders">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="2"/>
-                <line x1="9" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="9" y1="16" x2="13" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span>Заказы</span>
-        </a>
+        <button class="nav-item" onclick="openFavorites()">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Избранное</span>
+        </button>
         <button class="nav-item" onclick="openSupport()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            </svg></span>
             <span>Поддержка</span>
         </button>
     </nav>
 
 </div>
+<script src="/src/icons.js?v=20260930"></script>
 <script src="src/catalog/catalog.js?v=20260530b"></script>
 <script src="src/cookie.js?v=20260530b"></script><script>
 (function() {
     const tgId = getTgId();
     if (!tgId) return;
-    const navOrders = document.getElementById('navOrders');
-    if (navOrders) navOrders.href = 'src/orders/orders.html?tg_id=' + tgId;
     const navCart = document.querySelector('a.nav-item[href="cart.html"]');
     if (navCart) navCart.href = 'cart.html?tg_id=' + tgId;
 })();

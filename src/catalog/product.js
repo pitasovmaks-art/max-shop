@@ -134,7 +134,7 @@ function renderGallery() {
 
     if (!_allImages.length) {
         mainEl.className = `gallery__main cat-bg-${_product.categoryId || 1}`;
-        mainEl.innerHTML = '<span style="font-size:72px">📦</span>';
+        mainEl.innerHTML = `<span style="color:var(--text-secondary);opacity:.5">${iconSvg('image', 72)}</span>`;
         if (!_product.inStock) {
             mainEl.innerHTML += '<span class="badge-out">Нет в наличии</span>';
         }

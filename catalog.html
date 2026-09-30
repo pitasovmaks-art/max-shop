@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Точка Монтажа — Каталог</title>
+    <link rel="stylesheet" href="src/catalog/catalog.css">
+    <link rel="stylesheet" href="src/cookie.css">
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
+    <script src="/src/shopGuard.js"></script>
+    <script src="/src/utils/tgid.js?v=20260530b"></script>
+</head>
+<body style="background:var(--bg-page);min-height:100vh;">
+
+<!-- City selection screen -->
+<div id="city-screen" style="position:fixed;inset:0;z-index:2000;background:var(--bg-page);display:flex;flex-direction:column;align-items:center;padding:40px 20px 24px;overflow:hidden;">
+    <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:600;color:var(--accent);letter-spacing:-.5px;margin-bottom:4px;text-align:center;">Точка Монтажа</div>
+    <p style="font-size:16px;color:rgba(28,28,30,0.65);margin:0 0 20px;text-align:center;">Выберите ваш город</p>
+    <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:0;flex:1;min-height:0;">
+        <div style="position:relative;margin-bottom:10px;">
+            <input id="citySearchInput" type="text" placeholder="Поиск города..."
+                oninput="filterCityList(this.value)"
+                autocomplete="off"
+                style="width:100%;height:48px;background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.12);border-radius:14px;color:#1C1C1E;font-size:16px;font-family:inherit;padding:0 16px 0 40px;outline:none;-webkit-tap-highlight-color:transparent;">
+            <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.5;" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="#1C1C1E" stroke-width="2"/>
+                <path d="m21 21-4.35-4.35" stroke="#1C1C1E" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <div id="cityListScroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:14px;background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.08);">
+            <div id="cityListInner" style="display:flex;flex-direction:column;padding:4px;"></div>
+        </div>
+    </div>
+    <style>
+        .city-list-btn{width:100%;text-align:left;padding:13px 14px;color:#1C1C1E;font-size:15px;font-family:inherit;background:transparent;border:none;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .1s;}
+        .city-list-btn:active{background:rgba(28,28,30,.08);}
+        #citySearchInput::placeholder{color:rgba(28,28,30,.4);}
+        #cityListScroll::-webkit-scrollbar{width:4px;}
+        #cityListScroll::-webkit-scrollbar-thumb{background:rgba(28,28,30,.2);border-radius:4px;}
+    </style>
+</div>
+
+<div class="app">
+
+    <!-- ══ ROOT: rails + hits + all products ══ -->
+    <div id="screen-root" class="cscreen">
+        <header class="header">
+            <button id="headerCityBtn" class="header__loc" onclick="showCityScreen()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z" stroke="currentColor" stroke-width="2"/></svg>
+                <span id="cityLabel">—</span>
+            </button>
+            <button class="header__cart" onclick="location.href='cart.html'" aria-label="Корзина">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
+                    <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="cart-badge hidden" id="cartBadge">0</span>
+            </button>
+        </header>
+
+        <div class="search-wrap">
+            <div class="search-bar">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                    <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input
+                    type="text"
+                    class="search-input"
+                    id="searchInput"
+                    placeholder="Поиск по каталогу..."
+                    oninput="handleSearch()"
+                    autocomplete="off"
+                >
+                <button class="search-clear hidden" id="searchClear" onclick="clearSearch()">✕</button>
+            </div>
+        </div>
+
+        <p class="rail-caption">Категории</p>
+        <div class="cat-rail" id="catRail"></div>
+
+        <div id="hitsSection" class="hidden">
+            <p class="rail-caption">Хиты продаж</p>
+            <div class="hits-rail" id="hitsRail"></div>
+        </div>
+
+        <main class="main">
+            <div class="section-head">
+                <h2 class="section-title">Все товары</h2>
+                <span class="section-count" id="resultsCount"></span>
+            </div>
+            <div class="products-grid" id="productsGrid"></div>
+            <div class="empty-state hidden" id="emptyState">
+                <div class="empty-state__icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+                <p class="empty-state__title">Ничего не найдено</p>
+                <p class="empty-state__sub">Попробуйте изменить запрос</p>
+            </div>
+
+            <!-- Legal footer inside main so padding-bottom clears the fixed nav -->
+            <div class="legal-footer">
+                <div class="legal-footer__info">
+                    ИП Питасов Максим Сергеевич<br>
+                    ИНН: 635009278943 | ОГРНИП: 325632700121983<br>
+                    Адрес: 350075, г. Краснодар, ул. Селезнева, д. 4/10, оф. 53<br>
+                    Email: pitasov01@inbox.ru
+                </div>
+                <div class="legal-footer__links">
+                    <a href="/src/legal/policy.html">Политика обработки персональных данных</a>
+                    <a href="/src/legal/offer.html">Публичная оферта</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ══ SUBCATS: tiles for one category ══ -->
+    <div id="screen-subcats" class="cscreen hidden">
+        <header class="header">
+            <button class="header__back" onclick="closeSubcatsScreen()" aria-label="Назад">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <span class="header__title" id="subcatsTitle">Категория</span>
+        </header>
+        <div class="subcat-grid" id="subcatGrid"></div>
+    </div>
+
+    <!-- ══ PAIR: products of category × subcategory ══ -->
+    <div id="screen-pair" class="cscreen hidden">
+        <header class="header">
+            <button class="header__back" onclick="closePairScreen()" aria-label="Назад">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <span class="header__title" id="pairTitle">Подкатегория</span>
+            <button class="header__filter" id="filterOpenBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <span>Фильтры</span>
+                <span class="header__filter-badge hidden" id="filterBadge">0</span>
+            </button>
+        </header>
+        <div class="chips-row-wrap hidden" id="chipsRowWrap"><div class="chips-row" id="chipsRow"></div></div>
+        <div class="results-bar"><span id="pairResultsCount"></span></div>
+        <main class="main">
+            <div class="products-grid" id="pairProductsGrid"></div>
+            <div class="empty-state hidden" id="pairEmptyState">
+                <div class="empty-state__icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+                <p class="empty-state__title">Ничего не найдено по этим фильтрам</p>
+                <p class="empty-state__sub">Попробуйте изменить или сбросить фильтры</p>
+                <button class="error-state__btn" id="pairEmptyResetBtn" type="button">Сбросить фильтры</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Filter sheet overlay -->
+    <div class="sheet-scrim hidden" id="sheetScrim"></div>
+    <div class="filter-sheet hidden" id="filterSheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-head"><h4>Фильтры</h4><button class="sheet-close" id="sheetClose" aria-label="Закрыть">✕</button></div>
+        <div class="sheet-body" id="sheetBody"></div>
+        <div class="sheet-foot">
+            <button class="reset-btn" id="resetBtn" type="button">Сбросить</button>
+            <button class="show-btn" id="showBtn" type="button">Показать</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 10v9a1 1 0 001 1h10a1 1 0 001-1v-9" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Главная</span>
+        </a>
+        <a href="catalog.html" class="nav-item active">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="2" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="15" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+            </svg></span>
+            <span>Каталог</span>
+        </a>
+        <a href="cart.html" class="nav-item">
+            <span class="nav-ic">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/>
+                    <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="nav-badge hidden" id="navBadge">0</span>
+            </span>
+            <span>Корзина</span>
+        </a>
+        <button class="nav-item" onclick="openFavorites()">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Избранное</span>
+        </button>
+        <button class="nav-item" onclick="openSupport()">
+            <span class="nav-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg></span>
+            <span>Поддержка</span>
+        </button>
+    </nav>
+
+</div>
+<script src="/src/icons.js?v=20260930"></script>
+<script src="src/catalog/catalog.js?v=20260530b"></script>
+<script src="src/cookie.js?v=20260530b"></script><script>
+(function() {
+    const tgId = getTgId();
+    if (!tgId) return;
+    const navCart = document.querySelector('a.nav-item[href="cart.html"]');
+    if (navCart) navCart.href = 'cart.html?tg_id=' + tgId;
+})();
+</script>
+</body>
+</html>

@@ -36,7 +36,7 @@
 }
 
 .cookie-banner__text a {
-    color: #F85800;
+    color: var(--accent, #0E7C6B);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -48,7 +48,7 @@
 }
 
 .cookie-btn {
-    height: 34px;
+    height: 44px;
     padding: 0 14px;
     border-radius: 10px;
     font-size: 13px;
@@ -61,7 +61,7 @@
 .cookie-btn:active { opacity: .75; }
 
 .cookie-btn--accept {
-    background: #F85800;
+    background: var(--accent, #0E7C6B);
     color: #FFFFFF;
 }
 
@@ -97,4 +97,4 @@
     white-space: nowrap;
 }
 .site-footer__link:hover,
-.site-footer__link:active { color: #F85800; text-decoration-color: currentColor; }
+.site-footer__link:active { color: var(--accent, #0E7C6B); text-decoration-color: currentColor; }

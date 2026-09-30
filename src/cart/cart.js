@@ -1,11 +1,3 @@
-/* ─── Category icons ────────────────────────────────────── */
-const CAT_META = {
-    'mounting-guns':  { icon: '🔨', bg: 'img-bg--guns' },
-    'battery-tools':  { icon: '⚡',  bg: 'img-bg--battery' },
-    'consumables':    { icon: '📦', bg: 'img-bg--consumables' },
-    'services':       { icon: '🔧', bg: 'img-bg--services' },
-};
-
 /* ─── Cart storage ──────────────────────────────────────── */
 function getCart() {
     try {
@@ -140,7 +132,6 @@ function render() {
     }
 
     list.innerHTML = priced.map(({ item, ep }) => {
-        const meta    = CAT_META[item.category] || { icon: '📦', bg: 'img-bg--default' };
         const safeKey = item.key.replace(/'/g, "\\'");
 
         if (ep === null) {
@@ -148,7 +139,7 @@ function render() {
             <div class="cart-item cart-item--unavailable" id="item-${item.key}">
                 ${item.image
                     ? `<div class="cart-item__img"><img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;opacity:.4"></div>`
-                    : `<div class="cart-item__img ${meta.bg}" style="opacity:.4">${meta.icon}</div>`}
+                    : `<div class="cart-item__img img-bg--default" style="opacity:.4">${iconSvg('image', 26)}</div>`}
                 <div class="cart-item__info">
                     <div class="cart-item__name">${item.name}</div>
                     ${item.variantLabel ? `<div class="cart-item__variant">${item.variantLabel}</div>` : ''}
@@ -178,7 +169,7 @@ function render() {
         <div class="cart-item" id="item-${item.key}">
             ${item.image
                 ? `<div class="cart-item__img"><img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px"></div>`
-                : `<div class="cart-item__img ${meta.bg}">${meta.icon}</div>`}
+                : `<div class="cart-item__img img-bg--default">${iconSvg('image', 26)}</div>`}
             <div class="cart-item__info">
                 <div class="cart-item__name">${item.name}</div>
                 ${item.variantLabel ? `<div class="cart-item__variant">${item.variantLabel}</div>` : ''}
