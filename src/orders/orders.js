@@ -71,16 +71,34 @@ function renderOrders(orders) {
     });
 }
 
+/* Раньше при !_tgId страница молча рендерила пустой список («Заказов
+   пока нет» — тот же текст, что у покупателя, у которого правда нет
+   заказов), а 401 от /api/orders/my ловился в общий catch с «Ошибка
+   загрузки, попробуйте открыть страницу снова» — оба сообщения не
+   объясняют, что страница вообще не может узнать, кто покупатель.
+   requireUser на сервере (см. server/middleware/requireUser.js) отвечает
+   401 именно тогда, когда initData отсутствуют/невалидны — то есть
+   страница открыта не из Max. Оба случая — один и тот же текст. */
+function renderAuthRequired() {
+    document.getElementById('content').innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state__icon">${iconSvg('alert', 48)}</div>
+            <p class="empty-state__title">Доступно только в Max</p>
+            <p class="empty-state__sub">Откройте магазин через бота в Max Messenger, чтобы увидеть свои заказы</p>
+        </div>`;
+}
+
 async function init() {
     const content = document.getElementById('content');
 
     if (!_tgId) {
-        renderOrders([]);
+        renderAuthRequired();
         return;
     }
 
     try {
-        const r = await fetch(`/api/orders/my?tg_id=${encodeURIComponent(_tgId)}`);
+        const r = await authFetch('/api/orders/my');
+        if (r.status === 401) { renderAuthRequired(); return; }
         if (!r.ok) throw new Error(r.status);
         const orders = await r.json();
         renderOrders(orders);
@@ -112,19 +130,6 @@ function openSupport() {
     const url = `https://max.ru/${_supportBotUsername}`;
     if (window.WebApp?.openLink) window.WebApp.openLink(url);
     else window.location.href = url;
-}
-
-/* ─── Nav tg_id links ────────────────────────────────────── */
-function updateNavLinks() {
-    if (!_tgId) return;
-    const navHome = document.getElementById('navHome');
-    if (navHome) navHome.href = `../../index.html?tg_id=${_tgId}`;
-    const navCatalog = document.getElementById('navCatalog');
-    if (navCatalog) navCatalog.href = `../../catalog.html?tg_id=${_tgId}`;
-    const navCart = document.getElementById('navCart');
-    if (navCart) navCart.href = `../../cart.html?tg_id=${_tgId}`;
-    const navFavorites = document.getElementById('navFavorites');
-    if (navFavorites) navFavorites.href = `../favorites/favorites.html?tg_id=${_tgId}`;
 }
 
 /* ─── Reorder ────────────────────────────────────────────── */
@@ -227,7 +232,6 @@ function showReorderToast(msg) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    updateNavLinks();
     updateCartBadge();
     init();
 });

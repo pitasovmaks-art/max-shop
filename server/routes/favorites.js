@@ -1,5 +1,6 @@
-const router = require('express').Router();
-const db     = require('../db');
+const router          = require('express').Router();
+const db              = require('../db');
+const { requireUser } = require('../middleware/requireUser');
 
 /* ─── Attach variants to product list ───────────────────── */
 async function withVariants(products) {
@@ -50,44 +51,43 @@ function normalizeProduct(p) {
     };
 }
 
-/* GET /api/favorites?tg_id= */
-router.get('/', async (req, res) => {
-    const { tg_id } = req.query;
-    if (!tg_id) return res.status(400).json({ error: 'tg_id required' });
+/* GET /api/favorites — tg_id из подписанных initData (req.tgId), не из
+   query (см. PROGRESS.md, «Открытая уязвимость — tg_id без проверки»). */
+router.get('/', requireUser, async (req, res) => {
     try {
         const rows = await db.query(
             `SELECT p.* FROM favorites f
              JOIN products p ON p.id = f.product_id
              WHERE f.tg_id = $1
              ORDER BY f.created_at DESC`,
-            [String(tg_id)]
+            [req.tgId]
         );
         const products = await withVariants(rows.map(normalizeProduct));
         res.json(products);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/* POST /api/favorites */
-router.post('/', async (req, res) => {
-    const { tgId, productId } = req.body;
-    if (!tgId || !productId) return res.status(400).json({ error: 'tgId and productId required' });
+/* POST /api/favorites — tgId из req.tgId, не из тела запроса. */
+router.post('/', requireUser, async (req, res) => {
+    const { productId } = req.body;
+    if (!productId) return res.status(400).json({ error: 'productId required' });
     try {
         await db.execute(
             `INSERT INTO favorites (tg_id, product_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-            [String(tgId), String(productId)]
+            [req.tgId, String(productId)]
         );
         res.json({ ok: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/* DELETE /api/favorites */
-router.delete('/', async (req, res) => {
-    const { tgId, productId } = req.body;
-    if (!tgId || !productId) return res.status(400).json({ error: 'tgId and productId required' });
+/* DELETE /api/favorites — tgId из req.tgId, не из тела запроса. */
+router.delete('/', requireUser, async (req, res) => {
+    const { productId } = req.body;
+    if (!productId) return res.status(400).json({ error: 'productId required' });
     try {
         await db.execute(
             `DELETE FROM favorites WHERE tg_id = $1 AND product_id = $2`,
-            [String(tgId), String(productId)]
+            [req.tgId, String(productId)]
         );
         res.json({ ok: true });
     } catch (e) { res.status(500).json({ error: e.message }); }

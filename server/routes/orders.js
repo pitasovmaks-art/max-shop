@@ -1,6 +1,7 @@
-const router           = require('express').Router();
-const db               = require('../db');
-const { requireAdmin } = require('../middleware/auth');
+const router            = require('express').Router();
+const db                = require('../db');
+const { requireAdmin }  = require('../middleware/auth');
+const { requireUser }   = require('../middleware/requireUser');
 const { notifyStore, notifyCustomer } = require('../../bot');
 
 function normalize(o) {
@@ -22,9 +23,12 @@ function normalize(o) {
     };
 }
 
-/* POST /api/orders — public, customers submit */
-router.post('/', async (req, res) => {
-    const { name, phone, store, delivery, address, city, tgId, comment, items, total } = req.body;
+/* POST /api/orders — публичный (создание), но tg_id заказа берётся из
+   подписанных initData (req.tgId), а не из тела запроса — клиент больше
+   не может подставить чужой id в поле tgId. */
+router.post('/', requireUser, async (req, res) => {
+    const { name, phone, store, delivery, address, city, comment, items, total } = req.body;
+    const tgId = req.tgId;
     console.log('[orders] новый заказ: name=', name, 'tgId=', tgId, 'city=', city);
     if (!name || !phone || !store || !items || total == null) {
         return res.status(400).json({ error: 'Обязательные поля: name, phone, store, items, total' });
@@ -34,7 +38,7 @@ router.post('/', async (req, res) => {
             `INSERT INTO orders (name,phone,store,delivery,address,city,tg_id,comment,items,total)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
             [name, phone, store, delivery || 'pickup', address || null, city || null,
-             tgId || null, comment || null, JSON.stringify(items), total]
+             tgId, comment || null, JSON.stringify(items), total]
         );
         const order = normalize(await db.queryOne('SELECT * FROM orders WHERE id=$1', [row.id]));
         notifyStore(order).catch(e => console.error('[bot] notifyStore:', e.message));
@@ -42,14 +46,14 @@ router.post('/', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/* GET /api/orders/my?tg_id=... — public, customer orders */
-router.get('/my', async (req, res) => {
-    const { tg_id } = req.query;
-    if (!tg_id) return res.status(400).json({ error: 'tg_id required' });
+/* GET /api/orders/my — tg_id берётся из подписанных initData (req.tgId),
+   не из query, иначе любой мог запросить чужие заказы, подобрав чужой
+   tg_id (см. PROGRESS.md, «Открытая уязвимость — tg_id без проверки»). */
+router.get('/my', requireUser, async (req, res) => {
     try {
         const rows = await db.query(
             'SELECT * FROM orders WHERE tg_id=$1 ORDER BY id DESC',
-            [String(tg_id)]
+            [req.tgId]
         );
         res.json(rows.map(normalize));
     } catch (e) { res.status(500).json({ error: e.message }); }

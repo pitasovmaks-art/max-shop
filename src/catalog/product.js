@@ -431,7 +431,7 @@ async function setupNotifyBtn() {
     const tgId = getTgId();
     if (!tgId || !_product || _product.inStock) return;
     try {
-        const r = await fetch(`/api/stock-notify/check?tg_id=${encodeURIComponent(tgId)}&product_id=${_product.id}`);
+        const r = await authFetch(`/api/stock-notify/check?product_id=${_product.id}`);
         const data = await r.json();
         if (data.subscribed) applySubscribedState();
     } catch {}
@@ -451,10 +451,10 @@ async function subscribeNotifyProduct() {
     const tgId = getTgId();
     if (!tgId) { showToast('Откройте магазин через бота в Max Messenger'); return; }
     try {
-        await fetch('/api/stock-notify', {
+        await authFetch('/api/stock-notify', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ tgId, productId: _product.id }),
+            body:    JSON.stringify({ productId: _product.id }),
         });
         applySubscribedState();
         showToast('🔔 Уведомим когда товар появится');

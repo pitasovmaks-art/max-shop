@@ -483,12 +483,8 @@ async function submitOrder() {
         storeLabel = 'Доставка по России';
     }
 
-    console.log('[CHECKOUT] tgId:', tgId);
-    console.log('[CHECKOUT] URL:', location.search);
-    console.log('[CHECKOUT] sessionStorage:', sessionStorage.getItem('tg_id'));
-
     try {
-        const r = await fetch('/api/orders', {
+        const r = await authFetch('/api/orders', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -498,7 +494,6 @@ async function submitOrder() {
                 delivery: _deliveryMethod,
                 address:  address || undefined,
                 city:     city    || undefined,
-                tgId:     tgId    || undefined,
                 comment:  comment || undefined,
                 items: cart.map(i => ({
                     id:    i.id,
@@ -510,6 +505,7 @@ async function submitOrder() {
             }),
         });
 
+        if (r.status === 401) throw new Error('AUTH_REQUIRED');
         if (!r.ok) throw new Error(await r.text());
         const data = await r.json();
 
@@ -534,11 +530,7 @@ async function submitOrder() {
 
         // Subscribe to promo if user opted in
         if (tgId && document.getElementById('agreePromo')?.checked) {
-            fetch('/api/promo/subscribe', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ tgId }),
-            }).catch(() => {});
+            authFetch('/api/promo/subscribe', { method: 'POST' }).catch(() => {});
         }
     } catch (e) {
         console.error('Order error:', e);
@@ -546,7 +538,14 @@ async function submitOrder() {
         btn.classList.remove('submit-btn--disabled');
         btn.textContent = 'Подтвердить заказ';
         _pendingFreshProducts = null;
-        alert('Ошибка при оформлении заказа. Попробуйте ещё раз.');
+        // 401 = requireUser не смог проверить initData (страница открыта не
+        // из Max, либо initData устарели/невалидны) — «попробуйте ещё раз»
+        // тут не поможет, нужна другая инструкция.
+        if (e.message === 'AUTH_REQUIRED') {
+            alert('Не удалось подтвердить сессию Max. Откройте магазин заново через бота в Max Messenger и попробуйте оформить заказ снова.');
+        } else {
+            alert('Ошибка при оформлении заказа. Попробуйте ещё раз.');
+        }
     }
 }
 
