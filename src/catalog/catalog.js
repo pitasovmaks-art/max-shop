@@ -301,6 +301,26 @@ function isSaleForCity(product, city) {
     return product.variants.some(v => !v.isKrd && v.salePrice > 0);
 }
 
+/* ─── Rails: right-edge fade mask (.rail--fade, see catalog.css) ────
+   Only shown while there's more to scroll — removed once the rail is
+   scrolled to its end so the last card stays fully opaque, and absent
+   entirely when all cards already fit (nothing to scroll). Attached
+   once per rail element (innerHTML gets replaced on re-render, but the
+   element itself doesn't, so the listener must not be re-added). */
+function initRailFade(rail) {
+    if (!rail) return;
+    const update = () => {
+        const max = rail.scrollWidth - rail.clientWidth;
+        rail.classList.toggle('rail--fade', max - rail.scrollLeft > 2);
+    };
+    if (!rail.dataset.fadeInit) {
+        rail.dataset.fadeInit = '1';
+        rail.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+    }
+    update();
+}
+
 /* ─── Home: category rail ───────────────────────────────────── */
 function renderCategoryRail() {
     const rail = document.getElementById('catRail');
@@ -326,6 +346,7 @@ function renderCategoryRail() {
             <span>${c.name}</span>
         </button>`
     ).join('');
+    initRailFade(rail);
 }
 
 /* ─── Home: promo banner carousel ───────────────────────────── */
@@ -387,6 +408,7 @@ function renderHitsRail() {
     if (!hits.length) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
     rail.innerHTML = hits.map(p => `<div class="hits-rail__item">${productCardHTML(p)}</div>`).join('');
+    initRailFade(rail);
 }
 
 /* ─── Catalog: category → subcategory → products screens ────────── */
