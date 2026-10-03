@@ -1,7 +1,20 @@
 const crypto = require('crypto');
 
-/* Проверка подписи initData Max Mini Apps (тот же алгоритм, что в Telegram WebApp:
-   secret = HMAC_SHA256(key="WebAppData", msg=botToken); hash = HMAC_SHA256(key=secret, msg=dataCheckString)).
+/* Максимальный возраст initData. Официальная документация Max
+   (dev.max.ru/docs/webapps/bridge, описание поля auth_date — «Время
+   выдачи данных. Позволяет определить момент инвалидации данных»)
+   рекомендует интервал в 1 час. Здесь — сутки: это сознательно мягче
+   рекомендации, чтобы не обрывать сессию покупателя, который держит
+   магазин открытым дольше часа (см. комментарий у verifyInitData ниже
+   про то, как это соотносится с повторной проверкой initData на каждой
+   странице). Если понадобится следовать рекомендации Max дословно —
+   поменять на 3600. */
+const MAX_INIT_DATA_AGE_SECONDS = 24 * 60 * 60;
+
+/* Проверка подписи initData Max Mini Apps — алгоритм задокументирован
+   на dev.max.ru/docs/webapps/validation: secret_key = HMAC_SHA256(key=
+   "WebAppData", msg=botToken); hash = HMAC_SHA256(key=secret_key,
+   msg=dataCheckString) — та же схема, что в Telegram WebApp.
    window.WebApp.initData у Max-SDK — это значение, уже однократно декодированное из URL,
    поэтому перед разбором на пары его нужно декодировать ещё раз (см. parseInitData в max-web-app.js). */
 function verifyInitData(rawInitData, botToken) {
@@ -29,6 +42,9 @@ function verifyInitData(rawInitData, botToken) {
 
     if (computedHash !== hash) return null;
 
+    const authDate = Number(params.get('auth_date') || 0);
+    if (!authDate || Date.now() / 1000 - authDate > MAX_INIT_DATA_AGE_SECONDS) return null;
+
     let user = null;
     try {
         user = params.get('user') ? JSON.parse(params.get('user')) : null;
@@ -36,10 +52,7 @@ function verifyInitData(rawInitData, botToken) {
         user = null;
     }
 
-    return {
-        user,
-        authDate: Number(params.get('auth_date') || 0),
-    };
+    return { user, authDate };
 }
 
 module.exports = { verifyInitData };

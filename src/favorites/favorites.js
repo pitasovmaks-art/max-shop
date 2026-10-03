@@ -163,26 +163,36 @@ function renderFavorites(products) {
     window._removeFav = id => removeFav(id, products);
 }
 
+/* 401 от /api/favorites (initData отсутствуют/невалидны — страница
+   открыта не из Max) показывает тот же текст, что и !_tgId ниже, вместо
+   того чтобы падать в общий catch с невнятным «Ошибка загрузки». */
+function renderAuthRequired() {
+    const loading = document.getElementById('loading');
+    const main    = document.getElementById('main');
+    loading.style.display = 'none';
+    main.style.display    = '';
+    main.innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state__icon">${iconSvg('heart', 48)}</div>
+            <p class="empty-state__title">Избранное недоступно</p>
+            <p class="empty-state__sub">Откройте магазин через бота в Max Messenger</p>
+            <a href="../../catalog.html" class="empty-state__btn">В каталог</a>
+        </div>`;
+}
+
 /* ─── Init ──────────────────────────────────────────────── */
 async function init() {
     const loading = document.getElementById('loading');
     const main    = document.getElementById('main');
 
     if (!_tgId) {
-        loading.style.display = 'none';
-        main.style.display    = '';
-        main.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state__icon">${iconSvg('heart', 48)}</div>
-                <p class="empty-state__title">Избранное недоступно</p>
-                <p class="empty-state__sub">Откройте магазин через бота в Max Messenger</p>
-                <a href="../../catalog.html" class="empty-state__btn">В каталог</a>
-            </div>`;
+        renderAuthRequired();
         return;
     }
 
     try {
         const r = await authFetch('/api/favorites');
+        if (r.status === 401) { renderAuthRequired(); return; }
         if (!r.ok) throw new Error(r.status);
         const products = await r.json();
         loading.style.display = 'none';

@@ -505,6 +505,7 @@ async function submitOrder() {
             }),
         });
 
+        if (r.status === 401) throw new Error('AUTH_REQUIRED');
         if (!r.ok) throw new Error(await r.text());
         const data = await r.json();
 
@@ -537,7 +538,14 @@ async function submitOrder() {
         btn.classList.remove('submit-btn--disabled');
         btn.textContent = 'Подтвердить заказ';
         _pendingFreshProducts = null;
-        alert('Ошибка при оформлении заказа. Попробуйте ещё раз.');
+        // 401 = requireUser не смог проверить initData (страница открыта не
+        // из Max, либо initData устарели/невалидны) — «попробуйте ещё раз»
+        // тут не поможет, нужна другая инструкция.
+        if (e.message === 'AUTH_REQUIRED') {
+            alert('Не удалось подтвердить сессию Max. Откройте магазин заново через бота в Max Messenger и попробуйте оформить заказ снова.');
+        } else {
+            alert('Ошибка при оформлении заказа. Попробуйте ещё раз.');
+        }
     }
 }
 

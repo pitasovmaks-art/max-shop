@@ -105,6 +105,20 @@ async function main() {
         check(`requireUser: req.tgId берётся из подписи, не из клиента (ожидали ${VICTIM_ID}, получили ${body.tgId})`,
             body.tgId === String(VICTIM_ID));
     }
+
+    // Проверка срока действия initData (auth_date), см. server/utils/initData.js —
+    // MAX_INIT_DATA_AGE_SECONDS (сейчас 24ч).
+    const now = Math.floor(Date.now() / 1000);
+    const initData23hOld = buildSignedInitData({ id: VICTIM_ID }, REAL_BOT_TOKEN, now - 23 * 3600);
+    const initData25hOld = buildSignedInitData({ id: VICTIM_ID }, REAL_BOT_TOKEN, now - 25 * 3600);
+    {
+        const r = await fetch(`${probeBase}/probe`, { headers: { 'X-Init-Data': initData23hOld } });
+        check('requireUser: валидная подпись, auth_date 23ч назад (в пределах окна) -> 200', r.status === 200);
+    }
+    {
+        const r = await fetch(`${probeBase}/probe`, { headers: { 'X-Init-Data': initData25hOld } });
+        check('requireUser: валидная подпись, auth_date 25ч назад (вне окна 24ч) -> 401', r.status === 401);
+    }
     probeServer.close();
 
     /* ── 2) Реальные защищённые эндпоинты: без подписи -> 401 ──────── */

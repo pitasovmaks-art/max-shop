@@ -71,16 +71,34 @@ function renderOrders(orders) {
     });
 }
 
+/* Раньше при !_tgId страница молча рендерила пустой список («Заказов
+   пока нет» — тот же текст, что у покупателя, у которого правда нет
+   заказов), а 401 от /api/orders/my ловился в общий catch с «Ошибка
+   загрузки, попробуйте открыть страницу снова» — оба сообщения не
+   объясняют, что страница вообще не может узнать, кто покупатель.
+   requireUser на сервере (см. server/middleware/requireUser.js) отвечает
+   401 именно тогда, когда initData отсутствуют/невалидны — то есть
+   страница открыта не из Max. Оба случая — один и тот же текст. */
+function renderAuthRequired() {
+    document.getElementById('content').innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state__icon">${iconSvg('alert', 48)}</div>
+            <p class="empty-state__title">Доступно только в Max</p>
+            <p class="empty-state__sub">Откройте магазин через бота в Max Messenger, чтобы увидеть свои заказы</p>
+        </div>`;
+}
+
 async function init() {
     const content = document.getElementById('content');
 
     if (!_tgId) {
-        renderOrders([]);
+        renderAuthRequired();
         return;
     }
 
     try {
         const r = await authFetch('/api/orders/my');
+        if (r.status === 401) { renderAuthRequired(); return; }
         if (!r.ok) throw new Error(r.status);
         const orders = await r.json();
         renderOrders(orders);
