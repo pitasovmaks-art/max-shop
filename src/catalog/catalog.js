@@ -301,6 +301,26 @@ function isSaleForCity(product, city) {
     return product.variants.some(v => !v.isKrd && v.salePrice > 0);
 }
 
+/* ─── Rails: right-edge fade mask (.rail--fade, see catalog.css) ────
+   Only shown while there's more to scroll — removed once the rail is
+   scrolled to its end so the last card stays fully opaque, and absent
+   entirely when all cards already fit (nothing to scroll). Attached
+   once per rail element (innerHTML gets replaced on re-render, but the
+   element itself doesn't, so the listener must not be re-added). */
+function initRailFade(rail) {
+    if (!rail) return;
+    const update = () => {
+        const max = rail.scrollWidth - rail.clientWidth;
+        rail.classList.toggle('rail--fade', max - rail.scrollLeft > 2);
+    };
+    if (!rail.dataset.fadeInit) {
+        rail.dataset.fadeInit = '1';
+        rail.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+    }
+    update();
+}
+
 /* ─── Home: category rail ───────────────────────────────────── */
 function renderCategoryRail() {
     const rail = document.getElementById('catRail');
@@ -326,13 +346,21 @@ function renderCategoryRail() {
             <span>${c.name}</span>
         </button>`
     ).join('');
+    initRailFade(rail);
 }
 
 /* ─── Home: promo banner carousel ───────────────────────────── */
+/* Нейтральные тексты — без цен, скидок, сроков и условий (их никто не
+   придумывал, см. PROGRESS.md «Баннеры главной»: сейчас это заглушка,
+   управление из админки — отдельная задача этапа 2). categoryName —
+   название категории для клика по баннеру (openBannerTarget ниже ищет
+   её среди загруженных _categories по имени и ведёт на неё; если имя
+   не найдено, открывает просто Каталог — на случай, если категорию
+   переименуют/удалят в админке, это тоже «не найдено», а не ошибка). */
 const HOME_BANNERS = [
-    { cls: 'banner-slide--a', title: 'Ремонт монтажных пистолетов',  sub: 'от 3 500 ₽ · диагностика и замена деталей' },
-    { cls: 'banner-slide--b', title: 'Чистка монтажных пистолетов',  sub: 'от 1 500 ₽ · разборка, очистка, смазка' },
-    { cls: 'banner-slide--c', title: '[редактируемый текст]',        sub: '[редактируемый текст]' },
+    { cls: 'banner-slide--a', title: 'Точка Монтажа',       sub: 'Профессиональный строительный инструмент', categoryName: null },
+    { cls: 'banner-slide--b', title: 'Монтажные пистолеты', sub: 'Toua, FengBao и другие бренды',             categoryName: 'Монтажные пистолеты' },
+    { cls: 'banner-slide--c', title: 'Расходники',          sub: 'Для монтажных пистолетов и инструмента',    categoryName: 'Расходники' },
 ];
 let _bannerIndex = 0;
 let _bannerTimer = null;
@@ -357,13 +385,22 @@ function _bannerPause() {
     clearInterval(_bannerTimer);
 }
 
+/* Баннер ведёт на свою категорию по имени (categoryName в HOME_BANNERS),
+   если такая категория сейчас есть среди загруженных _categories —
+   иначе просто на Каталог. Баннер показывается только на Главной, так
+   что переход всегда "снаружи" каталога, как у рельсы категорий. */
+function openBannerTarget(categoryName) {
+    const cat = categoryName ? _categories.find(c => c.name === categoryName) : null;
+    location.href = cat ? `catalog.html?category=${cat.id}` : 'catalog.html';
+}
+
 function initBanner() {
     const track = document.getElementById('bannerTrack');
     const dots  = document.getElementById('bannerDots');
     if (!track || !dots) return;
 
     track.innerHTML = HOME_BANNERS.map(b =>
-        `<div class="banner-slide ${b.cls}"><b>${b.title}</b><span>${b.sub}</span></div>`
+        `<div class="banner-slide ${b.cls}" onclick="openBannerTarget(${b.categoryName ? `'${b.categoryName}'` : 'null'})"><b>${b.title}</b><span>${b.sub}</span></div>`
     ).join('');
     dots.innerHTML = HOME_BANNERS.map(() => `<span></span>`).join('');
     _bannerIndex = 0;
@@ -387,6 +424,7 @@ function renderHitsRail() {
     if (!hits.length) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
     rail.innerHTML = hits.map(p => `<div class="hits-rail__item">${productCardHTML(p)}</div>`).join('');
+    initRailFade(rail);
 }
 
 /* ─── Catalog: category → subcategory → products screens ────────── */

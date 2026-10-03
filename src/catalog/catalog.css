@@ -216,9 +216,14 @@ a      { text-decoration: none; color: inherit; }
    not the browser window — .app has no padding of its own and the rail is a
    direct block child of it, so plain padding (no negative margin needed)
    already puts the rail's own box exactly on .app's edges. Card width is a
-   fixed px, NOT vw/%: on a wide window (desktop, Max desktop client) .app
-   stays capped at 480px, so sizing off the raw viewport would blow the
-   cards up far past what the app column itself can show. */
+   calc() off the rail's own content-box width (the flex-basis % base),
+   NOT a fixed px and NOT vw: that keeps the "~2 cards + partial 3rd" ratio
+   the same at any .app width (390 narrow phone, 480 capped-wide desktop)
+   instead of being tuned for one specific width.
+   The partial 3rd card is intentional — a right-edge mask (.rail--fade,
+   toggled by JS in initRailFade()) fades it to transparent instead of
+   letting it hard-clip mid-card/mid-word, and is removed once the rail
+   is scrolled to its end so the last card stays fully opaque. */
 .cat-rail, .hits-rail {
     display: flex;
     gap: 10px;
@@ -226,13 +231,18 @@ a      { text-decoration: none; color: inherit; }
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scroll-padding-left: 16px;
+    scroll-padding-right: 16px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
 .cat-rail::-webkit-scrollbar, .hits-rail::-webkit-scrollbar { display: none; }
+.cat-rail.rail--fade, .hits-rail.rail--fade {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent 100%);
+            mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent 100%);
+}
 .cat-tile {
     scroll-snap-align: start;
-    flex: 0 0 160px;
+    flex: 0 0 calc((100% - 20px) / 2.275);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -257,6 +267,11 @@ a      { text-decoration: none; color: inherit; }
     text-align: center;
     line-height: 1.25;
     color: var(--text-primary);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: break-word;
 }
 
 /* ─── Home: promo banner carousel ───────────────────────── */
@@ -289,7 +304,7 @@ a      { text-decoration: none; color: inherit; }
 /* ─── Catalog: hits rail (layout shared with .cat-rail above) ──── */
 .hits-rail__item {
     scroll-snap-align: start;
-    flex: 0 0 160px;
+    flex: 0 0 calc((100% - 20px) / 2.275);
 }
 .hits-rail__item .product-card { height: 100%; }
 
