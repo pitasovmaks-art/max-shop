@@ -9,6 +9,7 @@
     <script src="https://st.max.ru/js/max-web-app.js"></script>
     <script src="/src/shopGuard.js"></script>
     <script src="/src/utils/tgid.js?v=20260601"></script>
+    <script src="/src/utils/authFetch.js?v=20261003"></script>
     <style>
         @import url('/src/theme.css');
         body { background: var(--bg-page); min-height: 100vh; }
@@ -99,13 +100,6 @@
 <script src="favorites.js?v=20260601"></script>
 <script src="../../src/cookie.js?v=20260601"></script>
 <script>
-(function() {
-    const tgId = getTgId();
-    if (tgId) {
-        const navCart = document.getElementById('navCart');
-        if (navCart) navCart.href = '../../cart.html?tg_id=' + tgId;
-    }
-})();
 let _favSupportBotUsername = 'id635009278943_1_bot';
 fetch('/api/config').then(r => r.json()).then(cfg => { _favSupportBotUsername = cfg.supportBotUsername || 'id635009278943_1_bot'; }).catch(() => {});
 function openFavSupport() {

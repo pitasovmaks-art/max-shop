@@ -2,8 +2,7 @@ const _tgId = getTgId() || '';
 const _city = localStorage.getItem('city') || '';
 
 function goBack() {
-    const tgId = getTgId();
-    window.location.href = tgId ? `/index.html?tg_id=${tgId}` : '/index.html';
+    window.location.href = '/index.html';
 }
 
 /* ─── Helpers ───────────────────────────────────────────── */
@@ -82,10 +81,10 @@ function addToCart(productId, products) {
 /* ─── Remove from favorites ─────────────────────────────── */
 async function removeFav(productId, products) {
     if (!_tgId) return;
-    await fetch('/api/favorites', {
+    await authFetch('/api/favorites', {
         method:  'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ tgId: _tgId, productId }),
+        body:    JSON.stringify({ productId }),
     }).catch(() => {});
     localStorage.setItem('favorites_changed', Date.now().toString());
     renderFavorites(products.filter(p => p.id !== productId));
@@ -183,7 +182,7 @@ async function init() {
     }
 
     try {
-        const r = await fetch(`/api/favorites?tg_id=${encodeURIComponent(_tgId)}`);
+        const r = await authFetch('/api/favorites');
         if (!r.ok) throw new Error(r.status);
         const products = await r.json();
         loading.style.display = 'none';

@@ -9,6 +9,7 @@
     <script src="https://st.max.ru/js/max-web-app.js"></script>
     <script src="/src/shopGuard.js"></script>
     <script src="/src/utils/tgid.js?v=20260530b"></script>
+    <script src="/src/utils/authFetch.js?v=20261003"></script>
 </head>
 <body style="background:var(--bg-page);min-height:100vh;">
 <div class="app">
@@ -68,7 +69,7 @@
                 <span>🏪 Самовывоз из 3 магазинов</span>
             </div>
         </div>
-        <button class="checkout-btn" onclick="(function(){const t=new URLSearchParams(location.search).get('tg_id')||sessionStorage.getItem('tg_id');location.href=t?'checkout.html?tg_id='+t:'checkout.html';})()">
+        <button class="checkout-btn" onclick="location.href='checkout.html'">
             Оформить заказ
         </button>
     </div>
@@ -121,12 +122,6 @@
 <script src="src/cart/cart.js?v=20260530b"></script>
 <script src="src/cookie.js?v=20260530b"></script>
 <script>
-(function() {
-    const tgId = getTgId();
-    if (!tgId) return;
-    const ordersLink = document.getElementById('ordersLink');
-    if (ordersLink) ordersLink.href = 'src/orders/orders.html?tg_id=' + tgId;
-})();
 let _cartSupportBotUsername = 'id635009278943_1_bot';
 fetch('/api/config').then(r=>r.json()).then(cfg=>{ _cartSupportBotUsername = cfg.supportBotUsername||'id635009278943_1_bot'; }).catch(()=>{});
 function openCartSupport() {
@@ -134,8 +129,7 @@ function openCartSupport() {
     if (window.WebApp?.openLink) window.WebApp.openLink(url); else window.location.href = url;
 }
 function openFavoritesFromCart() {
-    const tgId = new URLSearchParams(location.search).get('tg_id') || sessionStorage.getItem('tg_id');
-    location.href = tgId ? `src/favorites/favorites.html?tg_id=${tgId}` : 'src/favorites/favorites.html';
+    location.href = 'src/favorites/favorites.html';
 }
 </script>
 </body>

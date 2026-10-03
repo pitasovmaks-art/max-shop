@@ -80,7 +80,7 @@ async function init() {
     }
 
     try {
-        const r = await fetch(`/api/orders/my?tg_id=${encodeURIComponent(_tgId)}`);
+        const r = await authFetch('/api/orders/my');
         if (!r.ok) throw new Error(r.status);
         const orders = await r.json();
         renderOrders(orders);
@@ -112,19 +112,6 @@ function openSupport() {
     const url = `https://max.ru/${_supportBotUsername}`;
     if (window.WebApp?.openLink) window.WebApp.openLink(url);
     else window.location.href = url;
-}
-
-/* ─── Nav tg_id links ────────────────────────────────────── */
-function updateNavLinks() {
-    if (!_tgId) return;
-    const navHome = document.getElementById('navHome');
-    if (navHome) navHome.href = `../../index.html?tg_id=${_tgId}`;
-    const navCatalog = document.getElementById('navCatalog');
-    if (navCatalog) navCatalog.href = `../../catalog.html?tg_id=${_tgId}`;
-    const navCart = document.getElementById('navCart');
-    if (navCart) navCart.href = `../../cart.html?tg_id=${_tgId}`;
-    const navFavorites = document.getElementById('navFavorites');
-    if (navFavorites) navFavorites.href = `../favorites/favorites.html?tg_id=${_tgId}`;
 }
 
 /* ─── Reorder ────────────────────────────────────────────── */
@@ -227,7 +214,6 @@ function showReorderToast(msg) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    updateNavLinks();
     updateCartBadge();
     init();
 });

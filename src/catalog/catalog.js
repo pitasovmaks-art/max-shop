@@ -142,7 +142,7 @@ let _activeSubId  = null;
 
 /* ─── API ────────────────────────────────────────────────────── */
 async function apiFetch(path) {
-    const r = await fetch(path);
+    const r = await authFetch(path);
     if (!r.ok) throw new Error(`${r.status} ${path}`);
     return r.json();
 }
@@ -887,10 +887,10 @@ async function toggleFav(productId) {
         }
     }
     applyFavState(!wasFav);
-    fetch('/api/favorites', {
+    authFetch('/api/favorites', {
         method:  wasFav ? 'DELETE' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ tgId, productId }),
+        body:    JSON.stringify({ productId }),
     }).catch(() => {
         if (wasFav) { _favorites.add(productId); } else { _favorites.delete(productId); }
         applyFavState(wasFav);
@@ -910,10 +910,10 @@ async function subscribeNotify(productId) {
     const tgId = getTgId();
     if (!tgId) { showToast('Откройте магазин через бота в Max Messenger'); return; }
     try {
-        await fetch('/api/stock-notify', {
+        await authFetch('/api/stock-notify', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ tgId, productId }),
+            body:    JSON.stringify({ productId }),
         });
         _subscriptions.add(productId);
         const btn = document.querySelector(`#pcard-${productId} .add-btn--notify`);
@@ -929,9 +929,7 @@ async function subscribeNotify(productId) {
 }
 
 function openFavorites() {
-    const tgId = getTgId();
-    const base = 'src/favorites/favorites.html';
-    location.href = tgId ? `${base}?tg_id=${tgId}` : base;
+    location.href = 'src/favorites/favorites.html';
 }
 
 /* ─── Init ──────────────────────────────────────────────────── */
@@ -942,8 +940,8 @@ async function init() {
             apiFetch('/api/categories'),
             apiFetch('/api/subcategories'),
             apiFetch('/api/products'),
-            tgId ? apiFetch(`/api/favorites?tg_id=${encodeURIComponent(tgId)}`).catch(() => []) : Promise.resolve([]),
-            tgId ? apiFetch(`/api/stock-notify/list?tg_id=${encodeURIComponent(tgId)}`).catch(() => []) : Promise.resolve([]),
+            tgId ? apiFetch('/api/favorites').catch(() => []) : Promise.resolve([]),
+            tgId ? apiFetch('/api/stock-notify/list').catch(() => []) : Promise.resolve([]),
         ]);
         _categories    = cats;
         _subcategories = subs;
@@ -1013,7 +1011,7 @@ async function reloadFavorites() {
     const tgId = getTgId();
     if (!tgId) return;
     try {
-        const favs = await apiFetch(`/api/favorites?tg_id=${encodeURIComponent(tgId)}`).catch(() => []);
+        const favs = await apiFetch('/api/favorites').catch(() => []);
         _favorites = new Set(favs.map(f => Number(f.id)));
         document.querySelectorAll('.fav-btn').forEach(btn => {
             const card = btn.closest('[id^="pcard-"]');
@@ -1040,8 +1038,8 @@ async function reloadProductsAndSubscriptions() {
     try {
         const [prods, stockSubs, favs] = await Promise.all([
             apiFetch('/api/products'),
-            tgId ? apiFetch(`/api/stock-notify/list?tg_id=${encodeURIComponent(tgId)}`).catch(() => []) : Promise.resolve([]),
-            tgId ? apiFetch(`/api/favorites?tg_id=${encodeURIComponent(tgId)}`).catch(() => []) : Promise.resolve([]),
+            tgId ? apiFetch('/api/stock-notify/list').catch(() => []) : Promise.resolve([]),
+            tgId ? apiFetch('/api/favorites').catch(() => []) : Promise.resolve([]),
         ]);
         _products      = prods;
         _subscriptions = new Set((stockSubs || []).map(id => Number(id)));
@@ -1062,7 +1060,7 @@ async function pollStockState() {
     try {
         const [prods, stockSubs] = await Promise.all([
             apiFetch('/api/products'),
-            apiFetch(`/api/stock-notify/list?tg_id=${encodeURIComponent(tgId)}`).catch(() => []),
+            apiFetch('/api/stock-notify/list').catch(() => []),
         ]);
         const newSubs = new Set((stockSubs || []).map(id => Number(id)));
         const hasChange = prods.some(p => {

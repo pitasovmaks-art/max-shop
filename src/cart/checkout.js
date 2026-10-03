@@ -483,12 +483,8 @@ async function submitOrder() {
         storeLabel = 'Доставка по России';
     }
 
-    console.log('[CHECKOUT] tgId:', tgId);
-    console.log('[CHECKOUT] URL:', location.search);
-    console.log('[CHECKOUT] sessionStorage:', sessionStorage.getItem('tg_id'));
-
     try {
-        const r = await fetch('/api/orders', {
+        const r = await authFetch('/api/orders', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -498,7 +494,6 @@ async function submitOrder() {
                 delivery: _deliveryMethod,
                 address:  address || undefined,
                 city:     city    || undefined,
-                tgId:     tgId    || undefined,
                 comment:  comment || undefined,
                 items: cart.map(i => ({
                     id:    i.id,
@@ -534,11 +529,7 @@ async function submitOrder() {
 
         // Subscribe to promo if user opted in
         if (tgId && document.getElementById('agreePromo')?.checked) {
-            fetch('/api/promo/subscribe', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ tgId }),
-            }).catch(() => {});
+            authFetch('/api/promo/subscribe', { method: 'POST' }).catch(() => {});
         }
     } catch (e) {
         console.error('Order error:', e);
