@@ -373,25 +373,40 @@ function renderCategoryRail() {
 
 /* ─── Home: promo banner carousel ───────────────────────────── */
 /* Нейтральные тексты — без цен, скидок, сроков и условий (их никто не
-   придумывал, см. PROGRESS.md «Баннеры главной»: сейчас это заглушка,
-   управление из админки — отдельная задача этапа 2). categoryName —
-   название категории для клика по баннеру (openBannerTarget ниже ищет
-   её среди загруженных _categories по имени и ведёт на неё; если имя
-   не найдено, открывает просто Каталог — на случай, если категорию
-   переименуют/удалят в админке, это тоже «не найдено», а не ошибка). */
+   придумывал). Фолбэк: показывается только если в БД нет активных
+   баннеров (см. loadBannersCache/initBanner ниже) или запрос к
+   /api/banners не удался — управление баннерами теперь в админке
+   (server/routes/banners.js, admin/banners.js). categoryName —
+   название категории для клика (openBannerTarget ищет её среди
+   загруженных _categories по имени; если не найдено — просто Каталог). */
 const HOME_BANNERS = [
-    { cls: 'banner-slide--a', title: 'Точка Монтажа',       sub: 'Профессиональный строительный инструмент', categoryName: null },
-    { cls: 'banner-slide--b', title: 'Монтажные пистолеты', sub: 'Toua, FengBao и другие бренды',             categoryName: 'Монтажные пистолеты' },
-    { cls: 'banner-slide--c', title: 'Расходники',          sub: 'Для монтажных пистолетов и инструмента',    categoryName: 'Расходники' },
+    { cls: 'banner-slide--a', title: 'Точка Монтажа',       sub: 'Профессиональный строительный инструмент', linkType: 'none', linkId: null },
+    { cls: 'banner-slide--b', title: 'Монтажные пистолеты', sub: 'Toua, FengBao и другие бренды',             linkType: 'category', linkId: null, categoryName: 'Монтажные пистолеты' },
+    { cls: 'banner-slide--c', title: 'Расходники',          sub: 'Для монтажных пистолетов и инструмента',    linkType: 'category', linkId: null, categoryName: 'Расходники' },
 ];
-let _bannerIndex = 0;
-let _bannerTimer = null;
+let _bannerIndex    = 0;
+let _bannerTimer    = null;
+let _activeBanners  = HOME_BANNERS;
+
+const BANNERS_CACHE_KEY = 'banners_cache_v1';
+
+function loadBannersCache() {
+    try {
+        const raw = localStorage.getItem(BANNERS_CACHE_KEY);
+        if (raw === null) return undefined; // кэша ещё не было вообще — отличаем от «кэш: баннеров нет»
+        const data = JSON.parse(raw);
+        return Array.isArray(data) ? data : undefined;
+    } catch { return undefined; }
+}
+function saveBannersCache(banners) {
+    try { localStorage.setItem(BANNERS_CACHE_KEY, JSON.stringify(banners)); } catch { /* приватный режим и т.п. — не критично */ }
+}
 
 function _bannerGoTo(i) {
     const track = document.getElementById('bannerTrack');
     const dots  = document.getElementById('bannerDots');
-    if (!track) return;
-    _bannerIndex = ((i % HOME_BANNERS.length) + HOME_BANNERS.length) % HOME_BANNERS.length;
+    if (!track || !_activeBanners.length) return;
+    _bannerIndex = ((i % _activeBanners.length) + _activeBanners.length) % _activeBanners.length;
     track.style.transform = `translateX(-${_bannerIndex * 100}%)`;
     if (dots) {
         [...dots.children].forEach((dot, idx) => dot.classList.toggle('on', idx === _bannerIndex));
@@ -400,40 +415,108 @@ function _bannerGoTo(i) {
 
 function _bannerStart() {
     clearInterval(_bannerTimer);
-    _bannerTimer = setInterval(() => _bannerGoTo(_bannerIndex + 1), 3000);
+    if (_activeBanners.length > 1) _bannerTimer = setInterval(() => _bannerGoTo(_bannerIndex + 1), 3000);
 }
 
 function _bannerPause() {
     clearInterval(_bannerTimer);
 }
 
-/* Баннер ведёт на свою категорию по имени (categoryName в HOME_BANNERS),
-   если такая категория сейчас есть среди загруженных _categories —
-   иначе просто на Каталог. Баннер показывается только на Главной, так
-   что переход всегда "снаружи" каталога, как у рельсы категорий. */
-function openBannerTarget(categoryName) {
-    const cat = categoryName ? _categories.find(c => c.name === categoryName) : null;
-    location.href = cat ? `catalog.html?category=${cat.id}` : 'catalog.html';
+/* Клик по баннеру — с проверкой, что цель ещё существует среди уже
+   загруженных данных (товар/категория/подкатегория могли быть удалены
+   после того, как баннер на них настроили) — иначе вместо перехода на
+   несуществующую страницу просто открываем Каталог. */
+function openBannerTarget(linkType, linkId) {
+    if (linkType === 'product' || linkType === 'service') {
+        if (!_products.find(p => p.id === linkId)) { location.href = 'catalog.html'; return; }
+        location.href = `src/catalog/product.html?id=${linkId}`;
+    } else if (linkType === 'category') {
+        if (!_categories.find(c => c.id === linkId)) { location.href = 'catalog.html'; return; }
+        location.href = `catalog.html?category=${linkId}`;
+    } else if (linkType === 'subcategory') {
+        const sub = _subcategories.find(s => s.id === linkId);
+        if (!sub) { location.href = 'catalog.html'; return; }
+        location.href = `catalog.html?category=${sub.categoryId}&sub=${linkId}`;
+    } else {
+        location.href = 'catalog.html';
+    }
 }
 
-function initBanner() {
+/* HOME_BANNERS использует старое поле categoryName (ищем id по имени
+   среди уже загруженных категорий — как и раньше); серверные баннеры
+   уже приходят с готовым linkType/linkId. */
+function _resolveFallbackBanners() {
+    return HOME_BANNERS.map(b => {
+        if (b.linkType !== 'category' || !b.categoryName) return b;
+        const cat = _categories.find(c => c.name === b.categoryName);
+        return cat ? { ...b, linkId: cat.id } : { ...b, linkType: 'none', linkId: null };
+    });
+}
+
+function _bannerSlideHTML(b) {
+    const isPhoto = !!b.imageUrl;
+    const cls     = isPhoto ? 'banner-slide--photo' : (b.cls || 'banner-slide--a');
+    const style   = isPhoto ? ` style="background-image:url('${b.imageUrl}')"` : '';
+    const sub     = b.subtitle ?? b.sub ?? '';
+    const clickable = b.linkType && b.linkType !== 'none';
+    const onclick = clickable ? ` onclick="openBannerTarget('${b.linkType}', ${b.linkId})"` : '';
+    return `<div class="banner-slide ${cls}"${style}${onclick}><b>${b.title}</b>${sub ? `<span>${sub}</span>` : ''}</div>`;
+}
+
+function _renderBannerSlides(banners) {
+    const track = document.getElementById('bannerTrack');
+    const dots  = document.getElementById('bannerDots');
+    if (!track || !dots) return;
+    _activeBanners = banners;
+    track.innerHTML = banners.map(_bannerSlideHTML).join('');
+    dots.innerHTML  = banners.length > 1 ? banners.map(() => `<span></span>`).join('') : '';
+    _bannerIndex = 0;
+    _bannerGoTo(0);
+    _bannerStart();
+}
+
+function _renderBannerSkeleton() {
+    const track = document.getElementById('bannerTrack');
+    const dots  = document.getElementById('bannerDots');
+    if (!track) return;
+    clearInterval(_bannerTimer);
+    track.style.transform = 'translateX(0)';
+    track.innerHTML = '<div class="banner-slide banner-slide--skeleton" aria-hidden="true"></div>';
+    if (dots) dots.innerHTML = '';
+}
+
+/* Независимый от каталога stale-while-revalidate-цикл (тот же приём,
+   что у loadCatalogCache/saveCatalogCache) — поэтому вызывается ровно
+   один раз, в начале init(), а не привязан к двухфазной загрузке
+   каталога. Нет кэша вообще (первый визит) -> скелетон, а не нейтральные
+   баннеры и не пустота. Нейтральные HOME_BANNERS показываются только
+   после того, как запрос реально завершился пустым ответом или упал —
+   не как стартовое состояние. */
+async function initBanner() {
     const track = document.getElementById('bannerTrack');
     const dots  = document.getElementById('bannerDots');
     if (!track || !dots) return;
 
-    track.innerHTML = HOME_BANNERS.map(b =>
-        `<div class="banner-slide ${b.cls}" onclick="openBannerTarget(${b.categoryName ? `'${b.categoryName}'` : 'null'})"><b>${b.title}</b><span>${b.sub}</span></div>`
-    ).join('');
-    dots.innerHTML = HOME_BANNERS.map(() => `<span></span>`).join('');
-    _bannerIndex = 0;
-    _bannerGoTo(0);
+    const cached = loadBannersCache();
+    if (cached !== undefined) {
+        _renderBannerSlides(cached.length ? cached : _resolveFallbackBanners());
+    } else {
+        _renderBannerSkeleton();
+    }
+
+    try {
+        const banners = await apiFetch('/api/banners');
+        saveBannersCache(banners);
+        _renderBannerSlides(banners.length ? banners : _resolveFallbackBanners());
+    } catch (e) {
+        if (cached === undefined) _renderBannerSlides(_resolveFallbackBanners());
+        // иначе на экране уже что-то из кэша — оставляем как есть
+    }
 
     track.addEventListener('touchstart', _bannerPause, { passive: true });
     track.addEventListener('touchend',   _bannerStart,  { passive: true });
     track.addEventListener('mousedown',  _bannerPause);
     window.addEventListener('mouseup',   _bannerStart);
-
-    _bannerStart();
 }
 
 /* ─── Catalog: hits rail (source: products.isHit — not in the API yet,
@@ -996,6 +1079,11 @@ function openFavorites() {
 async function init() {
     const tgId = getTgId();
 
+    // Баннер живёт по собственному stale-while-revalidate циклу, независимо
+    // от каталога (см. initBanner) — поэтому запускается один раз здесь,
+    // а не на каждой из двух фаз загрузки каталога ниже.
+    initBanner();
+
     // Stale-while-revalidate: кэш показываем мгновенно (без ожидания сети),
     // ниже эти же данные обновляются свежим запросом и перерисовываются.
     const cached = loadCatalogCache();
@@ -1005,7 +1093,6 @@ async function init() {
         _products      = cached.products;
         renderCategoryRail();
         renderHitsRail();
-        initBanner();
         render();
     }
 
@@ -1053,7 +1140,6 @@ async function init() {
     localStorage.removeItem('favorites_changed');
     renderCategoryRail();
     renderHitsRail();
-    initBanner();
     render();
     updateBadges();
     _startPolling();

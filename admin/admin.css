@@ -1397,3 +1397,83 @@ button.product-row__stock:active  { opacity: .7; }
     text-decoration: none;
 }
 .exports-dl-btn:active { opacity: .7; }
+
+/* ─── Banners admin ─────────────────────────────────────── */
+.banners-admin-list {
+    padding: 10px 12px calc(var(--nav-h) + 72px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.banner-row {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.banner-row__thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    object-fit: cover;
+    background: #2A2A2A;
+}
+.banner-row__thumb--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+.banner-row__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.banner-row__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.banner-row__subtitle {
+    font-size: 12.5px;
+    color: var(--gray);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.banner-row__meta {
+    font-size: 11.5px;
+    color: var(--gray);
+}
+.banner-row__order {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.banner-order-btn {
+    width: 24px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.06);
+    border-radius: 6px;
+    color: var(--gray);
+}
+.banner-order-btn:active { opacity: .6; }
+.banner-order-btn:disabled { opacity: .25; pointer-events: none; }
+.banner-row__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+}

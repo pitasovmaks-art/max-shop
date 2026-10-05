@@ -75,6 +75,24 @@ CREATE TABLE IF NOT EXISTS product_images (
     sort_order INTEGER NOT NULL DEFAULT 0
 );
 
+-- Баннеры главной (управление из админки). link_id — полиморфная ссылка
+-- (products/categories/subcategories по link_type), без FK; link_type='service'
+-- тоже хранит id из products (is_service=1), отдельной таблицы услуг нет.
+CREATE TABLE IF NOT EXISTS banners (
+    id         SERIAL  PRIMARY KEY,
+    title      TEXT    NOT NULL,
+    subtitle   TEXT,
+    image_url  TEXT,
+    link_type  TEXT    NOT NULL DEFAULT 'none',
+    link_id    INTEGER,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active  INTEGER NOT NULL DEFAULT 1,
+    starts_at  TIMESTAMP,
+    ends_at    TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 
 -- ─── Заказы и магазины ─────────────────────────────────────────────────
 
