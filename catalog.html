@@ -6,6 +6,23 @@
     <title>Точка Монтажа — Каталог</title>
     <link rel="stylesheet" href="src/catalog/catalog.css">
     <link rel="stylesheet" href="src/cookie.css">
+    <script>
+    /* Решает, показывать ли экран выбора города, ДО первой отрисовки —
+       чтобы оверлей не мигал, когда город уже сохранён. См. #city-screen
+       в src/catalog/catalog.css и detectCity() в src/catalog/catalog.js
+       (TTL должен совпадать с _24H там же). */
+    (function () {
+        try {
+            var CITY_TTL_MS = 900000; // 15 минут
+            var city = localStorage.getItem('city');
+            var ts = parseInt(localStorage.getItem('cityTimestamp') || '0', 10);
+            var known = !!city && (Date.now() - ts < CITY_TTL_MS);
+            document.documentElement.classList.add(known ? 'city-known' : 'city-unknown');
+        } catch (e) {
+            document.documentElement.classList.add('city-unknown');
+        }
+    })();
+    </script>
     <script src="https://st.max.ru/js/max-web-app.js"></script>
     <script src="/src/shopGuard.js"></script>
     <script src="/src/utils/tgid.js?v=20260530b"></script>
@@ -14,7 +31,7 @@
 <body style="background:var(--bg-page);min-height:100vh;">
 
 <!-- City selection screen -->
-<div id="city-screen" style="position:fixed;inset:0;z-index:2000;background:var(--bg-page);display:flex;flex-direction:column;align-items:center;padding:40px 20px 24px;overflow:hidden;">
+<div id="city-screen" style="position:fixed;inset:0;z-index:2000;background:var(--bg-page);flex-direction:column;align-items:center;padding:40px 20px 24px;overflow:hidden;">
     <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:600;color:var(--accent);letter-spacing:-.5px;margin-bottom:4px;text-align:center;">Точка Монтажа</div>
     <p style="font-size:16px;color:rgba(28,28,30,0.65);margin:0 0 20px;text-align:center;">Выберите ваш город</p>
     <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:0;flex:1;min-height:0;">
