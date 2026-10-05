@@ -555,6 +555,19 @@
 
         <div class="sheet__body">
 
+            <!-- Live preview — та же DOM-разметка, что рисует Главная
+                 (src/shared/bannerRender.js), в пропорциях слайда.
+                 .banner-preview-scope — см. admin.css: зеркало цветовых
+                 переменных src/theme.css под отдельным скоупом (сам
+                 theme.css подключить нельзя, admin.css уже использует
+                 те же имена переменных для своих, других цветов). -->
+            <div class="ff">
+                <label class="ff__label">Превью</label>
+                <div class="banner-preview-viewport">
+                    <div class="banner-preview-scope" id="bannerPreview"></div>
+                </div>
+            </div>
+
             <!-- Photo upload -->
             <div class="ff">
                 <label class="ff__label">Фото баннера</label>
@@ -573,16 +586,50 @@
                 <span class="ff__hint">Рекомендуемый размер ~1200×500, JPEG/PNG/WebP, до 10 МБ — сервер сам сожмёт в WebP</span>
             </div>
 
-            <!-- Title -->
+            <!-- Оформление: фон, затемнение, положение текста -->
             <div class="ff">
-                <label class="ff__label" for="bf-title">Заголовок *</label>
-                <input class="ff__input" id="bf-title" type="text" placeholder="Заголовок баннера">
+                <label class="ff__label">Фон</label>
+                <div class="bg-tiles" id="bgTiles"></div>
+                <div class="bg-custom-row hidden" id="bgCustomRow">
+                    <input type="color" id="bf-bg-color" value="#0E7C6B" oninput="handleBgCustomColorInput()">
+                    <span class="ff__hint">Свой цвет фона</span>
+                </div>
+            </div>
+            <div class="ff">
+                <label class="ff__label">Затемнение</label>
+                <div class="choice-row" id="overlayChoices"></div>
+            </div>
+            <div class="ff">
+                <label class="ff__label">Положение текста</label>
+                <div class="choice-row" id="textPosChoices"></div>
             </div>
 
-            <!-- Subtitle -->
+            <!-- Title / subtitle — резервный текст, используется, пока
+                 ниже не добавлена ни одна текстовая строка -->
+            <div class="ff">
+                <label class="ff__label" for="bf-title">Заголовок *</label>
+                <input class="ff__input" id="bf-title" type="text" placeholder="Заголовок баннера" oninput="renderBannerPreview()">
+            </div>
             <div class="ff">
                 <label class="ff__label" for="bf-subtitle">Подзаголовок</label>
-                <input class="ff__input" id="bf-subtitle" type="text" placeholder="Короткое пояснение">
+                <input class="ff__input" id="bf-subtitle" type="text" placeholder="Короткое пояснение" oninput="renderBannerPreview()">
+                <span class="ff__hint">Заголовок/подзаголовок используются, пока в «Текстовых строках» ниже ничего не добавлено</span>
+            </div>
+
+            <!-- Текстовые блоки (до 4) -->
+            <div class="ff">
+                <div class="ff__label-row">
+                    <span class="ff__label">Текстовые строки</span>
+                    <span class="ff__hint">до 4</span>
+                </div>
+                <div id="bannerBlocksList"></div>
+                <button type="button" class="add-variant-btn" id="addBlockBtn" onclick="addBannerBlock()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                    Добавить строку
+                </button>
             </div>
 
             <!-- Link type -->
@@ -630,14 +677,36 @@
     </div>
 </div>
 
+<!-- Emoji picker — общая панель, переиспользуется для любого блока
+     текста баннера (см. admin/banners.js: openEmojiPicker). -->
+<div class="overlay hidden" id="emojiPickerOverlay" onclick="handleEmojiOverlayClick(event)">
+    <div class="sheet sheet--emoji">
+        <div class="sheet__handle"></div>
+        <div class="sheet__header">
+            <button class="sheet__close" onclick="closeEmojiPicker()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <span class="sheet__title">Эмодзи</span>
+            <span class="sheet__placeholder"></span>
+        </div>
+        <div class="sheet__body">
+            <div id="emojiPickerBody"></div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast -->
 <div class="toast hidden" id="toast"></div>
 
 <script src="lib/xlsx.full.min.js"></script>
 <script src="categories.js"></script>
 <script src="stores.js"></script>
+<script src="../src/shared/bannerRender.js?v=20261007"></script>
 <script src="banners.js"></script>
 <script src="../src/components/FileUploader.js"></script>
-<script src="admin.js?v=3"></script>
+<script src="admin.js?v=4"></script>
 </body>
 </html>

@@ -93,6 +93,14 @@ CREATE TABLE IF NOT EXISTS banners (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- Оформление баннера (текстовые блоки + фон). text_blocks NULL у старых
+-- строк — Главная рисует их по title/subtitle, как раньше.
+ALTER TABLE banners ADD COLUMN IF NOT EXISTS text_blocks JSONB;
+ALTER TABLE banners ADD COLUMN IF NOT EXISTS bg_style TEXT NOT NULL DEFAULT 'brand';
+ALTER TABLE banners ADD COLUMN IF NOT EXISTS bg_color TEXT;
+ALTER TABLE banners ADD COLUMN IF NOT EXISTS overlay TEXT NOT NULL DEFAULT 'medium';
+ALTER TABLE banners ADD COLUMN IF NOT EXISTS text_pos TEXT NOT NULL DEFAULT 'bottom-left';
+
 
 -- ─── Заказы и магазины ─────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-@import url('/src/theme.css?v=20261005');
+@import url('/src/theme.css?v=20261007');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@600&display=swap');
 
 /* ─── Reset & Base ──────────────────────────────────────── */
@@ -291,6 +291,7 @@ html.city-unknown #city-screen { display: flex; }
     touch-action: pan-y;
 }
 .banner-slide {
+    position: relative; /* точка отсчёта для .banner-slide--overlay-*::before */
     flex: 0 0 100%;
     min-height: 76px;
     padding: 14px 16px;
@@ -313,12 +314,6 @@ html.city-unknown #city-screen { display: flex; }
     background-size: cover;
     background-position: center;
 }
-.banner-slide--photo::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.6) 100%);
-}
 .banner-slide--photo b, .banner-slide--photo span { position: relative; z-index: 1; }
 /* Скелетон — показывается, пока /api/banners ещё не ответил и кэша нет
    вообще (первый визит); см. initBanner()/loadBannersCache. */
@@ -326,6 +321,47 @@ html.city-unknown #city-screen { display: flex; }
     background: var(--bg-secondary);
     animation: skel-pulse 1.4s ease-in-out infinite;
 }
+
+/* ─── Оформление баннера: фон/затемнение/положение (banners.bg_style/
+   overlay/text_pos) — рисуются через src/shared/bannerRender.js,
+   подробности о градиентах и переменных --banner-* см. src/theme.css. ── */
+.banner-bg--brand { background: linear-gradient(135deg, var(--accent), var(--accent-press)); }
+.banner-bg--dark  { background: linear-gradient(135deg, var(--banner-dark-1),  var(--banner-dark-2)); }
+.banner-bg--light { background: linear-gradient(135deg, var(--banner-light-1), var(--banner-light-2)); color: var(--text-primary); }
+.banner-bg--warm  { background: linear-gradient(135deg, var(--banner-warm-1),  var(--banner-warm-2)); }
+.banner-bg--cool  { background: linear-gradient(135deg, var(--banner-cool-1),  var(--banner-cool-2)); }
+.banner-bg--steel { background: linear-gradient(135deg, var(--banner-steel-1), var(--banner-steel-2)); }
+
+/* Затемнение — тот же приём, что раньше был только у --photo (градиент
+   снизу вверх), теперь 4 уровня и применяется к любому фону, не только
+   к фото (banners.overlay — общий параметр). */
+.banner-slide--overlay-light::before,
+.banner-slide--overlay-medium::before,
+.banner-slide--overlay-strong::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.banner-slide--overlay-light::before  { background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,.30) 100%); }
+.banner-slide--overlay-medium::before { background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.60) 100%); }
+.banner-slide--overlay-strong::before { background: linear-gradient(180deg, rgba(0,0,0,0) 20%, rgba(0,0,0,.78) 100%); }
+
+/* Положение текстового блока (banners.text_pos) */
+.banner-slide--pos-bottom-left { justify-content: flex-end; align-items: flex-start; }
+.banner-slide--pos-center      { justify-content: center; align-items: center; text-align: center; }
+.banner-slide--pos-top-left    { justify-content: flex-start; align-items: flex-start; }
+
+/* Контейнер текстовых блоков (banners.text_blocks) — поверх затемнения */
+.banner-slide__blocks {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 100%;
+}
+.banner-slide__block { line-height: 1.25; overflow-wrap: break-word; }
 .banner-dots { display: flex; gap: 6px; justify-content: center; padding: 8px 0 2px; }
 .banner-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--border); display: block; }
 .banner-dots span.on { background: var(--accent); width: 16px; border-radius: 3px; transition: width .2s, background .2s; }
