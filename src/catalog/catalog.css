@@ -15,6 +15,13 @@ button { cursor: pointer; border: none; background: none; font: inherit; }
 a      { text-decoration: none; color: inherit; }
 .hidden { display: none !important; }
 
+/* ─── City screen: decided before first paint (see inline <script> in <head>) ──
+   Default hidden; shown only when the city-gate script could not confirm a
+   fresh saved city. Avoids the flash of the city picker on every navigation
+   to index.html/catalog.html. */
+#city-screen { display: none; }
+html.city-unknown #city-screen { display: flex; }
+
 /* ─── App shell ─────────────────────────────────────────── */
 .app {
     max-width: 480px;
