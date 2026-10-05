@@ -239,7 +239,7 @@ router.post('/', requireAdmin, async (req, res) => {
         const nextOrder = (maxRow?.m ?? -1) + 1;
         const row = await db.queryOne(
             `INSERT INTO banners (title,subtitle,image_url,link_type,link_id,sort_order,is_active,starts_at,ends_at,text_blocks,bg_style,bg_color,overlay,text_pos)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$12,$13,$14) RETURNING id`,
             [
                 title, subtitle || null, imageUrl || null, type,
                 type === 'none' ? null : (linkId ?? null),
@@ -269,7 +269,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
             `UPDATE banners
              SET title=$1, subtitle=$2, image_url=$3, link_type=$4, link_id=$5,
                  is_active=$6, starts_at=$7, ends_at=$8,
-                 text_blocks=$9, bg_style=$10, bg_color=$11, overlay=$12, text_pos=$13,
+                 text_blocks=$9::jsonb, bg_style=$10, bg_color=$11, overlay=$12, text_pos=$13,
                  updated_at=NOW()
              WHERE id=$14`,
             [
