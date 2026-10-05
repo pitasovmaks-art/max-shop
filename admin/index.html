@@ -79,6 +79,7 @@
         <button class="tab-btn" id="tabCategories" onclick="switchTab('categories')">Категории</button>
         <button class="tab-btn" id="tabOrders" onclick="switchTab('orders')">Заказы</button>
         <button class="tab-btn" id="tabStores" onclick="switchTab('stores')">Магазины</button>
+        <button class="tab-btn" id="tabBanners" onclick="switchTab('banners')">Баннеры</button>
         <button class="tab-btn" id="tabUploads" onclick="switchTab('uploads')">📤 Загрузка данных</button>
         <button class="tab-btn" id="tabExports" onclick="switchTab('exports')">📥 Экспорт файлов</button>
     </div>
@@ -168,6 +169,19 @@
             </svg>
         </button>
     </div><!-- /sectionStores -->
+
+    <!-- Banners section -->
+    <div id="sectionBanners" class="hidden">
+        <div class="banners-admin-list" id="bannersList"></div>
+
+        <!-- FAB: add banner -->
+        <button class="fab hidden" id="fabBanners" onclick="openBannerForm()" aria-label="Добавить баннер" title="+ Добавить баннер">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </div><!-- /sectionBanners -->
 
     <!-- Uploads section -->
     <div id="sectionUploads" class="hidden"></div><!-- /sectionUploads -->
@@ -524,6 +538,89 @@
     </div><!-- /sheet -->
 </div><!-- /storeFormOverlay -->
 
+<!-- Banner form overlay -->
+<div class="overlay hidden" id="bannerFormOverlay" onclick="handleBannerFormOverlayClick(event)">
+    <div class="sheet">
+        <div class="sheet__handle"></div>
+        <div class="sheet__header">
+            <button class="sheet__close" onclick="closeBannerForm()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <span class="sheet__title" id="bannerFormTitle">Новый баннер</span>
+            <span class="sheet__placeholder"></span>
+        </div>
+
+        <div class="sheet__body">
+
+            <!-- Photo upload -->
+            <div class="ff">
+                <label class="ff__label">Фото баннера</label>
+                <div class="photo-upload" id="bannerPhotoUpload" onclick="triggerBannerPhotoInput()">
+                    <img class="photo-preview hidden" id="bannerPhotoPreview" alt="Фото баннера">
+                    <div class="photo-placeholder" id="bannerPhotoPlaceholder">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        <span>Нажмите, чтобы загрузить фото</span>
+                    </div>
+                    <button type="button" class="photo-remove hidden" id="bannerPhotoRemove" onclick="removeBannerPhoto(event)">✕</button>
+                </div>
+                <input type="file" id="bannerPhotoInput" accept="image/jpeg,image/png,image/webp" onchange="handleBannerPhotoSelect(event)" style="display:none">
+                <span class="ff__hint">Рекомендуемый размер ~1200×500, JPEG/PNG/WebP, до 10 МБ — сервер сам сожмёт в WebP</span>
+            </div>
+
+            <!-- Title -->
+            <div class="ff">
+                <label class="ff__label" for="bf-title">Заголовок *</label>
+                <input class="ff__input" id="bf-title" type="text" placeholder="Заголовок баннера">
+            </div>
+
+            <!-- Subtitle -->
+            <div class="ff">
+                <label class="ff__label" for="bf-subtitle">Подзаголовок</label>
+                <input class="ff__input" id="bf-subtitle" type="text" placeholder="Короткое пояснение">
+            </div>
+
+            <!-- Link type -->
+            <div class="ff">
+                <label class="ff__label" for="bf-link-type">Куда ведёт</label>
+                <select class="ff__select" id="bf-link-type" onchange="handleBannerLinkTypeChange()">
+                    <option value="none">Никуда</option>
+                    <option value="product">Товар</option>
+                    <option value="category">Категория</option>
+                    <option value="subcategory">Подкатегория</option>
+                    <option value="service">Услуга</option>
+                </select>
+            </div>
+
+            <!-- Link target (shown dynamically) -->
+            <div class="ff hidden" id="ff-bf-link-target">
+                <label class="ff__label" for="bf-link-target">Объект</label>
+                <select class="ff__select" id="bf-link-target">
+                    <option value="">— выберите —</option>
+                </select>
+            </div>
+
+            <!-- Показ period -->
+            <div class="ff">
+                <label class="ff__label" for="bf-starts">Показывать с (необязательно)</label>
+                <input class="ff__input" id="bf-starts" type="date">
+            </div>
+            <div class="ff">
+                <label class="ff__label" for="bf-ends">Показывать по (необязательно)</label>
+                <input class="ff__input" id="bf-ends" type="date">
+            </div>
+
+            <button class="save-btn" onclick="saveBannerForm()">Сохранить</button>
+
+        </div><!-- /sheet__body -->
+    </div><!-- /sheet -->
+</div><!-- /bannerFormOverlay -->
+
 <!-- Import result modal -->
 <div class="overlay hidden" id="importResultOverlay" onclick="closeImportResult()">
     <div class="import-result" onclick="event.stopPropagation()">
@@ -539,7 +636,8 @@
 <script src="lib/xlsx.full.min.js"></script>
 <script src="categories.js"></script>
 <script src="stores.js"></script>
+<script src="banners.js"></script>
 <script src="../src/components/FileUploader.js"></script>
-<script src="admin.js?v=2"></script>
+<script src="admin.js?v=3"></script>
 </body>
 </html>

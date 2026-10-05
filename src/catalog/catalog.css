@@ -304,6 +304,28 @@ html.city-unknown #city-screen { display: flex; }
 .banner-slide--a { background: var(--accent); }
 .banner-slide--b { background: #123B33; }
 .banner-slide--c { background: var(--bg-secondary); color: var(--text-secondary); border: 1.5px dashed var(--border); }
+/* Баннер из админки с фото (server/routes/banners.js imageUrl) — градиент
+   поверх фото для читаемости текста поверх произвольного изображения
+   (кроп картинки не делаем, только cover — см. PROGRESS.md). */
+.banner-slide--photo {
+    position: relative;
+    min-height: 130px;
+    background-size: cover;
+    background-position: center;
+}
+.banner-slide--photo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.6) 100%);
+}
+.banner-slide--photo b, .banner-slide--photo span { position: relative; z-index: 1; }
+/* Скелетон — показывается, пока /api/banners ещё не ответил и кэша нет
+   вообще (первый визит); см. initBanner()/loadBannersCache. */
+.banner-slide--skeleton {
+    background: var(--bg-secondary);
+    animation: skel-pulse 1.4s ease-in-out infinite;
+}
 .banner-dots { display: flex; gap: 6px; justify-content: center; padding: 8px 0 2px; }
 .banner-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--border); display: block; }
 .banner-dots span.on { background: var(--accent); width: 16px; border-radius: 3px; transition: width .2s, background .2s; }

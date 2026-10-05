@@ -12,7 +12,7 @@
         html { background: #EEF3F1; }
         @media (prefers-color-scheme: dark) { html { background: #0E1613; } }
     </style>
-    <link rel="stylesheet" href="src/catalog/catalog.css?v=20261005">
+    <link rel="stylesheet" href="src/catalog/catalog.css?v=20261006">
     <link rel="stylesheet" href="src/cookie.css?v=20261005">
     <script>
     /* Решает, показывать ли экран выбора города, ДО первой отрисовки —
@@ -121,9 +121,11 @@
         <div class="cat-tile" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
     </div>
 
-    <!-- Promo banner carousel -->
+    <!-- Promo banner carousel. Skeleton below is the initial state before
+         JS runs — initBanner() (src/catalog/catalog.js) replaces it wholesale
+         with cache/fallback/real banners, so it never lingers. -->
     <div class="banner-wrap">
-        <div class="banner-viewport"><div class="banner-track" id="bannerTrack"></div></div>
+        <div class="banner-viewport"><div class="banner-track" id="bannerTrack"><div class="banner-slide banner-slide--skeleton" aria-hidden="true"></div></div></div>
         <div class="banner-dots" id="bannerDots"></div>
     </div>
 
@@ -208,7 +210,7 @@
 
 </div>
 <script src="/src/icons.js?v=20261005" defer></script>
-<script src="src/catalog/catalog.js?v=20261005" defer></script>
+<script src="src/catalog/catalog.js?v=20261006" defer></script>
 <script src="src/cookie.js?v=20261005" defer></script>
 </body>
 </html>

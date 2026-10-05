@@ -277,16 +277,18 @@ async function apiAdmin(path, method = 'GET', body = null) {
 /* ─── Data refresh ──────────────────────────────────────── */
 async function refreshData() {
     const authHeaders = { 'Authorization': `Bearer ${getToken()}` };
-    const [cats, subs, prods, stores] = await Promise.all([
+    const [cats, subs, prods, stores, banners] = await Promise.all([
         fetch('/api/categories', { headers: authHeaders }).then(r => r.json()),
         fetch('/api/subcategories', { headers: authHeaders }).then(r => r.json()),
         fetch('/api/products', { headers: authHeaders }).then(r => r.json()),
         fetch('/api/stores', { headers: authHeaders }).then(r => r.json()),
+        fetch('/api/banners/all', { headers: authHeaders }).then(r => r.json()),
     ]);
     _categories    = cats;
     _subcategories = subs;
     _products      = prods;
     _stores        = stores;
+    _banners       = banners;
 }
 
 /* ─── Sync lookup helpers ───────────────────────────────── */
@@ -342,6 +344,7 @@ function switchTab(tab) {
     const isCategories = tab === 'categories';
     const isOrders     = tab === 'orders';
     const isStores     = tab === 'stores';
+    const isBanners    = tab === 'banners';
     const isUploads    = tab === 'uploads';
     const isExports    = tab === 'exports';
 
@@ -349,6 +352,7 @@ function switchTab(tab) {
     document.getElementById('sectionCategories').classList.toggle('hidden', !isCategories);
     document.getElementById('sectionOrders').classList.toggle('hidden',     !isOrders);
     document.getElementById('sectionStores').classList.toggle('hidden',     !isStores);
+    document.getElementById('sectionBanners').classList.toggle('hidden',    !isBanners);
     document.getElementById('sectionUploads').classList.toggle('hidden',    !isUploads);
     document.getElementById('sectionExports').classList.toggle('hidden',    !isExports);
 
@@ -356,17 +360,20 @@ function switchTab(tab) {
     document.getElementById('fabImport').classList.toggle('hidden',     !isProducts);
     document.getElementById('fabCategories').classList.toggle('hidden', !isCategories);
     document.getElementById('fabStores').classList.toggle('hidden',     !isStores);
+    document.getElementById('fabBanners').classList.toggle('hidden',    !isBanners);
 
     document.getElementById('tabProducts').classList.toggle('active',   isProducts);
     document.getElementById('tabCategories').classList.toggle('active', isCategories);
     document.getElementById('tabOrders').classList.toggle('active',     isOrders);
     document.getElementById('tabStores').classList.toggle('active',     isStores);
+    document.getElementById('tabBanners').classList.toggle('active',    isBanners);
     document.getElementById('tabUploads').classList.toggle('active',    isUploads);
     document.getElementById('tabExports').classList.toggle('active',    isExports);
 
     if (isCategories) renderCategories();
     if (isOrders)     renderOrders();
     if (isStores)     renderStores();
+    if (isBanners)    renderBanners();
     if (isUploads)    renderFileUploader();
     if (isExports)    renderExports();
 }
