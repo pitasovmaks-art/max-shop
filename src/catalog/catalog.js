@@ -5,6 +5,28 @@ let _products      = [];
 let _favorites     = new Set();      // Set of product_id (Number)
 let _subscriptions = new Set();      // product_ids subscribed for restock notifications
 
+/* ─── Catalog cache (stale-while-revalidate) ─────────────────── */
+// Показываем сохранённый каталог сразу (без ожидания сети), затем тихо
+// обновляем его в фоне тем же /api/categories+/api/subcategories+/api/products
+// запросом, который init() всё равно делает. Если фоновое обновление
+// упало, а показанные данные уже из кэша — ошибку не показываем, просто
+// оставляем то, что уже на экране (см. init()).
+const CATALOG_CACHE_KEY = 'catalog_cache_v1';
+
+function loadCatalogCache() {
+    try {
+        const data = JSON.parse(localStorage.getItem(CATALOG_CACHE_KEY) || 'null');
+        if (!data || !Array.isArray(data.categories) || !Array.isArray(data.subcategories) || !Array.isArray(data.products)) return null;
+        return data;
+    } catch { return null; }
+}
+
+function saveCatalogCache(categories, subcategories, products) {
+    try {
+        localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({ categories, subcategories, products, savedAt: Date.now() }));
+    } catch { /* localStorage переполнен/недоступен (приватный режим) — не критично */ }
+}
+
 /* ─── City ──────────────────────────────────────────────────── */
 let _city = localStorage.getItem('city') || null;
 
@@ -973,6 +995,20 @@ function openFavorites() {
 /* ─── Init ──────────────────────────────────────────────────── */
 async function init() {
     const tgId = getTgId();
+
+    // Stale-while-revalidate: кэш показываем мгновенно (без ожидания сети),
+    // ниже эти же данные обновляются свежим запросом и перерисовываются.
+    const cached = loadCatalogCache();
+    if (cached) {
+        _categories    = cached.categories;
+        _subcategories = cached.subcategories;
+        _products      = cached.products;
+        renderCategoryRail();
+        renderHitsRail();
+        initBanner();
+        render();
+    }
+
     try {
         const [cats, subs, prods, favs, stockSubs] = await Promise.all([
             apiFetch('/api/categories'),
@@ -986,10 +1022,15 @@ async function init() {
         _products      = prods;
         _favorites     = new Set(favs.map(f => Number(f.id)));
         _subscriptions = new Set((stockSubs || []).map(id => Number(id)));
+        saveCatalogCache(cats, subs, prods);
     } catch (e) {
         console.error('Ошибка загрузки каталога:', e);
-        document.getElementById('emptyState').classList.remove('hidden');
-        document.getElementById('resultsCount').textContent = 'Ошибка загрузки';
+        // Фоновое обновление упало, но на экране уже валидный кэш — не
+        // перекрываем его сообщением об ошибке, просто остаёмся на нём.
+        if (!cached) {
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('resultsCount').textContent = 'Ошибка загрузки';
+        }
     }
 
     // Restore catalog position when coming back from a product page
@@ -1121,21 +1162,54 @@ function _stopPolling() {
     _pollInterval = null;
 }
 
+/* ─── Prefetch neighbouring Home/Catalog page ─────────────────────
+   Home and Catalog are full (non-SPA) navigations, so the next page
+   normally starts completely cold. Since users bounce between these two
+   constantly, warm the browser's HTTP cache for whichever of the two the
+   current page is NOT, either as soon as its bottom-nav link scrolls into
+   view, or immediately on press (pointerdown fires before click/navigation,
+   buying a head start on touch devices). */
+function setupNavPrefetch() {
+    const prefetched = new Set();
+    function prefetch(url) {
+        if (prefetched.has(url)) return;
+        prefetched.add(url);
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = url;
+        document.head.appendChild(link);
+    }
+    document.querySelectorAll('.bottom-nav a[href="index.html"], .bottom-nav a[href="catalog.html"]').forEach(a => {
+        const href = a.getAttribute('href');
+        if (location.pathname.endsWith(href)) return; // already on that page
+        a.addEventListener('pointerdown', () => prefetch(href), { once: true });
+        if ('IntersectionObserver' in window) {
+            const io = new IntersectionObserver(entries => {
+                if (entries.some(e => e.isIntersecting)) { prefetch(href); io.disconnect(); }
+            });
+            io.observe(a);
+        } else {
+            prefetch(href);
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     renderCityList('');
     initFilterSheet();
+    setupNavPrefetch();
     if (detectCity()) init();
 });
 
 window.addEventListener('pageshow', (e) => {
-    if (e.persisted) {
-        // bfcache restore: JS state (incl. scroll + screen) already preserved
-        sessionStorage.removeItem('catalog_back');
-        sessionStorage.removeItem('catalog_screen');
-        sessionStorage.removeItem('catalog_cat');
-        sessionStorage.removeItem('catalog_sub');
-        sessionStorage.removeItem('catalog_scroll');
-    }
+    if (!e.persisted) return; // обычная загрузка — init() уже сам сходил за свежими данными
+    // bfcache restore: JS state (incl. scroll + screen) already preserved,
+    // но данные с сервера могли устареть за время в bfcache — обновим их.
+    sessionStorage.removeItem('catalog_back');
+    sessionStorage.removeItem('catalog_screen');
+    sessionStorage.removeItem('catalog_cat');
+    sessionStorage.removeItem('catalog_sub');
+    sessionStorage.removeItem('catalog_scroll');
     if (_products.length) reloadProductsAndSubscriptions();
     else if (localStorage.getItem('favorites_changed')) reloadFavorites();
 });

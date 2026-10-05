@@ -1,4 +1,4 @@
-@import url('/src/theme.css');
+@import url('/src/theme.css?v=20261005');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@600&display=swap');
 
 /* ─── Reset & Base ──────────────────────────────────────── */
@@ -552,6 +552,26 @@ html.city-unknown #city-screen { display: flex; }
     margin-top: auto;
     padding-top: 4px;
 }
+
+/* ─── Skeletons (static markup shown until catalog.js render()s real
+   content — see #catRail/#productsGrid initial HTML) ──────────────── */
+@keyframes skel-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+.skel-tile__ic, .skel-line, .skeleton-card .product-card__img {
+    animation: skel-pulse 1.4s ease-in-out infinite;
+}
+.skel-tile__ic {
+    width: 38px; height: 38px;
+    border-radius: 11px;
+    background: var(--bg-secondary);
+}
+.skel-line {
+    border-radius: 6px;
+    background: var(--bg-secondary);
+}
+.skel-line--title  { width: 70%; height: 10px; }
+.skel-line--name   { width: 90%; height: 11px; margin-bottom: 6px; }
+.skel-line--name2  { width: 55%; height: 11px; }
+.skel-line--price  { width: 50%; height: 15px; }
 .product-card__price {
     font-size: 14px;
     font-weight: 800;
