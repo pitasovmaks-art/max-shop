@@ -20,13 +20,17 @@ async function processImage(buffer, { maxWidth = 1200, maxBytes = 200 * 1024 } =
     const base = sharp(buffer).rotate().resize({ width: maxWidth, withoutEnlargement: true });
 
     let best = null;
+    let bestQuality = QUALITY_STEPS[0];
     for (const quality of QUALITY_STEPS) {
         const out = await base.clone().webp({ quality }).toBuffer();
-        if (!best || out.length < best.length) best = out;
-        if (out.length <= maxBytes) { best = out; break; }
+        if (!best || out.length < best.length) { best = out; bestQuality = quality; }
+        if (out.length <= maxBytes) { best = out; bestQuality = quality; break; }
     }
 
-    return { buffer: best, contentType: 'image/webp' };
+    // quality — не используется существующими вызывающими (banners.js
+    // деструктурирует только { buffer, contentType }), добавлено для
+    // наблюдаемости/отладки и для test-image-processor.js.
+    return { buffer: best, contentType: 'image/webp', quality: bestQuality };
 }
 
-module.exports = { processImage };
+module.exports = { processImage, QUALITY_STEPS };

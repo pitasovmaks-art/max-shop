@@ -9,7 +9,8 @@
     "seed:demo": "node server/scripts/seed-demo-data.js",
     "truncate:demo-catalog": "node server/scripts/truncate-demo-catalog.js",
     "test:require-user": "node server/scripts/test-require-user.js",
-    "test:banners": "node server/scripts/test-banners.js"
+    "test:banners": "node server/scripts/test-banners.js",
+    "test:image-processor": "node server/scripts/test-image-processor.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",
