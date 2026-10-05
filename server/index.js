@@ -1,10 +1,13 @@
 try { process.loadEnvFile(); } catch { /* .env отсутствует — переменные заданы окружением */ }
 
-const express = require('express');
-const path    = require('path');
-const fs      = require('fs');
+const express    = require('express');
+const path       = require('path');
+const fs         = require('fs');
+const compression = require('compression');
 
 const app = express();
+
+app.use(compression());
 
 /* Применяет schema.sql (только CREATE TABLE IF NOT EXISTS — идемпотентно и
    безопасно) до того, как сервер начнёт принимать запросы. */
@@ -28,11 +31,23 @@ app.use((req, res, next) => {
     next();
 });
 
+/* Кэш статики и API. HTML — всегда свежий (no-cache = обязательная
+   ревалидация по ETag, но без запрета хранить тело — в отличие от
+   прежнего no-store, это позволяет дешёвый 304 вместо полной
+   перекачки). Версионные ?v=... файлы (так уже подключены все
+   <script>/<link> в index.html/catalog.html) — кэшируются на год и без
+   ревалидации: следующая правка обязана поднять версию, а новую версию
+   принесёт свежий (no-cache) HTML. GET /api/* — тоже no-cache: данные
+   каталога меняются из админки в любой момент, но ревалидация по ETag
+   (уже проставляется Express) экономит трафик на неизменившихся ответах. */
 app.use((req, res, next) => {
-    if (req.path.endsWith('.html') || req.path.endsWith('.js') || req.path === '/') {
-        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
+    const isVersioned = req.url.includes('?v=');
+    if (req.path.endsWith('.html') || req.path === '/') {
+        res.setHeader('Cache-Control', 'no-cache');
+    } else if ((req.path.endsWith('.js') || req.path.endsWith('.css')) && isVersioned) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (req.path.startsWith('/api/') && req.method === 'GET') {
+        res.setHeader('Cache-Control', 'no-cache');
     }
     next();
 });

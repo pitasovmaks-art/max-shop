@@ -3,9 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="view-transition" content="same-origin">
     <title>Точка Монтажа — Каталог</title>
-    <link rel="stylesheet" href="src/catalog/catalog.css">
-    <link rel="stylesheet" href="src/cookie.css">
+    <!-- Фон страницы — сразу, инлайном, до catalog.css (который ещё грузится
+         по сети) — иначе между документами мелькает белый экран браузера
+         по умолчанию вместо темы магазина. -->
+    <style>
+        html { background: #EEF3F1; }
+        @media (prefers-color-scheme: dark) { html { background: #0E1613; } }
+    </style>
+    <link rel="stylesheet" href="src/catalog/catalog.css?v=20261005">
+    <link rel="stylesheet" href="src/cookie.css?v=20261005">
     <script>
     /* Решает, показывать ли экран выбора города, ДО первой отрисовки —
        чтобы оверлей не мигал, когда город уже сохранён. См. #city-screen
@@ -23,10 +31,17 @@
         }
     })();
     </script>
-    <script src="https://st.max.ru/js/max-web-app.js"></script>
-    <script src="/src/shopGuard.js"></script>
-    <script src="/src/utils/tgid.js?v=20260530b"></script>
-    <script src="/src/utils/authFetch.js?v=20261003"></script>
+    <!-- defer (не async!) сохраняет текущий порядок выполнения этих 4
+         скриптов + трёх в конце body (icons.js/catalog.js/cookie.js —
+         тоже переведены на defer), но позволяет браузеру распарсить всю
+         остальную HTML-разметку страницы (включая заготовки-скелетоны),
+         не дожидаясь их загрузки по сети. shopGuard.js по-прежнему
+         выполняется раньше catalog.js и блокирует данные/функциональность
+         ровно как раньше — меняется только то, что разметка готова сразу. -->
+    <script src="https://st.max.ru/js/max-web-app.js" defer></script>
+    <script src="/src/shopGuard.js" defer></script>
+    <script src="/src/utils/tgid.js?v=20260530b" defer></script>
+    <script src="/src/utils/authFetch.js?v=20261003" defer></script>
 </head>
 <body style="background:var(--bg-page);min-height:100vh;">
 
@@ -95,8 +110,14 @@
             </div>
         </div>
 
+        <!-- Skeleton placeholder — renderCategoryRail() fully replaces it. -->
         <p class="rail-caption">Категории</p>
-        <div class="cat-rail" id="catRail"></div>
+        <div class="cat-rail" id="catRail">
+            <div class="cat-tile" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
+            <div class="cat-tile" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
+            <div class="cat-tile" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
+            <div class="cat-tile" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
+        </div>
 
         <div id="hitsSection" class="hidden">
             <p class="rail-caption">Хиты продаж</p>
@@ -108,7 +129,13 @@
                 <h2 class="section-title">Все товары</h2>
                 <span class="section-count" id="resultsCount"></span>
             </div>
-            <div class="products-grid" id="productsGrid"></div>
+            <!-- Skeleton placeholder — render() fully replaces it once data loads. -->
+            <div class="products-grid" id="productsGrid">
+                <div class="product-card skeleton-card" aria-hidden="true"><div class="product-card__accent"></div><div class="product-card__img"></div><div class="product-card__body"><div class="skel-line skel-line--name"></div><div class="skel-line skel-line--name2"></div><div class="product-card__footer"><div class="skel-line skel-line--price"></div></div></div></div>
+                <div class="product-card skeleton-card" aria-hidden="true"><div class="product-card__accent"></div><div class="product-card__img"></div><div class="product-card__body"><div class="skel-line skel-line--name"></div><div class="skel-line skel-line--name2"></div><div class="product-card__footer"><div class="skel-line skel-line--price"></div></div></div></div>
+                <div class="product-card skeleton-card" aria-hidden="true"><div class="product-card__accent"></div><div class="product-card__img"></div><div class="product-card__body"><div class="skel-line skel-line--name"></div><div class="skel-line skel-line--name2"></div><div class="product-card__footer"><div class="skel-line skel-line--price"></div></div></div></div>
+                <div class="product-card skeleton-card" aria-hidden="true"><div class="product-card__accent"></div><div class="product-card__img"></div><div class="product-card__body"><div class="skel-line skel-line--name"></div><div class="skel-line skel-line--name2"></div><div class="product-card__footer"><div class="skel-line skel-line--price"></div></div></div></div>
+            </div>
             <div class="empty-state hidden" id="emptyState">
                 <div class="empty-state__icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
                 <p class="empty-state__title">Ничего не найдено</p>
@@ -227,8 +254,8 @@
     </nav>
 
 </div>
-<script src="/src/icons.js?v=20260930"></script>
-<script src="src/catalog/catalog.js?v=20260530b"></script>
-<script src="src/cookie.js?v=20260530b"></script>
+<script src="/src/icons.js?v=20260930" defer></script>
+<script src="src/catalog/catalog.js?v=20261005" defer></script>
+<script src="src/cookie.js?v=20260530b" defer></script>
 </body>
 </html>
