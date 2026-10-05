@@ -77,12 +77,15 @@ async function fakeQuery(sql, params = []) {
         return [];
     }
     if (s.startsWith('UPDATE banners SET title=')) {
-        const [title, subtitle, imageUrl, linkType, linkId, isActive, startsAt, endsAt, id] = params;
+        const [title, subtitle, imageUrl, linkType, linkId, isActive, startsAt, endsAt, textBlocks, bgStyle, bgColor, overlay, textPos, id] = params;
         const b = banners.find(x => x.id === id);
         if (!b) return { rowCount: 0 };
         Object.assign(b, {
             title, subtitle, image_url: imageUrl, link_type: linkType, link_id: linkId,
-            is_active: isActive, starts_at: startsAt, ends_at: endsAt, updated_at: new Date().toISOString(),
+            is_active: isActive, starts_at: startsAt, ends_at: endsAt,
+            text_blocks: textBlocks ? JSON.parse(textBlocks) : null, // имитация pg: JSONB возвращается уже распарсенным
+            bg_style: bgStyle, bg_color: bgColor, overlay, text_pos: textPos,
+            updated_at: new Date().toISOString(),
         });
         return { rowCount: 1 };
     }
@@ -92,11 +95,13 @@ async function fakeQuery(sql, params = []) {
         return { rowCount: before - banners.length };
     }
     if (s.startsWith('INSERT INTO banners')) {
-        const [title, subtitle, imageUrl, linkType, linkId, sortOrder, isActive, startsAt, endsAt] = params;
+        const [title, subtitle, imageUrl, linkType, linkId, sortOrder, isActive, startsAt, endsAt, textBlocks, bgStyle, bgColor, overlay, textPos] = params;
         const id = nextId++;
         banners.push({
             id, title, subtitle, image_url: imageUrl, link_type: linkType, link_id: linkId,
             sort_order: sortOrder, is_active: isActive, starts_at: startsAt, ends_at: endsAt,
+            text_blocks: textBlocks ? JSON.parse(textBlocks) : null, // имитация pg: JSONB возвращается уже распарсенным
+            bg_style: bgStyle, bg_color: bgColor, overlay, text_pos: textPos,
             created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
         });
         return [{ id }];
@@ -211,6 +216,103 @@ async function main() {
         const byId = Object.fromEntries(banners.map(b => [b.id, b.sort_order]));
         check('PUT /api/banners/reorder: присланный порядок учтён (11 раньше 10, пропущенный 12 — в конце)',
             byId[11] < byId[10] && byId[12] > byId[10] && byId[12] > byId[11]);
+    }
+
+    /* ── (г) Оформление: белый список, 400, дефолты, эмодзи, XSS,
+       обратная совместимость ───────────────────────────────────── */
+    resetBanners([]);
+
+    async function postBanner(body) {
+        const r = await fetch(`${base}/api/banners`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...AUTH },
+            body: JSON.stringify(body),
+        });
+        const json = await r.json().catch(() => ({}));
+        return { status: r.status, body: json };
+    }
+
+    // Белый список — каждое поле по отдельности с заведомо неверным значением
+    const invalidWhitelistCases = [
+        ['size',    { textBlocks: [{ text: 'x', size: 'huge',  weight: 'regular', italic: false, color: 'auto', align: 'left' }] }],
+        ['weight',  { textBlocks: [{ text: 'x', size: 'm', weight: 'ultra',       italic: false, color: 'auto', align: 'left' }] }],
+        ['color',   { textBlocks: [{ text: 'x', size: 'm', weight: 'regular',     italic: false, color: 'rainbow', align: 'left' }] }],
+        ['align',   { textBlocks: [{ text: 'x', size: 'm', weight: 'regular',     italic: false, color: 'auto', align: 'justify' }] }],
+        ['bgStyle', { bgStyle: 'neon' }],
+        ['overlay', { overlay: 'extreme' }],
+        ['textPos', { textPos: 'middle-right' }],
+    ];
+    for (const [label, extra] of invalidWhitelistCases) {
+        const { status, body } = await postBanner({ title: 'T', ...extra });
+        check(`POST /api/banners: неверный ${label} -> 400`, status === 400 && typeof body.error === 'string');
+    }
+
+    // Максимум 4 блока
+    {
+        const fiveBlocks = Array.from({ length: 5 }, (_, i) => ({ text: `${i}`, size: 'm', weight: 'regular', italic: false, color: 'auto', align: 'left' }));
+        const { status } = await postBanner({ title: 'T', textBlocks: fiveBlocks });
+        check('POST /api/banners: 5 блоков (>4) -> 400', status === 400);
+    }
+
+    // Текст >120 символов
+    {
+        const longText = 'a'.repeat(121);
+        const { status } = await postBanner({ title: 'T', textBlocks: [{ text: longText, size: 'm', weight: 'regular', italic: false, color: 'auto', align: 'left' }] });
+        check('POST /api/banners: текст блока >120 символов -> 400', status === 400);
+    }
+
+    // Перенос строки в тексте блока
+    {
+        const { status } = await postBanner({ title: 'T', textBlocks: [{ text: 'строка1\nстрока2', size: 'm', weight: 'regular', italic: false, color: 'auto', align: 'left' }] });
+        check('POST /api/banners: перенос строки в тексте блока -> 400', status === 400);
+    }
+
+    // customColor невалиден/отсутствует при color='custom'
+    {
+        const { status } = await postBanner({ title: 'T', textBlocks: [{ text: 'x', size: 'm', weight: 'regular', italic: false, color: 'custom', align: 'left' }] });
+        check('POST /api/banners: color=custom без customColor -> 400', status === 400);
+    }
+    {
+        const { status } = await postBanner({ title: 'T', textBlocks: [{ text: 'x', size: 'm', weight: 'regular', italic: false, color: 'custom', customColor: 'not-a-hex', align: 'left' }] });
+        check('POST /api/banners: color=custom с невалидным customColor -> 400', status === 400);
+    }
+
+    // bgColor невалиден/отсутствует при bgStyle='custom'
+    {
+        const { status } = await postBanner({ title: 'T', bgStyle: 'custom' });
+        check('POST /api/banners: bgStyle=custom без bgColor -> 400', status === 400);
+    }
+    {
+        const { status } = await postBanner({ title: 'T', bgStyle: 'custom', bgColor: 'red' });
+        check('POST /api/banners: bgStyle=custom с невалидным bgColor -> 400', status === 400);
+    }
+
+    // Значения по умолчанию — запрос вообще без стилевых полей (обратная
+    // совместимость со старым форматом: только title/subtitle)
+    {
+        const { status, body } = await postBanner({ title: 'Старый формат', subtitle: 'Подзаголовок' });
+        check('POST /api/banners: без стилевых полей -> 201', status === 201);
+        check('POST /api/banners: дефолт bgStyle=brand',       body.bgStyle === 'brand');
+        check('POST /api/banners: дефолт overlay=medium',      body.overlay === 'medium');
+        check('POST /api/banners: дефолт textPos=bottom-left', body.textPos === 'bottom-left');
+        check('POST /api/banners: textBlocks не задан -> null', body.textBlocks === null);
+        check('POST /api/banners: title/subtitle сохранились как есть', body.title === 'Старый формат' && body.subtitle === 'Подзаголовок');
+    }
+
+    // Эмодзи — сохраняется и возвращается побайтово тем же
+    {
+        const emojiText = '🔧 Скидки до 50% 🔥 ⭐⭐⭐';
+        const { status, body } = await postBanner({ title: 'T', textBlocks: [{ text: emojiText, size: 'l', weight: 'bold', italic: false, color: 'light', align: 'center' }] });
+        check('POST /api/banners: эмодзи в тексте блока -> 201', status === 201);
+        check('POST /api/banners: эмодзи возвращается без искажений', body.textBlocks?.[0]?.text === emojiText);
+    }
+
+    // XSS-строка — сохраняется и возвращается как обычный текст, не отклоняется
+    {
+        const xss = '<img src=x onerror=alert(1)>';
+        const { status, body } = await postBanner({ title: 'T', textBlocks: [{ text: xss, size: 'm', weight: 'regular', italic: false, color: 'auto', align: 'left' }] });
+        check('POST /api/banners: XSS-строка в тексте блока -> 201 (не отклонена как невалидная)', status === 201);
+        check('POST /api/banners: XSS-строка возвращается как обычный текст, без изменений', body.textBlocks?.[0]?.text === xss);
     }
 
     server.close();

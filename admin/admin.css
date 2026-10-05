@@ -1477,3 +1477,176 @@ button.product-row__stock:active  { opacity: .7; }
     gap: 6px;
     align-items: center;
 }
+
+/* ─── Баннер: живое превью — зеркало src/theme.css ─────────────────
+   Подключить сам theme.css в админку нельзя: он объявляет переменные
+   с ТЕМИ ЖЕ ИМЕНАМИ (--accent, --bg-page, --bg-card, --text-primary,
+   --border, --radius и т.д. — см. :root в начале этого файла), что уже
+   использует admin.css для СВОИХ, других цветов — одинаковые имена на
+   :root в двух таблицах стилей столкнутся. Вместо этого повторяем
+   только нужные для баннера hex-значения под отдельным скоупом —
+   src/shared/bannerRender.js читает их через getComputedStyle(scopeEl),
+   где scopeEl — этот самый узел, так что результат идентичен Главной.
+   Обновлять вручную при смене палитры в src/theme.css. */
+.banner-preview-scope {
+    --accent:        #0E7C6B;
+    --accent-press:  #0B6558;
+    --text-primary:  #132420;
+    --bg-secondary:  #E1EAE6;
+    --border:        rgba(19,36,32,0.10);
+    --font-body:     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --banner-dark-1:  #1C2420;  --banner-dark-2:  #0E1613;
+    --banner-light-1: #FFFFFF;  --banner-light-2: #E7F0EC;
+    --banner-warm-1:  #F7E7D6;  --banner-warm-2:  #F0C9A8;
+    --banner-cool-1:  #DCEAF5;  --banner-cool-2:  #B9D3E8;
+    --banner-steel-1: #5B6B73;  --banner-steel-2: #35414A;
+
+    font-family: var(--font-body);
+    border-radius: 14px;
+    overflow: hidden;
+}
+.banner-preview-viewport { width: 100%; border-radius: 14px; overflow: hidden; }
+
+/* Зеркало .banner-slide-семейства из src/catalog/catalog.css — тот же
+   список правил, те же имена классов (их проставляет общий
+   src/shared/bannerRender.js), просто под другим корневым скоупом.
+   Если меняешь оформление баннера в catalog.css — продублируй сюда. */
+.banner-preview-scope .banner-slide {
+    position: relative;
+    min-height: 130px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: #fff;
+}
+.banner-preview-scope .banner-slide--photo { background-size: cover; background-position: center; }
+.banner-preview-scope .banner-slide b { font-size: 14.5px; font-weight: 800; line-height: 1.25; }
+.banner-preview-scope .banner-slide span { font-size: 12px; opacity: .9; margin-top: 3px; display: block; }
+.banner-preview-scope .banner-bg--brand { background: linear-gradient(135deg, var(--accent), var(--accent-press)); }
+.banner-preview-scope .banner-bg--dark  { background: linear-gradient(135deg, var(--banner-dark-1),  var(--banner-dark-2)); }
+.banner-preview-scope .banner-bg--light { background: linear-gradient(135deg, var(--banner-light-1), var(--banner-light-2)); color: var(--text-primary); }
+.banner-preview-scope .banner-bg--warm  { background: linear-gradient(135deg, var(--banner-warm-1),  var(--banner-warm-2)); }
+.banner-preview-scope .banner-bg--cool  { background: linear-gradient(135deg, var(--banner-cool-1),  var(--banner-cool-2)); }
+.banner-preview-scope .banner-bg--steel { background: linear-gradient(135deg, var(--banner-steel-1), var(--banner-steel-2)); }
+.banner-preview-scope .banner-slide--overlay-light::before,
+.banner-preview-scope .banner-slide--overlay-medium::before,
+.banner-preview-scope .banner-slide--overlay-strong::before { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.banner-preview-scope .banner-slide--overlay-light::before  { background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,.30) 100%); }
+.banner-preview-scope .banner-slide--overlay-medium::before { background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.60) 100%); }
+.banner-preview-scope .banner-slide--overlay-strong::before { background: linear-gradient(180deg, rgba(0,0,0,0) 20%, rgba(0,0,0,.78) 100%); }
+.banner-preview-scope .banner-slide--pos-bottom-left { justify-content: flex-end; align-items: flex-start; }
+.banner-preview-scope .banner-slide--pos-center      { justify-content: center; align-items: center; text-align: center; }
+.banner-preview-scope .banner-slide--pos-top-left    { justify-content: flex-start; align-items: flex-start; }
+.banner-preview-scope .banner-slide__blocks { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 4px; max-width: 100%; }
+.banner-preview-scope .banner-slide__block { line-height: 1.25; overflow-wrap: break-word; }
+
+/* ─── Баннер: плитки фона / затемнение / положение текста ──────────── */
+.bg-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.bg-tile {
+    height: 44px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    position: relative;
+}
+.bg-tile--brand { background: linear-gradient(135deg, #0E7C6B, #0B6558); }
+.bg-tile--dark  { background: linear-gradient(135deg, #1C2420, #0E1613); }
+.bg-tile--light { background: linear-gradient(135deg, #FFFFFF, #E7F0EC); }
+.bg-tile--warm  { background: linear-gradient(135deg, #F7E7D6, #F0C9A8); }
+.bg-tile--cool  { background: linear-gradient(135deg, #DCEAF5, #B9D3E8); }
+.bg-tile--steel { background: linear-gradient(135deg, #5B6B73, #35414A); }
+.bg-tile--custom {
+    background: repeating-conic-gradient(#3A3A3A 0% 25%, #2E2E2E 0% 50%) 0 0/12px 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: #CCCCCC; text-align: center; line-height: 1.2;
+}
+.bg-tile--active { border-color: #FFFFFF; }
+.bg-custom-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.bg-custom-row input[type="color"] { width: 40px; height: 32px; border: none; border-radius: 8px; background: none; padding: 0; cursor: pointer; }
+
+.choice-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.choice-btn {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: none;
+    color: var(--gray);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+}
+.choice-btn--active { border-color: #FFFFFF; color: #FFFFFF; }
+
+/* ─── Баннер: редактор текстовых блоков ─────────────────────────────── */
+.banner-block-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+.banner-block-row__top { display: flex; align-items: center; gap: 6px; }
+.banner-block-row__text {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px !important;
+    padding: 8px 10px !important;
+    height: 38px !important;
+}
+.banner-block-row__emoji-btn,
+.banner-block-row__del {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+    background: rgba(255,255,255,.06);
+}
+.banner-block-row__del { background: rgba(255,59,48,.1); color: var(--red); }
+.banner-block-row__controls { display: flex; flex-wrap: wrap; gap: 6px; }
+.banner-block-row__controls select {
+    flex: 1;
+    min-width: 90px;
+    font-size: 12.5px !important;
+    padding: 6px 8px !important;
+    height: 32px !important;
+}
+.banner-block-row__toggle {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: none;
+    color: var(--gray);
+    font-size: 13px;
+    font-weight: 700;
+}
+.banner-block-row__toggle--active { border-color: #FFFFFF; color: #FFFFFF; }
+.banner-block-row__order { display: flex; gap: 4px; }
+.banner-block-row__custom-color { width: 30px; height: 30px; border: none; border-radius: 6px; background: none; padding: 0; cursor: pointer; }
+.banner-block-row__warning {
+    font-size: 11.5px;
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ─── Баннер: панель эмодзи ──────────────────────────────────────────── */
+.sheet--emoji { max-height: 70dvh; }
+.emoji-category-title { font-size: 12px; color: var(--gray); margin: 10px 0 6px; text-transform: uppercase; letter-spacing: .04em; }
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+.emoji-grid button {
+    font-size: 22px;
+    height: 38px;
+    border-radius: 8px;
+    background: none;
+    display: flex; align-items: center; justify-content: center;
+}
+.emoji-grid button:active { background: rgba(255,255,255,.08); }

@@ -224,6 +224,14 @@ async function createSchema() {
             updated_at TIMESTAMP NOT NULL DEFAULT NOW()
         )
     `);
+    /* Оформление баннера (текстовые блоки + фон) — добавлено сессией
+       «баннеры: оформление». text_blocks NULL у старых строк — Главная
+       рисует их по title/subtitle, как раньше (см. src/shared/bannerRender.js). */
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS text_blocks JSONB`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS bg_style TEXT NOT NULL DEFAULT 'brand'`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS bg_color TEXT`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS overlay TEXT NOT NULL DEFAULT 'medium'`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS text_pos TEXT NOT NULL DEFAULT 'bottom-left'`);
 
     /* ─── Загрузки данных продавца (seller-cabinet) ──────── */
     await pool.query(`

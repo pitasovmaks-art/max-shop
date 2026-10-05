@@ -453,23 +453,26 @@ function _resolveFallbackBanners() {
     });
 }
 
-function _bannerSlideHTML(b) {
-    const isPhoto = !!b.imageUrl;
-    const cls     = isPhoto ? 'banner-slide--photo' : (b.cls || 'banner-slide--a');
-    const style   = isPhoto ? ` style="background-image:url('${b.imageUrl}')"` : '';
-    const sub     = b.subtitle ?? b.sub ?? '';
-    const clickable = b.linkType && b.linkType !== 'none';
-    const onclick = clickable ? ` onclick="openBannerTarget('${b.linkType}', ${b.linkId})"` : '';
-    return `<div class="banner-slide ${cls}"${style}${onclick}><b>${b.title}</b>${sub ? `<span>${sub}</span>` : ''}</div>`;
-}
-
+/* Собирает DOM разметку слайда через общий src/shared/bannerRender.js
+   (textContent/createTextNode внутри — никакого innerHTML с данными
+   баннера, это и есть защита от XSS в text_blocks/title/subtitle).
+   Клик вешается здесь, а не в bannerRender.js — это уже специфика
+   страницы (Главная), а не внешний вид. */
 function _renderBannerSlides(banners) {
     const track = document.getElementById('bannerTrack');
     const dots  = document.getElementById('bannerDots');
-    if (!track || !dots) return;
+    if (!track || !dots || !window.BannerRender) return;
     _activeBanners = banners;
-    track.innerHTML = banners.map(_bannerSlideHTML).join('');
-    dots.innerHTML  = banners.length > 1 ? banners.map(() => `<span></span>`).join('') : '';
+    track.innerHTML = '';
+    banners.forEach(b => {
+        const el = BannerRender.buildBannerSlideElement(b, document.documentElement);
+        if (b.linkType && b.linkType !== 'none') {
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', () => openBannerTarget(b.linkType, b.linkId));
+        }
+        track.appendChild(el);
+    });
+    dots.innerHTML = banners.length > 1 ? banners.map(() => `<span></span>`).join('') : '';
     _bannerIndex = 0;
     _bannerGoTo(0);
     _bannerStart();
@@ -495,7 +498,11 @@ function _renderBannerSkeleton() {
 async function initBanner() {
     const track = document.getElementById('bannerTrack');
     const dots  = document.getElementById('bannerDots');
-    if (!track || !dots) return;
+    // catalog.js общий для index.html и catalog.html; bannerRender.js
+    // подключён только в index.html (на catalog.html нет #bannerTrack —
+    // первая проверка уже выходит раньше; вторая — на случай будущих
+    // правок разметки, когда контейнер появится, а скрипт ещё нет).
+    if (!track || !dots || !window.BannerRender) return;
 
     const cached = loadBannersCache();
     if (cached !== undefined) {
