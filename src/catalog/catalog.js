@@ -162,6 +162,12 @@ let _activeScreen = 'root'; // 'root' | 'subcats' | 'pair'
 let _activeCatId  = null;
 let _activeSubId  = null;
 
+/* Home "Популярные товары": how many of the shuffled list are shown right
+   now (grows by 24 via loadMorePopular()); reset to 24 whenever the user
+   leaves the unfiltered "all products" view (search/category), so coming
+   back to it starts collapsed again. */
+let _popularVisibleCount = 24;
+
 /* ─── API ────────────────────────────────────────────────────── */
 async function apiFetch(path) {
     const r = await authFetch(path);
@@ -526,8 +532,7 @@ async function initBanner() {
     window.addEventListener('mouseup',   _bannerStart);
 }
 
-/* ─── Catalog: hits rail (source: products.isHit — not in the API yet,
-   so this stays hidden until that field exists) ─────────────────── */
+/* ─── Home: hits rail (товары с isHit, рельса под баннером) ──────── */
 function renderHitsRail() {
     const section = document.getElementById('hitsSection');
     const rail    = document.getElementById('hitsRail');
@@ -897,6 +902,39 @@ function getFiltered() {
     return list;
 }
 
+/* ─── Home "Популярные товары": seeded per-session shuffle ───────
+   Same seed + same input order/length ⇒ same shuffled order, so a
+   background cache refresh (render() called again with fresh data)
+   doesn't visibly reshuffle the grid mid-session. A new session (no
+   sessionStorage entry) gets a fresh seed ⇒ a new order. ─────────── */
+function _getPopularSeed() {
+    let seed = sessionStorage.getItem('catalog_popular_seed');
+    if (!seed) {
+        seed = String(Math.floor(Math.random() * 2 ** 31));
+        sessionStorage.setItem('catalog_popular_seed', seed);
+    }
+    return Number(seed);
+}
+
+function _seededShuffle(arr, seed) {
+    const a = arr.slice();
+    let s = seed >>> 0;
+    function rand() {
+        s = (s * 1103515245 + 12345) & 0x7fffffff;
+        return s / 0x7fffffff;
+    }
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function loadMorePopular() {
+    _popularVisibleCount += 24;
+    render();
+}
+
 /* ─── Helpers ───────────────────────────────────────────────── */
 function fmt(price) { return price.toLocaleString('ru-RU') + ' ₽'; }
 
@@ -929,7 +967,7 @@ function productCardHTML(p) {
         const sub     = subById(p.subId);
         const imgBg   = p.image ? '' : `cat-bg-${cat.color}`;
         const imgIcon = p.image
-            ? `<img class="product-card__photo" src="${p.image}" alt="${p.name}">`
+            ? `<img class="product-card__photo" src="${p.image}" alt="${p.name}" loading="lazy" decoding="async">`
             : iconSvg('image', 28);
 
         const outBadge = !p.inStock
@@ -1003,20 +1041,35 @@ function productCardHTML(p) {
 
 /* ─── Render: root/home grid ────────────────────────────────── */
 function render() {
-    const list  = getFiltered();
-    const grid  = document.getElementById('productsGrid');
-    const empty = document.getElementById('emptyState');
-    const count = document.getElementById('resultsCount');
+    const grid      = document.getElementById('productsGrid');
+    const empty     = document.getElementById('emptyState');
+    const count     = document.getElementById('resultsCount');
+    const loadMore  = document.getElementById('popularLoadMore');
+
+    // "Популярные товары" (все товары вперемешку, без исключения хитов) —
+    // только на Главной и только когда нет активного поиска/категории;
+    // поиск и переход по категории на Главной ведут себя как раньше.
+    const isHomePage       = !document.getElementById('screen-root');
+    const isPopularContext = isHomePage && state.categoryId === null && !state.query;
+    if (!isPopularContext) _popularVisibleCount = 24;
+
+    let list = getFiltered();
+    if (isPopularContext) list = _seededShuffle(list, _getPopularSeed());
 
     if (count) count.textContent = list.length ? plural(list.length, 'товар', 'товара', 'товаров') : '';
 
     if (!list.length) {
         grid.innerHTML = '';
         empty.classList.remove('hidden');
+        if (loadMore) loadMore.classList.add('hidden');
         return;
     }
     empty.classList.add('hidden');
-    grid.innerHTML = list.map(productCardHTML).join('');
+
+    const visibleList = isPopularContext ? list.slice(0, _popularVisibleCount) : list;
+    grid.innerHTML = visibleList.map(productCardHTML).join('');
+
+    if (loadMore) loadMore.classList.toggle('hidden', !(isPopularContext && list.length > visibleList.length));
 }
 
 /* ─── Favourites ─────────────────────────────────────────────── */

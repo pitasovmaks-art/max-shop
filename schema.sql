@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS products (
     sale_notified           INTEGER NOT NULL DEFAULT 0   -- boolean-флаг (0/1)
 );
 
+ALTER TABLE products ADD COLUMN IF NOT EXISTS is_hit INTEGER NOT NULL DEFAULT 0;  -- boolean-флаг (0/1)
+
 CREATE TABLE IF NOT EXISTS product_variants (
     id                   SERIAL  PRIMARY KEY,
     product_id           INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,

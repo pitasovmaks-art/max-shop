@@ -426,6 +426,27 @@ button.product-row__stock {
 button.product-row__stock:hover   { background: rgba(255,255,255,.08); }
 button.product-row__stock:active  { opacity: .7; }
 
+.product-row__hit {
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+/* литеральный цвет, не var(--accent) — --accent переопределён в :root
+   как #FFFFFF (см. комментарий у .fab--import выше), фолбэк не сработает */
+.product-row__hit--on  { color: #FFD60A; }
+.product-row__hit--off { color: var(--text-secondary); }
+button.product-row__hit {
+    background: none;
+    border-radius: 6px;
+    padding: 2px 5px;
+    cursor: pointer;
+    transition: background .15s;
+}
+button.product-row__hit:hover   { background: rgba(255,255,255,.08); }
+button.product-row__hit:active  { opacity: .7; }
+
 .product-row__actions {
     display: flex;
     flex-direction: column;

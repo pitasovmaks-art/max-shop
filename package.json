@@ -10,7 +10,8 @@
     "truncate:demo-catalog": "node server/scripts/truncate-demo-catalog.js",
     "test:require-user": "node server/scripts/test-require-user.js",
     "test:banners": "node server/scripts/test-banners.js",
-    "test:image-processor": "node server/scripts/test-image-processor.js"
+    "test:image-processor": "node server/scripts/test-image-processor.js",
+    "test:products-hit": "node server/scripts/test-products-hit.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",
