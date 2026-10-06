@@ -373,20 +373,27 @@ router.put('/:id', requireAdmin, async (req, res) => {
             newCatOrder = (catMax?.m ?? 0) + 1;
         }
 
+        // isHit не передан (undefined) в теле -> is_hit в БД не меняется
+        // (COALESCE на существующее значение). Сбросить в 0 можно только
+        // явным isHit:false/0 — иначе вызовы вроде quickToggleStock()
+        // (или любой другой код, который ещё не знает про isHit) тихо
+        // стирали бы ранее выставленный хит при каждом PUT.
+        const isHitParam = isHit !== undefined ? (isHit ? 1 : 0) : null;
+
         const changed = await db.execute(
             `UPDATE products
              SET name=$1,"desc"=$2,category_id=$3,sub_id=$4,price=$5,
                  price_krd=$6,price_msk=$7,price_delivery=$8,
-                 in_stock=$9,is_service=$10,is_hit=$11,price_label=$12,image=$13
+                 in_stock=$9,is_service=$10,is_hit=COALESCE($11,is_hit),price_label=$12,image=$13
                  ${newCatOrder !== undefined ? ',sort_order_in_category=$15' : ''}
              WHERE id=$14`,
             newCatOrder !== undefined
                 ? [name, desc || null, categoryId || null, subId || null, price || 0,
                    priceKrd || 0, priceMsk || 0, priceDelivery || 0,
-                   inStock ? 1 : 0, isService ? 1 : 0, isHit ? 1 : 0, priceLabel || null, image || null, +req.params.id, newCatOrder]
+                   inStock ? 1 : 0, isService ? 1 : 0, isHitParam, priceLabel || null, image || null, +req.params.id, newCatOrder]
                 : [name, desc || null, categoryId || null, subId || null, price || 0,
                    priceKrd || 0, priceMsk || 0, priceDelivery || 0,
-                   inStock ? 1 : 0, isService ? 1 : 0, isHit ? 1 : 0, priceLabel || null, image || null, +req.params.id]
+                   inStock ? 1 : 0, isService ? 1 : 0, isHitParam, priceLabel || null, image || null, +req.params.id]
         );
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         const product = normalize(await db.queryOne('SELECT * FROM products WHERE id=$1', [+req.params.id]));

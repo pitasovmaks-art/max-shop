@@ -10,6 +10,10 @@
    (а) POST без isHit создаёт товар с is_hit=0 → API отдаёт isHit:false;
    (б) PUT с isHit:true сохраняет is_hit=1 → API отдаёт isHit:true;
    (в) PUT с isHit:false (назад) → isHit:false;
+   (д) PUT БЕЗ поля isHit вообще у товара с is_hit=1 → is_hit не меняется,
+       остаётся 1 (COALESCE на существующее значение — см. комментарий у
+       PUT /api/products/:id в server/routes/products.js);
+   (е) PUT с явным isHit:true на уже хитовом товаре → остаётся 1;
    (г) POST/PUT без пароля и с неверным паролем -> 401.
 
    Запуск: node server/scripts/test-products-hit.js
@@ -74,7 +78,8 @@ async function fakeQuery(sql, params = []) {
         Object.assign(p, {
             name, desc, category_id: categoryId, sub_id: subId, price,
             price_krd: priceKrd, price_msk: priceMsk, price_delivery: priceDelivery,
-            in_stock: inStock, is_service: isService, is_hit: isHit,
+            in_stock: inStock, is_service: isService,
+            is_hit: isHit === null ? p.is_hit : isHit, // имитация is_hit=COALESCE($N,is_hit)
             price_label: priceLabel, image,
         });
         if (hasCatOrder) p.sort_order_in_category = newCatOrder;
@@ -156,6 +161,36 @@ async function main() {
         });
         const body = await r.json();
         check('PUT /api/products/:id: isHit:false сбрасывается обратно', body.isHit === false);
+    }
+
+    /* ── (д) PUT без isHit в теле у товара с is_hit=1 -> не трогает ── */
+    {
+        // Сначала ставим хит явно, затем шлём PUT вовсе без поля isHit
+        // (как делал бы вызов, который ещё не знает про это поле) —
+        // значение в БД должно остаться прежним, а не сброситься в 0.
+        await fetch(`${base}/api/products/${productId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', ...AUTH },
+            body: JSON.stringify({ name: 'Тестовый товар', categoryId: 1, inStock: true, isHit: true }),
+        });
+        const r = await fetch(`${base}/api/products/${productId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', ...AUTH },
+            body: JSON.stringify({ name: 'Тестовый товар', categoryId: 1, inStock: true }), // isHit нет вообще
+        });
+        const body = await r.json();
+        check('PUT /api/products/:id: без isHit в теле — is_hit=1 не трогается, остаётся true', body.isHit === true);
+    }
+
+    /* ── (е) снова явный isHit:true на уже хитовом товаре -> остаётся true ── */
+    {
+        const r = await fetch(`${base}/api/products/${productId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', ...AUTH },
+            body: JSON.stringify({ name: 'Тестовый товар', categoryId: 1, inStock: true, isHit: true }),
+        });
+        const body = await r.json();
+        check('PUT /api/products/:id: явный isHit:true ставит is_hit=1', body.isHit === true);
     }
 
     /* ── (г) без пароля / с неверным паролем -> 401 ─────────────── */
