@@ -498,6 +498,19 @@ html.city-unknown #city-screen { display: flex; }
 .reset-btn { height: 46px; padding: 0 16px; border-radius: var(--radius-md); background: transparent; border: 1px solid var(--border); font-size: 13px; font-weight: 700; color: var(--text-primary); }
 .show-btn { flex: 1; height: 46px; border-radius: var(--radius-md); background: var(--accent); color: var(--accent-ink); font-size: 14px; font-weight: 800; }
 
+/* ─── Home: "Показать ещё" под сеткой «Популярные товары» ─── */
+.load-more-btn {
+    display: block;
+    width: 100%;
+    height: 46px;
+    margin: 4px 0 8px;
+    border-radius: var(--radius-md);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 14px;
+    font-weight: 800;
+}
+
 /* ─── Home: "Товары" section header above the grid ──────── */
 .section-head {
     display: flex;

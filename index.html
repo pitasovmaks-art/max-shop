@@ -12,7 +12,7 @@
         html { background: #EEF3F1; }
         @media (prefers-color-scheme: dark) { html { background: #0E1613; } }
     </style>
-    <link rel="stylesheet" href="src/catalog/catalog.css?v=20261007">
+    <link rel="stylesheet" href="src/catalog/catalog.css?v=20261008">
     <link rel="stylesheet" href="src/cookie.css?v=20261005">
     <script>
     /* Решает, показывать ли экран выбора города, ДО первой отрисовки —
@@ -129,6 +129,11 @@
         <div class="banner-dots" id="bannerDots"></div>
     </div>
 
+    <div id="hitsSection" class="hidden">
+        <p class="rail-caption">Хиты продаж</p>
+        <div class="hits-rail" id="hitsRail"></div>
+    </div>
+
     <!-- Grid -->
     <main class="main">
         <div class="section-head">
@@ -141,6 +146,7 @@
             <div class="product-card skeleton-card" aria-hidden="true"><div class="product-card__accent"></div><div class="product-card__img"></div><div class="product-card__body"><div class="skel-line skel-line--name"></div><div class="skel-line skel-line--name2"></div><div class="product-card__footer"><div class="skel-line skel-line--price"></div></div></div></div>
             <div class="product-card skeleton-card" aria-hidden="true"><div class="product-card__accent"></div><div class="product-card__img"></div><div class="product-card__body"><div class="skel-line skel-line--name"></div><div class="skel-line skel-line--name2"></div><div class="product-card__footer"><div class="skel-line skel-line--price"></div></div></div></div>
         </div>
+        <button class="load-more-btn hidden" id="popularLoadMore" onclick="loadMorePopular()">Показать ещё</button>
         <div class="empty-state hidden" id="emptyState">
             <div class="empty-state__icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
             <p class="empty-state__title">Ничего не найдено</p>
@@ -211,7 +217,7 @@
 </div>
 <script src="/src/icons.js?v=20261005" defer></script>
 <script src="src/shared/bannerRender.js?v=20261007" defer></script>
-<script src="src/catalog/catalog.js?v=20261007" defer></script>
+<script src="src/catalog/catalog.js?v=20261008" defer></script>
 <script src="src/cookie.js?v=20261005" defer></script>
 </body>
 </html>

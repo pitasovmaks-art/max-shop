@@ -525,6 +525,10 @@ function renderList() {
             ? `<button class="product-row__stock product-row__stock--in" onclick="quickToggleStock(${p.id})" title="Нажмите чтобы снять с продажи">● В наличии</button>`
             : `<button class="product-row__stock product-row__stock--out" onclick="quickToggleStock(${p.id})" title="Нажмите чтобы поставить в наличие">● Нет в наличии</button>`;
 
+        const hitHtml = p.isHit
+            ? `<button class="product-row__hit product-row__hit--on" onclick="quickToggleHit(${p.id})" title="Нажмите чтобы снять с хитов">★ Хит</button>`
+            : `<button class="product-row__hit product-row__hit--off" onclick="quickToggleHit(${p.id})" title="Нажмите чтобы отметить хитом">☆ Хит</button>`;
+
         const varHtml = p.variants && p.variants.length
             ? `<span class="product-row__vars">${p.variants.length} вар.</span>`
             : '';
@@ -565,7 +569,7 @@ function renderList() {
             <div class="product-row__info">
                 <div class="product-row__name">${p.name}</div>
                 <div class="product-row__meta">${metaParts.join(' · ')}</div>
-                <div class="product-row__bottom">${priceHtml}${varHtml}${stockHtml}</div>
+                <div class="product-row__bottom">${priceHtml}${varHtml}${stockHtml}${hitHtml}</div>
             </div>
             <div class="product-row__actions">
                 <button class="action-btn action-btn--edit" onclick="openProductForm(${p.id})" aria-label="Редактировать">
@@ -853,6 +857,7 @@ function fillForm(p) {
     v('f-price-label', p.priceLabel || '');
     document.getElementById('f-instock').checked = !!p.inStock;
     document.getElementById('f-service').checked = !!p.isService;
+    document.getElementById('f-hit').checked     = !!p.isHit;
     const catSel = document.getElementById('f-cat');
     catSel.value = p.categoryId || '';
     handleCatChange();
@@ -885,6 +890,7 @@ function clearForm() {
     v('f-cat', '');
     document.getElementById('f-instock').checked = true;
     document.getElementById('f-service').checked = false;
+    document.getElementById('f-hit').checked     = false;
     handleCatChange();
     handleServiceChange();
     clearPhotoPreview();
@@ -972,6 +978,7 @@ async function saveProduct() {
         priceDelivery: 0,
         inStock:       document.getElementById('f-instock').checked,
         isService,
+        isHit:         document.getElementById('f-hit').checked,
         priceLabel:    (isService && document.getElementById('f-price-label').value)
                            ? document.getElementById('f-price-label').value : null,
         image:         currentPhotoBase64 || null,
@@ -1309,6 +1316,7 @@ async function quickToggleStock(id) {
             priceDelivery: p.priceDelivery || 0,
             inStock:       newStock,
             isService:     p.isService     || false,
+            isHit:         p.isHit         || false,
             priceLabel:    p.priceLabel    || null,
             image:         p.image         || null,
         });
@@ -1316,6 +1324,41 @@ async function quickToggleStock(id) {
         if (idx !== -1) _products[idx] = { ..._products[idx], ...updated };
         renderList();
         showToast(newStock ? '✓ Наличие обновлено: В наличии' : '✓ Наличие обновлено: Нет в наличии');
+    } catch (e) {
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+        showToast('Ошибка: ' + e.message);
+    }
+}
+
+/* ─── Quick hit toggle ───────────────────────────────────── */
+async function quickToggleHit(id) {
+    const p = _products.find(p => p.id === id);
+    if (!p) return;
+    const newHit = !p.isHit;
+
+    const btn = document.querySelector(`#row-${id} .product-row__hit`);
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+
+    try {
+        const updated = await apiAdmin(`/api/products/${id}`, 'PUT', {
+            name:          p.name,
+            desc:          p.desc          || null,
+            categoryId:    p.categoryId,
+            subId:         p.subId         || null,
+            price:         p.price         || 0,
+            priceKrd:      p.priceKrd      || 0,
+            priceMsk:      p.priceMsk      || 0,
+            priceDelivery: p.priceDelivery || 0,
+            inStock:       p.inStock       || false,
+            isService:     p.isService     || false,
+            isHit:         newHit,
+            priceLabel:    p.priceLabel    || null,
+            image:         p.image         || null,
+        });
+        const idx = _products.findIndex(p => p.id === id);
+        if (idx !== -1) _products[idx] = { ..._products[idx], ...updated };
+        renderList();
+        showToast(newHit ? '✓ Отмечен как хит продаж' : '✓ Снят с хитов продаж');
     } catch (e) {
         if (btn) { btn.disabled = false; btn.style.opacity = ''; }
         showToast('Ошибка: ' + e.message);
