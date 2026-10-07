@@ -558,14 +558,43 @@ function showCatalogScreen(name) {
     window.scrollTo(0, 0);
 }
 
-function openCategoryDrilldown(catId, subId, restoreOpts) {
-    if (subId != null && !Number.isNaN(subId)) { openPairProducts(catId, subId, restoreOpts); return; }
-    const subs = _subcategories.filter(s => s.categoryId === catId);
-    if (subs.length) openSubcatsScreen(catId);
-    else openPairProducts(catId, null, restoreOpts);
+/* ─── Catalog history: pushState только при переходе на более глубокий
+   экран (root→subcats, subcats→pair, root→pair напрямую), чтобы системная
+   «Назад» в Max/браузере поднимала на один уровень, а с корня каталога
+   выходила на предыдущую страницу (история каталога не разрастается на
+   плоских операциях — поиск/фильтры/сортировка всегда replaceState, см.
+   requirement 4). navMode, который принимают openSubcatsScreen/
+   openPairProducts/syncPairUrl/performCatalogSearch:
+     'push'    — обычный клик по категории/подкатегории/плитке (глубже);
+     'replace' — восстановление состояния при первой загрузке страницы
+                 (прямая ссылка/обновление) — тот же уровень, новой записи
+                 в истории быть не должно;
+     'none'    — реакция на popstate (реальная «Назад»/«Вперёд») — URL уже
+                 выставлен браузером, трогать историю не нужно, только
+                 перерисовать экран.
+   _historyPushed — был ли за время жизни этой страницы хоть один pushState
+   от каталога; используется собственной кнопкой «назад» в хедере (см.
+   closeSubcatsScreen/closePairScreen) — see requirement 3. */
+let _historyPushed = false;
+
+function catalogPushOrReplace(url, navMode) {
+    if (navMode === 'none') return;
+    if (navMode === 'push') {
+        history.pushState(null, '', url);
+        _historyPushed = true;
+    } else {
+        history.replaceState(null, '', url);
+    }
 }
 
-function openSubcatsScreen(catId) {
+function openCategoryDrilldown(catId, subId, restoreOpts, navMode = 'push') {
+    if (subId != null && !Number.isNaN(subId)) { openPairProducts(catId, subId, restoreOpts, navMode); return; }
+    const subs = _subcategories.filter(s => s.categoryId === catId);
+    if (subs.length) openSubcatsScreen(catId, navMode);
+    else openPairProducts(catId, null, restoreOpts, navMode);
+}
+
+function openSubcatsScreen(catId, navMode = 'push') {
     const grid = document.getElementById('subcatGrid');
     const titleEl = document.getElementById('subcatsTitle');
     if (!grid || !titleEl) return;
@@ -585,11 +614,20 @@ function openSubcatsScreen(catId) {
             <span class="subcat-tile__ic">${iconSvg('grid', 22)}</span>
             <span>Все товары</span>
         </button>`;
-    history.replaceState(null, '', `catalog.html?category=${catId}`);
+    catalogPushOrReplace(`catalog.html?category=${catId}`, navMode);
     showCatalogScreen('subcats');
 }
 
+/* Собственная кнопка «назад» в хедере — requirement 3: если за время жизни
+   страницы каталог хоть раз сделал pushState, в истории точно есть запись
+   экрана-предка (её же мы туда и положили) — просто уходим на неё
+   history.back(), а popstate (см. ниже) сам перерисует экран по новому URL.
+   Если же пользователь попал сюда сразу по прямой ссылке/обновлением
+   страницы (ни одного pushState за эту загрузку не было), в истории нет
+   ничего «нашего» — history.back() увёл бы мимо каталога; вместо этого
+   вручную поднимаемся на уровень выше через replaceState, как раньше. */
 function closeSubcatsScreen() {
+    if (_historyPushed) { history.back(); return; }
     history.replaceState(null, '', 'catalog.html');
     showCatalogScreen('root');
 }
@@ -647,11 +685,12 @@ function updateFilterBadge() {
     badge.textContent = n;
 }
 
-/* restoreOpts — только при восстановлении состояния из URL при загрузке
-   страницы (см. init()): { brand:[...], priceMin, priceMax, sort }.
+/* restoreOpts — только при восстановлении состояния из URL (см. init()/
+   restoreScreenFromUrl()): { brand:[...], priceMin, priceMax, sort }.
    Обычный тап по категории/подкатегории его не передаёт — фильтры и
-   сортировка сбрасываются, как и раньше. */
-function openPairProducts(catId, subId, restoreOpts) {
+   сортировка сбрасываются, как и раньше. navMode — см. комментарий у
+   catalogPushOrReplace() выше. */
+function openPairProducts(catId, subId, restoreOpts, navMode = 'push') {
     _activeCatId = catId;
     _activeSubId = (subId == null) ? null : subId;
     if (restoreOpts) {
@@ -677,37 +716,45 @@ function openPairProducts(catId, subId, restoreOpts) {
         }
     }
 
-    syncPairUrl();
+    syncPairUrl(navMode);
     renderPairProducts();
     showCatalogScreen('pair');
 }
 
 /* Отражает категорию/подкатегорию + применённые (не черновые) фильтры и
    сортировку экрана товаров в URL — чтобы «Назад» в Max и обновление
-   страницы восстанавливали ровно то же состояние (см. init()). */
-function syncPairUrl() {
+   страницы восстанавливали ровно то же состояние (см. restoreScreenFromUrl()).
+   navMode по умолчанию 'replace' — так и должно быть для всех вызовов
+   из смены фильтров/сортировки на том же экране (requirement 4); сам
+   openPairProducts передаёт свой navMode явно. */
+function syncPairUrl(navMode = 'replace') {
     const params = new URLSearchParams();
     params.set('category', _activeCatId);
     // sub=all различает «показать все товары категории» (кнопка в
     // openSubcatsScreen) от обычного «?category=ID без sub», который
-    // openCategoryDrilldown/init() трактуют как «открыть подкатегории,
-    // если они есть» — иначе оба случая давали бы один и тот же URL.
+    // openCategoryDrilldown/restoreScreenFromUrl() трактуют как «открыть
+    // подкатегории, если они есть» — иначе оба случая давали бы один и тот же URL.
     if (_activeSubId != null) params.set('sub', _activeSubId);
     else if (_activeCatId !== 'sale') params.set('sub', 'all');
     if (pairFilters.brand.size) params.set('brand', [...pairFilters.brand].join(','));
     if (pairFilters.price[0] != null) params.set('priceMin', pairFilters.price[0]);
     if (pairFilters.price[1] != null) params.set('priceMax', pairFilters.price[1]);
     if (pairSort && pairSort !== 'default') params.set('sort', pairSort);
-    history.replaceState(null, '', 'catalog.html?' + params.toString());
+    catalogPushOrReplace('catalog.html?' + params.toString(), navMode);
 }
 
 function closePairScreen() {
+    if (_historyPushed) { history.back(); return; }
+    // Фолбэк: прямая ссылка/обновление страницы — в истории нет записи,
+    // которую сделал бы каталог (ни одного pushState за эту загрузку не
+    // было), поэтому history.back() увёл бы мимо каталога. Поднимаемся на
+    // уровень выше вручную, как и раньше.
     // Категория с подкатегориями -> назад на экран подкатегорий (в том
     // числе из «Показать все товары», где _activeSubId сам null, но
     // подкатегории у категории всё равно есть). Категория без подкатегорий
     // (или «Акции») -> у неё никогда не было экрана подкатегорий, назад на корень.
     const subs = _subcategories.filter(s => s.categoryId === _activeCatId);
-    if (subs.length) { openSubcatsScreen(_activeCatId); return; }
+    if (subs.length) { openSubcatsScreen(_activeCatId, 'replace'); return; }
     history.replaceState(null, '', 'catalog.html');
     showCatalogScreen('root');
 }
@@ -1046,12 +1093,16 @@ function showSearchResultsView() {
     if (searchSection) searchSection.classList.remove('hidden');
 }
 
-async function performCatalogSearch() {
+/* navMode — см. комментарий у catalogPushOrReplace(): поиск никогда не
+   делает pushState (requirement 4 — ввод в строку поиска не должен
+   засорять историю), по умолчанию 'replace'; 'none' приходит только из
+   restoreScreenFromUrl() при реакции на popstate. */
+async function performCatalogSearch(navMode = 'replace') {
     const q = state.query;
-    if (!q) { showCategoriesView(); history.replaceState(null, '', 'catalog.html'); return; }
+    if (!q) { showCategoriesView(); catalogPushOrReplace('catalog.html', navMode); return; }
 
     showSearchResultsView();
-    history.replaceState(null, '', 'catalog.html?q=' + encodeURIComponent(q));
+    catalogPushOrReplace('catalog.html?q=' + encodeURIComponent(q), navMode);
 
     const seq   = ++_searchSeq;
     const grid  = document.getElementById('searchResultsGrid');
@@ -1332,6 +1383,74 @@ function openFavorites() {
     location.href = 'src/favorites/favorites.html';
 }
 
+/* ─── Catalog: render the screen matching the current URL ─────────
+   Общая логика для первой загрузки (init(), navMode='replace') и для
+   реакции на popstate — системную «Назад»/«Вперёд» (navMode='none', см.
+   обработчик ниже). Не делает сетевых запросов, кроме поиска (q=) —
+   категории/подкатегории/товары уже в памяти (_categories/_subcategories/
+   _products), просто перерисовываются. */
+function restoreScreenFromUrl(navMode) {
+    const params = new URLSearchParams(location.search);
+    const urlQ   = params.get('q');
+    const urlCat = params.get('category');
+    const urlSub = params.get('sub');
+
+    if (urlQ) {
+        const input = document.getElementById('searchInput');
+        if (input) {
+            input.value = urlQ;
+            state.query = urlQ.trim();
+            document.getElementById('searchClear')?.classList.toggle('hidden', !state.query);
+            performCatalogSearch(navMode);
+        }
+        return;
+    }
+
+    if (urlCat === 'sale') {
+        openPairProducts('sale', null, undefined, navMode);
+        return;
+    }
+
+    const catNum = urlCat ? Number(urlCat) : NaN;
+    if (!Number.isNaN(catNum)) {
+        const restoreOpts = {
+            brand:    (params.get('brand') || '').split(',').filter(Boolean),
+            priceMin: params.has('priceMin') ? Number(params.get('priceMin')) : null,
+            priceMax: params.has('priceMax') ? Number(params.get('priceMax')) : null,
+            sort:     params.get('sort') || 'default',
+        };
+        if (urlSub === 'all') {
+            // «Показать все товары категории» — минуя экран подкатегорий,
+            // даже если они у категории есть (см. syncPairUrl()).
+            openPairProducts(catNum, null, restoreOpts, navMode);
+        } else {
+            const subNum = urlSub ? Number(urlSub) : NaN;
+            openCategoryDrilldown(catNum, Number.isNaN(subNum) ? undefined : subNum, restoreOpts, navMode);
+        }
+        return;
+    }
+
+    // Нет ни q=, ни category= — голый catalog.html: список категорий.
+    // При первой загрузке (init()) это уже и так показано по умолчанию;
+    // explicit-вызов нужен для popstate (пользователь дошёл «Назад» до
+    // самого корня каталога, экран должен переключиться обратно).
+    showCategoriesView();
+    showCatalogScreen('root');
+}
+
+/* Системная «Назад»/«Вперёд» — URL уже сменил браузер (см. комментарий у
+   catalogPushOrReplace), просто синхронизируем экран с ним. Пропускаем
+   повторную обработку одного и того же search, если событие почему-то
+   прилетело дважды подряд (защита от циклов/лишней перерисовки, см.
+   requirement 2) — на Главной этого слушателя нет смысла вешать вообще. */
+let _lastPopstateSearch = null;
+window.addEventListener('popstate', () => {
+    if (!document.getElementById('screen-root')) return;
+    if (location.search === _lastPopstateSearch) return;
+    _lastPopstateSearch = location.search;
+    restoreScreenFromUrl('none');
+});
+
 /* ─── Init ──────────────────────────────────────────────────── */
 async function init() {
     const tgId = getTgId();
@@ -1409,45 +1528,14 @@ async function init() {
 
     if (isBack && backScreen === 'pair' && backCatId != null) {
         // Returning from a product page opened inside the pair-products screen
-        openPairProducts(backCatId, backSubId);
+        openPairProducts(backCatId, backSubId, undefined, 'replace');
     } else if (!isBack) {
         // Coming from a Home/Catalog rail tile (?category=ID[&sub=ID][&brand=&priceMin=&priceMax=&sort=],
         // ?category=sale, or a search ?q=...) — restore the matching screen
-        // once data is ready, so "Назад" in Max and a page refresh land back
-        // on the same place (see syncPairUrl()/performCatalogSearch()).
-        const params = new URLSearchParams(location.search);
-        const urlQ   = params.get('q');
-        const urlCat = params.get('category');
-        const urlSub = params.get('sub');
-        if (urlQ) {
-            const input = document.getElementById('searchInput');
-            if (input) {
-                input.value = urlQ;
-                state.query = urlQ.trim();
-                document.getElementById('searchClear')?.classList.toggle('hidden', !state.query);
-                performCatalogSearch();
-            }
-        } else if (urlCat === 'sale') {
-            openPairProducts('sale', null);
-        } else {
-            const catNum = urlCat ? Number(urlCat) : NaN;
-            if (!Number.isNaN(catNum)) {
-                const restoreOpts = {
-                    brand:    (params.get('brand') || '').split(',').filter(Boolean),
-                    priceMin: params.has('priceMin') ? Number(params.get('priceMin')) : null,
-                    priceMax: params.has('priceMax') ? Number(params.get('priceMax')) : null,
-                    sort:     params.get('sort') || 'default',
-                };
-                if (urlSub === 'all') {
-                    // «Показать все товары категории» — минуя экран подкатегорий,
-                    // даже если они у категории есть (см. syncPairUrl()).
-                    openPairProducts(catNum, null, restoreOpts);
-                } else {
-                    const subNum = urlSub ? Number(urlSub) : NaN;
-                    openCategoryDrilldown(catNum, Number.isNaN(subNum) ? undefined : subNum, restoreOpts);
-                }
-            }
-        }
+        // once data is ready, so "Назад" in Max/браузере и обновление страницы
+        // восстанавливают то же состояние, не добавляя лишних записей в
+        // историю (navMode='replace' — см. restoreScreenFromUrl()).
+        restoreScreenFromUrl('replace');
     }
 
     if (savedScroll) {
