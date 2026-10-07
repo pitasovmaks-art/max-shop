@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 ALTER TABLE products ADD COLUMN IF NOT EXISTS is_hit INTEGER NOT NULL DEFAULT 0;  -- boolean-флаг (0/1)
+ALTER TABLE products ADD COLUMN IF NOT EXISTS brand   TEXT;  -- до 100 символов, проверяется в server/routes/products.js
+ALTER TABLE products ADD COLUMN IF NOT EXISTS article TEXT;  -- до 100 символов, проверяется в server/routes/products.js
 
 CREATE TABLE IF NOT EXISTS product_variants (
     id                   SERIAL  PRIMARY KEY,

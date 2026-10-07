@@ -403,6 +403,18 @@ html.city-unknown #city-screen { display: flex; }
     color: var(--accent);
     display: flex; align-items: center; justify-content: center;
 }
+.subcat-tile--all {
+    background: var(--bg-secondary);
+    color: var(--accent-ink);
+}
+.subcat-tile--all .subcat-tile__ic { background: var(--accent); color: var(--accent-ink); }
+
+/* ─── Breadcrumb: category › subcategory, under the screen header ── */
+.breadcrumb {
+    padding: 8px 16px 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
 
 /* ─── Catalog: pair-products header filter button ────────── */
 .header__filter {

@@ -368,7 +368,11 @@ function renderCategoryRail() {
         </button>`
         : '';
 
-    rail.innerHTML = saleTile + _categories.map(c =>
+    // Категории без единого товара не показываем — тапать на них всё
+    // равно было бы некуда (пустой экран подкатегорий/товаров).
+    const nonEmptyCats = _categories.filter(c => _products.some(p => p.categoryId === c.id));
+
+    rail.innerHTML = saleTile + nonEmptyCats.map(c =>
         `<button class="cat-tile" onclick="${openTile(c.id)}">
             <span class="cat-tile__ic">${categoryIconSvg(c, 20)}</span>
             <span>${c.name}</span>
@@ -554,11 +558,11 @@ function showCatalogScreen(name) {
     window.scrollTo(0, 0);
 }
 
-function openCategoryDrilldown(catId, subId) {
-    if (subId != null && !Number.isNaN(subId)) { openPairProducts(catId, subId); return; }
+function openCategoryDrilldown(catId, subId, restoreOpts) {
+    if (subId != null && !Number.isNaN(subId)) { openPairProducts(catId, subId, restoreOpts); return; }
     const subs = _subcategories.filter(s => s.categoryId === catId);
     if (subs.length) openSubcatsScreen(catId);
-    else openPairProducts(catId, null);
+    else openPairProducts(catId, null, restoreOpts);
 }
 
 function openSubcatsScreen(catId) {
@@ -569,12 +573,18 @@ function openSubcatsScreen(catId) {
     _activeCatId = catId;
     _activeSubId = null;
     titleEl.textContent = cat.name;
+    const crumb = document.getElementById('subcatsBreadcrumb');
+    if (crumb) crumb.textContent = cat.name;
     const subs = _subcategories.filter(s => s.categoryId === catId);
     grid.innerHTML = subs.map(s => `
         <button class="subcat-tile" onclick="openPairProducts(${catId},${s.id})">
             <span class="subcat-tile__ic">${categoryIconSvg(cat, 22)}</span>
             <span>${s.name}</span>
-        </button>`).join('');
+        </button>`).join('')
+        + `<button class="subcat-tile subcat-tile--all" onclick="openPairProducts(${catId},null)">
+            <span class="subcat-tile__ic">${iconSvg('grid', 22)}</span>
+            <span>Все товары</span>
+        </button>`;
     history.replaceState(null, '', `catalog.html?category=${catId}`);
     showCatalogScreen('subcats');
 }
@@ -593,6 +603,20 @@ function clonePairFilters(f) { return { brand: new Set(f.brand), price: f.price.
 
 let pairFilters      = emptyPairFilters();
 let draftPairFilters = null;
+
+/* Сортировка на экране товаров (категория/подкатегория) — отдельная от
+   фильтров ось: не считается в счётчике на кнопке «Фильтры», но живёт в
+   той же шторке (см. sortSection() ниже) и в том же URL (см. syncPairUrl). */
+let pairSort      = 'default'; // 'default' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc'
+let draftPairSort = 'default';
+
+function sortPairList(list, sort) {
+    if (sort === 'price_asc')  return [...list].sort((a, b) => displayPriceFor(a) - displayPriceFor(b));
+    if (sort === 'price_desc') return [...list].sort((a, b) => displayPriceFor(b) - displayPriceFor(a));
+    if (sort === 'name_asc')   return [...list].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    if (sort === 'name_desc')  return [...list].sort((a, b) => b.name.localeCompare(a.name, 'ru'));
+    return list;
+}
 
 function pairProductsList() {
     if (_activeCatId === 'sale') return _products.filter(p => isSaleForCity(p, _city));
@@ -623,32 +647,67 @@ function updateFilterBadge() {
     badge.textContent = n;
 }
 
-function openPairProducts(catId, subId) {
+/* restoreOpts — только при восстановлении состояния из URL при загрузке
+   страницы (см. init()): { brand:[...], priceMin, priceMax, sort }.
+   Обычный тап по категории/подкатегории его не передаёт — фильтры и
+   сортировка сбрасываются, как и раньше. */
+function openPairProducts(catId, subId, restoreOpts) {
     _activeCatId = catId;
     _activeSubId = (subId == null) ? null : subId;
-    pairFilters  = emptyPairFilters();
+    if (restoreOpts) {
+        pairFilters = { brand: new Set(restoreOpts.brand || []), price: [restoreOpts.priceMin ?? null, restoreOpts.priceMax ?? null] };
+        pairSort    = restoreOpts.sort || 'default';
+    } else {
+        pairFilters = emptyPairFilters();
+        pairSort    = 'default';
+    }
     updateFilterBadge();
 
     const titleEl = document.getElementById('pairTitle');
+    const crumb   = document.getElementById('pairBreadcrumb');
     if (titleEl) {
         if (catId === 'sale') {
             titleEl.textContent = 'Акции';
+            if (crumb) crumb.textContent = '';
         } else {
             const cat = catById(catId);
             const sub = _activeSubId != null ? subById(_activeSubId) : null;
             titleEl.textContent = sub ? sub.name : cat.name;
+            if (crumb) crumb.textContent = sub ? `${cat.name} › ${sub.name}` : cat.name;
         }
     }
 
-    const url = 'catalog.html?category=' + catId + (_activeSubId != null ? '&sub=' + _activeSubId : '');
-    history.replaceState(null, '', url);
+    syncPairUrl();
     renderPairProducts();
     showCatalogScreen('pair');
 }
 
+/* Отражает категорию/подкатегорию + применённые (не черновые) фильтры и
+   сортировку экрана товаров в URL — чтобы «Назад» в Max и обновление
+   страницы восстанавливали ровно то же состояние (см. init()). */
+function syncPairUrl() {
+    const params = new URLSearchParams();
+    params.set('category', _activeCatId);
+    // sub=all различает «показать все товары категории» (кнопка в
+    // openSubcatsScreen) от обычного «?category=ID без sub», который
+    // openCategoryDrilldown/init() трактуют как «открыть подкатегории,
+    // если они есть» — иначе оба случая давали бы один и тот же URL.
+    if (_activeSubId != null) params.set('sub', _activeSubId);
+    else if (_activeCatId !== 'sale') params.set('sub', 'all');
+    if (pairFilters.brand.size) params.set('brand', [...pairFilters.brand].join(','));
+    if (pairFilters.price[0] != null) params.set('priceMin', pairFilters.price[0]);
+    if (pairFilters.price[1] != null) params.set('priceMax', pairFilters.price[1]);
+    if (pairSort && pairSort !== 'default') params.set('sort', pairSort);
+    history.replaceState(null, '', 'catalog.html?' + params.toString());
+}
+
 function closePairScreen() {
+    // Категория с подкатегориями -> назад на экран подкатегорий (в том
+    // числе из «Показать все товары», где _activeSubId сам null, но
+    // подкатегории у категории всё равно есть). Категория без подкатегорий
+    // (или «Акции») -> у неё никогда не было экрана подкатегорий, назад на корень.
     const subs = _subcategories.filter(s => s.categoryId === _activeCatId);
-    if (_activeSubId != null && subs.length) { openSubcatsScreen(_activeCatId); return; }
+    if (subs.length) { openSubcatsScreen(_activeCatId); return; }
     history.replaceState(null, '', 'catalog.html');
     showCatalogScreen('root');
 }
@@ -660,13 +719,19 @@ function renderPairChips() {
     wrap.innerHTML = '';
     let any = false;
 
+    // Бренд — текст из админки (не наш контент), поэтому только
+    // createTextNode/textContent, никогда innerHTML с его значением.
     pairFilters.brand.forEach(b => {
         any = true;
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'filter-chip';
-        btn.innerHTML = `${b} <span aria-hidden="true">✕</span>`;
-        btn.addEventListener('click', () => { pairFilters.brand.delete(b); renderPairProducts(); updateFilterBadge(); });
+        btn.appendChild(document.createTextNode(b + ' '));
+        const x = document.createElement('span');
+        x.setAttribute('aria-hidden', 'true');
+        x.textContent = '✕';
+        btn.appendChild(x);
+        btn.addEventListener('click', () => { pairFilters.brand.delete(b); renderPairProducts(); updateFilterBadge(); syncPairUrl(); });
         wrap.appendChild(btn);
     });
     if (pairFilters.price[0] != null || pairFilters.price[1] != null) {
@@ -677,7 +742,7 @@ function renderPairChips() {
         btn.type = 'button';
         btn.className = 'filter-chip';
         btn.innerHTML = `${label} <span aria-hidden="true">✕</span>`;
-        btn.addEventListener('click', () => { pairFilters.price = [null, null]; renderPairProducts(); updateFilterBadge(); });
+        btn.addEventListener('click', () => { pairFilters.price = [null, null]; renderPairProducts(); updateFilterBadge(); syncPairUrl(); });
         wrap.appendChild(btn);
     }
     outer.classList.toggle('hidden', !any);
@@ -685,7 +750,7 @@ function renderPairChips() {
 
 function renderPairProducts() {
     const all   = pairProductsList();
-    const list  = all.filter(p => matchesPairFilters(p, pairFilters));
+    const list  = sortPairList(all.filter(p => matchesPairFilters(p, pairFilters)), pairSort);
     const grid  = document.getElementById('pairProductsGrid');
     const empty = document.getElementById('pairEmptyState');
     const count = document.getElementById('pairResultsCount');
@@ -727,18 +792,72 @@ function rangeSection(label, key, range, unit) {
     return wrap;
 }
 
+// options (бренды) — текст из админки, не наш контент: строится через
+// DOM/textContent, а не через innerHTML-интерполяцию (XSS-защита).
 function checkSection(label, key, options) {
     const wrap = document.createElement('div');
     wrap.className = 'sheet-sect';
-    wrap.innerHTML = `<p class="sheet-sect__label">${label}</p><div class="check-list">`
-        + options.map(o => `<label class="check-row"><input type="checkbox" value="${o}"${draftPairFilters[key].has(o) ? ' checked' : ''}><span>${o}</span></label>`).join('')
-        + `</div>`;
-    wrap.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    const labelEl = document.createElement('p');
+    labelEl.className = 'sheet-sect__label';
+    labelEl.textContent = label;
+    wrap.appendChild(labelEl);
+
+    const list = document.createElement('div');
+    list.className = 'check-list';
+    options.forEach(o => {
+        const row = document.createElement('label');
+        row.className = 'check-row';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = o;
+        cb.checked = draftPairFilters[key].has(o);
         cb.addEventListener('change', () => {
             if (cb.checked) draftPairFilters[key].add(cb.value); else draftPairFilters[key].delete(cb.value);
             updateShowBtn();
         });
+        const span = document.createElement('span');
+        span.textContent = o;
+        row.appendChild(cb);
+        row.appendChild(span);
+        list.appendChild(row);
     });
+    wrap.appendChild(list);
+    return wrap;
+}
+
+const PAIR_SORT_OPTIONS = [
+    ['default',    'По умолчанию'],
+    ['price_asc',  'Сначала дешевле'],
+    ['price_desc', 'Сначала дороже'],
+    ['name_asc',   'По названию, А→Я'],
+];
+
+function sortSection() {
+    const wrap = document.createElement('div');
+    wrap.className = 'sheet-sect';
+    const labelEl = document.createElement('p');
+    labelEl.className = 'sheet-sect__label';
+    labelEl.textContent = 'Сортировка';
+    wrap.appendChild(labelEl);
+
+    const list = document.createElement('div');
+    list.className = 'check-list';
+    PAIR_SORT_OPTIONS.forEach(([val, label]) => {
+        const row = document.createElement('label');
+        row.className = 'check-row';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'pairSort';
+        radio.value = val;
+        radio.checked = draftPairSort === val;
+        radio.addEventListener('change', () => { if (radio.checked) draftPairSort = val; });
+        const span = document.createElement('span');
+        span.textContent = label;
+        row.appendChild(radio);
+        row.appendChild(span);
+        list.appendChild(row);
+    });
+    wrap.appendChild(list);
     return wrap;
 }
 
@@ -750,6 +869,7 @@ function buildSheetBody() {
 
     const prices = all.map(displayPriceFor).filter(v => v > 0);
     const priceRange = prices.length ? [Math.min(...prices), Math.max(...prices)] : [0, 0];
+    body.appendChild(sortSection());
     body.appendChild(rangeSection('Цена', 'price', priceRange, '₽'));
 
     const brands = [...new Set(all.map(p => p.brand).filter(Boolean))].sort();
@@ -772,6 +892,7 @@ const SHEET_ANIM_MS = 300;
 
 function openFilterSheet() {
     draftPairFilters = clonePairFilters(pairFilters);
+    draftPairSort    = pairSort;
     buildSheetBody();
     updateShowBtn();
     clearTimeout(_sheetCloseTimer);
@@ -790,8 +911,10 @@ function cancelFilterSheet() { closeFilterSheetAnimated(); }
 
 function confirmFilterSheet() {
     pairFilters = draftPairFilters;
+    pairSort    = draftPairSort;
     renderPairProducts();
     updateFilterBadge();
+    syncPairUrl();
     closeFilterSheetAnimated();
 }
 
@@ -824,14 +947,17 @@ function initFilterSheet() {
     showBtn.addEventListener('click', confirmFilterSheet);
     resetBtn.addEventListener('click', () => {
         draftPairFilters = emptyPairFilters();
+        draftPairSort    = 'default';
         buildSheetBody();
         updateShowBtn();
     });
     const emptyResetBtn = document.getElementById('pairEmptyResetBtn');
     if (emptyResetBtn) emptyResetBtn.addEventListener('click', () => {
         pairFilters = emptyPairFilters();
+        pairSort    = 'default';
         renderPairProducts();
         updateFilterBadge();
+        syncPairUrl();
     });
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && !sheet.classList.contains('hidden')) cancelFilterSheet();
@@ -865,19 +991,89 @@ function initFilterSheet() {
 }
 
 /* ─── Search ────────────────────────────────────────────────── */
+/* На Каталоге (screen-root существует) поиск параметризованным
+   запросом уходит на сервер (GET /api/products?q=, см. products.js) —
+   с задержкой ввода и заменой категорий результатами, см.
+   performCatalogSearch() ниже. На Главной (тот же HTML/JS, без
+   screen-root) поведение не меняется: как и раньше, фильтрует уже
+   загруженный локальный список товаров через render()/getFiltered(). */
 function handleSearch() {
     const input = document.getElementById('searchInput');
-    state.query = input.value.trim().toLowerCase();
-    document.getElementById('searchClear').classList.toggle('hidden', !state.query);
+    const onCatalogPage = !!document.getElementById('screen-root');
     clearTimeout(_searchTimer);
-    _searchTimer = setTimeout(render, 250);
+    if (onCatalogPage) {
+        state.query = input.value.trim();
+        document.getElementById('searchClear').classList.toggle('hidden', !state.query);
+        _searchTimer = setTimeout(performCatalogSearch, CATALOG_SEARCH_DEBOUNCE_MS);
+    } else {
+        state.query = input.value.trim().toLowerCase();
+        document.getElementById('searchClear').classList.toggle('hidden', !state.query);
+        _searchTimer = setTimeout(render, 250);
+    }
 }
 
 function clearSearch() {
     document.getElementById('searchInput').value = '';
     state.query = '';
     document.getElementById('searchClear').classList.add('hidden');
-    render();
+    if (document.getElementById('screen-root')) {
+        showCategoriesView();
+        history.replaceState(null, '', 'catalog.html');
+    } else {
+        render();
+    }
+}
+
+/* ─── Catalog root search: server-side, debounced ──────────────────
+   Пустой запрос -> список категорий (см. ТЗ); непустой -> запрос на
+   сервер (параметризованный, экранирование %/_ и лимиты — на сервере,
+   см. GET /api/products в server/routes/products.js), результаты
+   заменяют список категорий на экране. */
+const CATALOG_SEARCH_DEBOUNCE_MS = 300;
+let _searchSeq = 0; // против гонки: показываем только самый свежий ответ
+
+function showCategoriesView() {
+    const catSection    = document.getElementById('catRailSection');
+    const searchSection = document.getElementById('searchResultsSection');
+    if (catSection)    catSection.classList.remove('hidden');
+    if (searchSection) searchSection.classList.add('hidden');
+}
+
+function showSearchResultsView() {
+    const catSection    = document.getElementById('catRailSection');
+    const searchSection = document.getElementById('searchResultsSection');
+    if (catSection)    catSection.classList.add('hidden');
+    if (searchSection) searchSection.classList.remove('hidden');
+}
+
+async function performCatalogSearch() {
+    const q = state.query;
+    if (!q) { showCategoriesView(); history.replaceState(null, '', 'catalog.html'); return; }
+
+    showSearchResultsView();
+    history.replaceState(null, '', 'catalog.html?q=' + encodeURIComponent(q));
+
+    const seq   = ++_searchSeq;
+    const grid  = document.getElementById('searchResultsGrid');
+    const empty = document.getElementById('searchEmptyState');
+    const count = document.getElementById('searchResultsCount');
+    try {
+        const results = await apiFetch('/api/products?q=' + encodeURIComponent(q));
+        if (seq !== _searchSeq) return; // устарело — пришёл более новый запрос, этот ответ игнорируем
+        if (count) count.textContent = results.length ? plural(results.length, 'товар', 'товара', 'товаров') : '';
+        if (!results.length) {
+            if (grid) grid.innerHTML = '';
+            if (empty) empty.classList.remove('hidden');
+        } else {
+            if (empty) empty.classList.add('hidden');
+            if (grid) grid.innerHTML = results.map(productCardHTML).join('');
+        }
+    } catch (e) {
+        if (seq !== _searchSeq) return;
+        if (grid) grid.innerHTML = '';
+        if (empty) empty.classList.remove('hidden');
+        if (count) count.textContent = 'Ошибка загрузки';
+    }
 }
 
 /* ─── Filter products ───────────────────────────────────────── */
@@ -1042,6 +1238,7 @@ function productCardHTML(p) {
 /* ─── Render: root/home grid ────────────────────────────────── */
 function render() {
     const grid      = document.getElementById('productsGrid');
+    if (!grid) return; // Каталог больше не показывает общий список товаров на корне (см. performCatalogSearch) — это теперь только для Главной
     const empty     = document.getElementById('emptyState');
     const count     = document.getElementById('resultsCount');
     const loadMore  = document.getElementById('popularLoadMore');
@@ -1175,8 +1372,14 @@ async function init() {
         // Фоновое обновление упало, но на экране уже валидный кэш — не
         // перекрываем его сообщением об ошибке, просто остаёмся на нём.
         if (!cached) {
-            document.getElementById('emptyState').classList.remove('hidden');
-            document.getElementById('resultsCount').textContent = 'Ошибка загрузки';
+            // emptyState/resultsCount — только на Главной (там общий список
+            // товаров всё ещё есть); на Каталоге такого списка на корне
+            // больше нет (см. catalog.html), поэтому там просто тост.
+            const emptyEl = document.getElementById('emptyState');
+            const countEl = document.getElementById('resultsCount');
+            if (emptyEl) emptyEl.classList.remove('hidden');
+            if (countEl) countEl.textContent = 'Ошибка загрузки';
+            if (!emptyEl) showToast('Ошибка загрузки каталога');
         }
     }
 
@@ -1208,18 +1411,41 @@ async function init() {
         // Returning from a product page opened inside the pair-products screen
         openPairProducts(backCatId, backSubId);
     } else if (!isBack) {
-        // Coming from a Home/Catalog rail tile (?category=ID[&sub=ID], or
-        // ?category=sale) — open the matching drill-down screen once ready.
+        // Coming from a Home/Catalog rail tile (?category=ID[&sub=ID][&brand=&priceMin=&priceMax=&sort=],
+        // ?category=sale, or a search ?q=...) — restore the matching screen
+        // once data is ready, so "Назад" in Max and a page refresh land back
+        // on the same place (see syncPairUrl()/performCatalogSearch()).
         const params = new URLSearchParams(location.search);
+        const urlQ   = params.get('q');
         const urlCat = params.get('category');
         const urlSub = params.get('sub');
-        if (urlCat === 'sale') {
+        if (urlQ) {
+            const input = document.getElementById('searchInput');
+            if (input) {
+                input.value = urlQ;
+                state.query = urlQ.trim();
+                document.getElementById('searchClear')?.classList.toggle('hidden', !state.query);
+                performCatalogSearch();
+            }
+        } else if (urlCat === 'sale') {
             openPairProducts('sale', null);
         } else {
             const catNum = urlCat ? Number(urlCat) : NaN;
             if (!Number.isNaN(catNum)) {
-                const subNum = urlSub ? Number(urlSub) : NaN;
-                openCategoryDrilldown(catNum, Number.isNaN(subNum) ? undefined : subNum);
+                const restoreOpts = {
+                    brand:    (params.get('brand') || '').split(',').filter(Boolean),
+                    priceMin: params.has('priceMin') ? Number(params.get('priceMin')) : null,
+                    priceMax: params.has('priceMax') ? Number(params.get('priceMax')) : null,
+                    sort:     params.get('sort') || 'default',
+                };
+                if (urlSub === 'all') {
+                    // «Показать все товары категории» — минуя экран подкатегорий,
+                    // даже если они у категории есть (см. syncPairUrl()).
+                    openPairProducts(catNum, null, restoreOpts);
+                } else {
+                    const subNum = urlSub ? Number(urlSub) : NaN;
+                    openCategoryDrilldown(catNum, Number.isNaN(subNum) ? undefined : subNum, restoreOpts);
+                }
             }
         }
     }

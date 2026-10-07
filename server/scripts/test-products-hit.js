@@ -58,7 +58,8 @@ async function fakeQuery(sql, params = []) {
     }
     if (s.startsWith('INSERT INTO products')) {
         const [name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery,
-               inStock, isService, isHit, priceLabel, image, sortOrder, sortOrderInCategory] = params;
+               inStock, isService, isHit, priceLabel, image, sortOrder, sortOrderInCategory,
+               brand, article] = params;
         const id = nextId++;
         products.push({
             id, name, desc, category_id: categoryId, sub_id: subId, price,
@@ -66,13 +67,17 @@ async function fakeQuery(sql, params = []) {
             in_stock: inStock, is_service: isService, is_hit: isHit,
             price_label: priceLabel, image, sort_order: sortOrder,
             sort_order_in_category: sortOrderInCategory, sale_notified: 0,
+            brand: brand ?? null, article: article ?? null,
         });
         return [{ id }];
     }
     if (s.startsWith('UPDATE products SET name=')) {
         const hasCatOrder = s.includes('sort_order_in_category=');
         const [name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery,
-               inStock, isService, isHit, priceLabel, image, id, newCatOrder] = params;
+               inStock, isService, isHit, priceLabel, image, id, catOrderOrBrand, brandOrArticle, articleTail] = params;
+        const newCatOrder = hasCatOrder ? catOrderOrBrand : undefined;
+        const brand       = hasCatOrder ? brandOrArticle  : catOrderOrBrand;
+        const article      = hasCatOrder ? articleTail     : brandOrArticle;
         const p = products.find(x => x.id === id);
         if (!p) return { rowCount: 0 };
         Object.assign(p, {
@@ -81,6 +86,8 @@ async function fakeQuery(sql, params = []) {
             in_stock: inStock, is_service: isService,
             is_hit: isHit === null ? p.is_hit : isHit, // имитация is_hit=COALESCE($N,is_hit)
             price_label: priceLabel, image,
+            brand:   brand   === null ? p.brand   : brand,   // имитация brand=COALESCE($N,brand)
+            article: article === null ? p.article : article, // имитация article=COALESCE($N,article)
         });
         if (hasCatOrder) p.sort_order_in_category = newCatOrder;
         return { rowCount: 1 };
@@ -191,6 +198,34 @@ async function main() {
         });
         const body = await r.json();
         check('PUT /api/products/:id: явный isHit:true ставит is_hit=1', body.isHit === true);
+    }
+
+    /* ── (ж) brand/article: сохраняются, не переданные — не трогаются ── */
+    {
+        const r1 = await fetch(`${base}/api/products/${productId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', ...AUTH },
+            body: JSON.stringify({ name: 'Тестовый товар', categoryId: 1, inStock: true, brand: 'Bosch', article: 'ABC-123' }),
+        });
+        const body1 = await r1.json();
+        check('PUT /api/products/:id: brand сохраняется', body1.brand === 'Bosch');
+        check('PUT /api/products/:id: article сохраняется', body1.article === 'ABC-123');
+
+        const r2 = await fetch(`${base}/api/products/${productId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', ...AUTH },
+            body: JSON.stringify({ name: 'Тестовый товар', categoryId: 1, inStock: true }), // brand/article нет вообще
+        });
+        const body2 = await r2.json();
+        check('PUT /api/products/:id: без brand/article в теле — значения не трогаются', body2.brand === 'Bosch' && body2.article === 'ABC-123');
+
+        const r3 = await fetch(`${base}/api/products/${productId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', ...AUTH },
+            body: JSON.stringify({ name: 'Тестовый товар', categoryId: 1, inStock: true, brand: '', article: '' }),
+        });
+        const body3 = await r3.json();
+        check('PUT /api/products/:id: явная пустая строка очищает brand/article', body3.brand === undefined && body3.article === undefined);
     }
 
     /* ── (г) без пароля / с неверным паролем -> 401 ─────────────── */

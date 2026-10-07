@@ -8,6 +8,7 @@ function normalize(p) {
         name:                 p.name,
         desc:                 p.desc,
         brand:                p.brand                   || undefined,
+        article:              p.article                 || undefined,
         categoryId:           p.category_id,
         subId:                p.sub_id,
         price:                p.price,
@@ -22,6 +23,25 @@ function normalize(p) {
         sortOrder:            p.sort_order              || 0,
         sortOrderInCategory:  p.sort_order_in_category  || 0,
     };
+}
+
+// Бренд/артикул — простой текст без разметки (рендерится только через
+// textContent на фронте); обрезаем до разумной длины на входе, чтобы один
+// слишком длинный запрос из админки/импорта не раздувал строки в БД.
+const MAX_BRAND_ARTICLE_LEN = 100;
+function sanitizeShortText(value) {
+    if (value === undefined) return undefined;
+    if (value === null) return null;
+    return String(value).trim().slice(0, MAX_BRAND_ARTICLE_LEN);
+}
+
+// Поиск (q=) — экранирует спецсимволы ILIKE (% и _), чтобы они не
+// интерпретировались как маски пользователя, и режет длину запроса и
+// число результатов. Параметризовано — конкатенации SQL нет.
+const MAX_SEARCH_QUERY_LEN   = 100;
+const MAX_SEARCH_RESULTS     = 100;
+function escapeLikePattern(q) {
+    return q.replace(/[\\%_]/g, (c) => '\\' + c);
 }
 
 function normalizeVariant(v) {
@@ -60,20 +80,26 @@ async function attachVariants(products) {
     return products;
 }
 
-/* GET /api/products?categoryId=&subId=&q= */
+/* GET /api/products?categoryId=&subId=&q= — q ищет по name/brand/article,
+   без учёта регистра, по подстроке; % и _ в запросе экранируются, чтобы
+   не работали как маски ILIKE, а не как обычные символы поиска. */
 router.get('/', async (req, res) => {
     try {
         let sql = 'SELECT * FROM products WHERE 1=1';
         const params = [];
         let i = 1;
+        let hasQuery = false;
         if (req.query.categoryId) { sql += ` AND category_id=$${i++}`; params.push(+req.query.categoryId); }
         if (req.query.subId)      { sql += ` AND sub_id=$${i++}`;      params.push(+req.query.subId); }
-        if (req.query.q) {
-            const q = `%${req.query.q}%`;
-            sql += ` AND (name ILIKE $${i} OR "desc" ILIKE $${i+1})`;
-            params.push(q, q); i += 2;
+        const rawQuery = req.query.q ? String(req.query.q).trim().slice(0, MAX_SEARCH_QUERY_LEN) : '';
+        if (rawQuery) {
+            hasQuery = true;
+            const q = `%${escapeLikePattern(rawQuery)}%`;
+            sql += ` AND (name ILIKE $${i} OR brand ILIKE $${i+1} OR article ILIKE $${i+2})`;
+            params.push(q, q, q); i += 3;
         }
         sql += req.query.categoryId ? ' ORDER BY sort_order_in_category, id' : ' ORDER BY sort_order, id';
+        if (hasQuery) { sql += ` LIMIT $${i++}`; params.push(MAX_SEARCH_RESULTS); }
         const products = (await db.query(sql, params)).map(normalize);
         res.json(await attachVariants(products));
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -135,6 +161,10 @@ router.post('/import', requireAdmin, async (req, res) => {
         const subId   = subName ? (subByName[`${categoryId}::${subName}`] ?? null) : null;
         const inStock = first.inStock === undefined || first.inStock === '' ? true : !!+first.inStock;
         const desc    = String(first.desc || '').trim() || null;
+        // Бренд/артикул — необязательные колонки; старые файлы без них
+        // импортируются как раньше (оба поля просто остаются null).
+        const brand   = sanitizeShortText(first.brand)   || null;
+        const article = sanitizeShortText(first.article) || null;
 
         try {
             await db.inTransaction(async (client) => {
@@ -148,9 +178,9 @@ router.post('/import', requireAdmin, async (req, res) => {
                 const prodRes = await client.query(
                     `INSERT INTO products
                      (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,
-                      in_stock,is_service,sort_order,sort_order_in_category)
-                     VALUES ($1,$2,$3,$4,0,0,0,0,$5,0,$6,$7) RETURNING id`,
-                    [name, desc, categoryId, subId, inStock ? 1 : 0, globalOrder, catOrder]
+                      in_stock,is_service,sort_order,sort_order_in_category,brand,article)
+                     VALUES ($1,$2,$3,$4,0,0,0,0,$5,0,$6,$7,$8,$9) RETURNING id`,
+                    [name, desc, categoryId, subId, inStock ? 1 : 0, globalOrder, catOrder, brand, article]
                 );
                 const productId = prodRes.rows[0].id;
 
@@ -324,7 +354,7 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
 
 /* POST /api/products */
 router.post('/', requireAdmin, async (req, res) => {
-    const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, isHit, priceLabel, image } = req.body;
+    const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, isHit, priceLabel, image, brand, article } = req.body;
     if (!name) return res.status(400).json({ error: 'name required' });
     if (typeof image === 'string' && image.startsWith('data:')) {
         return res.status(400).json({ error: 'image must be S3 URL, not base64' });
@@ -339,11 +369,12 @@ router.post('/', requireAdmin, async (req, res) => {
         const nextOrder    = (globalMax?.m ?? 0) + 1;
         const nextCatOrder = (catMax?.m ?? 0) + 1;
         const row = await db.queryOne(
-            `INSERT INTO products (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,in_stock,is_service,is_hit,price_label,image,sort_order,sort_order_in_category)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id`,
+            `INSERT INTO products (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,in_stock,is_service,is_hit,price_label,image,sort_order,sort_order_in_category,brand,article)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id`,
             [name, desc || null, categoryId || null, subId || null, price || 0,
              priceKrd || 0, priceMsk || 0, priceDelivery || 0,
-             inStock ? 1 : 0, isService ? 1 : 0, isHit ? 1 : 0, priceLabel || null, image || null, nextOrder, nextCatOrder]
+             inStock ? 1 : 0, isService ? 1 : 0, isHit ? 1 : 0, priceLabel || null, image || null, nextOrder, nextCatOrder,
+             sanitizeShortText(brand) || null, sanitizeShortText(article) || null]
         );
         const product = normalize(await db.queryOne('SELECT * FROM products WHERE id=$1', [row.id]));
         await attachVariants([product]);
@@ -353,7 +384,7 @@ router.post('/', requireAdmin, async (req, res) => {
 
 /* PUT /api/products/:id */
 router.put('/:id', requireAdmin, async (req, res) => {
-    const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, isHit, priceLabel, image } = req.body;
+    const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, isHit, priceLabel, image, brand, article } = req.body;
     if (typeof image === 'string' && image.startsWith('data:')) {
         return res.status(400).json({ error: 'image must be S3 URL, not base64' });
     }
@@ -380,20 +411,31 @@ router.put('/:id', requireAdmin, async (req, res) => {
         // стирали бы ранее выставленный хит при каждом PUT.
         const isHitParam = isHit !== undefined ? (isHit ? 1 : 0) : null;
 
+        // brand/article не переданы (undefined) в теле -> не меняются (та же
+        // COALESCE-логика, что у isHit). Переданная пустая строка '' — это не
+        // SQL NULL, поэтому COALESCE её не отбрасывает и реально очищает поле.
+        const brandParam   = brand   !== undefined ? sanitizeShortText(brand)   : null;
+        const articleParam = article !== undefined ? sanitizeShortText(article) : null;
+
+        const hasCatOrder        = newCatOrder !== undefined;
+        const brandPlaceholder   = hasCatOrder ? '$16' : '$15';
+        const articlePlaceholder = hasCatOrder ? '$17' : '$16';
+
         const changed = await db.execute(
             `UPDATE products
              SET name=$1,"desc"=$2,category_id=$3,sub_id=$4,price=$5,
                  price_krd=$6,price_msk=$7,price_delivery=$8,
-                 in_stock=$9,is_service=$10,is_hit=COALESCE($11,is_hit),price_label=$12,image=$13
-                 ${newCatOrder !== undefined ? ',sort_order_in_category=$15' : ''}
+                 in_stock=$9,is_service=$10,is_hit=COALESCE($11,is_hit),price_label=$12,image=$13,
+                 brand=COALESCE(${brandPlaceholder},brand),article=COALESCE(${articlePlaceholder},article)
+                 ${hasCatOrder ? ',sort_order_in_category=$15' : ''}
              WHERE id=$14`,
-            newCatOrder !== undefined
+            hasCatOrder
                 ? [name, desc || null, categoryId || null, subId || null, price || 0,
                    priceKrd || 0, priceMsk || 0, priceDelivery || 0,
-                   inStock ? 1 : 0, isService ? 1 : 0, isHitParam, priceLabel || null, image || null, +req.params.id, newCatOrder]
+                   inStock ? 1 : 0, isService ? 1 : 0, isHitParam, priceLabel || null, image || null, +req.params.id, newCatOrder, brandParam, articleParam]
                 : [name, desc || null, categoryId || null, subId || null, price || 0,
                    priceKrd || 0, priceMsk || 0, priceDelivery || 0,
-                   inStock ? 1 : 0, isService ? 1 : 0, isHitParam, priceLabel || null, image || null, +req.params.id]
+                   inStock ? 1 : 0, isService ? 1 : 0, isHitParam, priceLabel || null, image || null, +req.params.id, brandParam, articleParam]
         );
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         const product = normalize(await db.queryOne('SELECT * FROM products WHERE id=$1', [+req.params.id]));

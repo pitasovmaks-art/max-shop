@@ -853,6 +853,8 @@ function handleOverlayClick(e) {
 /* ─── Fill / clear form ─────────────────────────────────── */
 function fillForm(p) {
     v('f-name',        p.name);
+    v('f-brand',       p.brand   || '');
+    v('f-article',     p.article || '');
     v('f-desc',        p.desc || '');
     v('f-price-label', p.priceLabel || '');
     document.getElementById('f-instock').checked = !!p.inStock;
@@ -884,7 +886,7 @@ function fillForm(p) {
 }
 
 function clearForm() {
-    ['f-name','f-desc','f-price-label'].forEach(id => {
+    ['f-name','f-brand','f-article','f-desc','f-price-label'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
     });
     v('f-cat', '');
@@ -969,6 +971,8 @@ async function saveProduct() {
 
     const product = {
         name:          document.getElementById('f-name').value.trim(),
+        brand:         document.getElementById('f-brand').value.trim(),
+        article:       document.getElementById('f-article').value.trim(),
         desc:          document.getElementById('f-desc').value.trim() || null,
         categoryId:    parseInt(document.getElementById('f-cat').value),
         subId:         subVal,
@@ -1046,6 +1050,8 @@ function handleImportFile(input) {
                     category:         String(r['category']         || r['Категория']       || '').trim(),
                     subcategory:      String(r['subcategory']      || r['Подкатегория']    || '').trim(),
                     desc:             String(r['desc']             || r['Описание']        || '').trim(),
+                    brand:            String(r['brand']            || r['Бренд']           || '').trim(),
+                    article:          String(r['article']          || r['Артикул']          || '').trim(),
                     inStock:          r['inStock']  !== undefined && r['inStock']  !== '' ? r['inStock']  :
                                       r['Наличие'] !== undefined && r['Наличие']  !== '' ? r['Наличие']  : 1,
                     variantLabel:     String(r['variantLabel']     || r['Вариант']         || '').trim(),
