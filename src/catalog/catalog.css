@@ -281,6 +281,100 @@ html.city-unknown #city-screen { display: flex; }
     overflow-wrap: break-word;
 }
 
+/* ─── Catalog (root only — Главная по-прежнему рельса, см. .cat-rail
+   выше): обычный вертикальный список категорий, без горизонтального
+   скролла. Высота строки — около 56px (min-height + паддинги), на всю
+   ширину экрана, иконка слева (она у категорий есть всегда, см.
+   categoryIconSvg()), название и стрелка справа. ──────────────────── */
+.cat-list {
+    display: flex;
+    flex-direction: column;
+    padding: 4px 16px 10px;
+}
+.cat-list__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 56px;
+    padding: 8px 2px;
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+.cat-list__item:last-child { border-bottom: none; }
+.cat-list__ic {
+    flex-shrink: 0;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+}
+.cat-list__item--sale .cat-list__ic { background: var(--red); }
+.cat-list__label {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cat-list__chevron {
+    flex-shrink: 0;
+    display: flex;
+    color: var(--text-secondary);
+    opacity: .6;
+}
+.cat-list__item--skel {
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+}
+.cat-list__item--skel .skel-tile__ic { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; }
+.cat-list__item--skel .skel-line--title { width: 55%; }
+
+/* ─── Catalog: subcategory screen — тоже вертикальный список (не сетка
+   2×N). У подкатегорий своей иконки в API нет, поэтому слева её нет —
+   кроме служебной строки «Все товары» (не данные API, см. catalog.js). */
+.subcat-list {
+    display: flex;
+    flex-direction: column;
+    padding: 4px 16px 10px;
+}
+.subcat-list__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 56px;
+    padding: 8px 2px;
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.subcat-list__item:last-child { border-bottom: none; }
+.subcat-list__item--all { color: var(--accent-ink); }
+.subcat-list__ic {
+    flex-shrink: 0;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    display: flex; align-items: center; justify-content: center;
+}
+.subcat-list__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.subcat-list__chevron {
+    flex-shrink: 0;
+    display: flex;
+    color: var(--text-secondary);
+    opacity: .6;
+}
+
 /* ─── Home: promo banner carousel ───────────────────────── */
 .banner-wrap { padding: 10px 16px 4px; }
 .banner-viewport { border-radius: var(--radius-md); overflow: hidden; }
@@ -375,39 +469,6 @@ html.city-unknown #city-screen { display: flex; }
 
 /* ─── Catalog: category screens (root/subcats/pair) ─────── */
 .cscreen { display: flex; flex-direction: column; min-height: 100dvh; }
-
-.subcat-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 14px 16px;
-}
-.subcat-tile {
-    background: var(--bg-card);
-    border-radius: var(--radius-md);
-    padding: 16px 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.05);
-    font-size: 12.5px;
-    font-weight: 700;
-    text-align: center;
-    color: var(--text-primary);
-}
-.subcat-tile__ic {
-    width: 44px; height: 44px;
-    border-radius: 12px;
-    background: var(--bg-secondary);
-    color: var(--accent);
-    display: flex; align-items: center; justify-content: center;
-}
-.subcat-tile--all {
-    background: var(--bg-secondary);
-    color: var(--accent-ink);
-}
-.subcat-tile--all .subcat-tile__ic { background: var(--accent); color: var(--accent-ink); }
 
 /* ─── Breadcrumb: category › subcategory, under the screen header ── */
 .breadcrumb {

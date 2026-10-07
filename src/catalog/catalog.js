@@ -361,17 +361,37 @@ function renderCategoryRail() {
         : `location.href='catalog.html?category=${target}'`;
 
     const hasSale = _products.some(p => isSaleForCity(p, _city));
+    // Категории без единого товара не показываем — тапать на них всё
+    // равно было бы некуда (пустой экран подкатегорий/товаров).
+    const nonEmptyCats = _categories.filter(c => _products.some(p => p.categoryId === c.id));
+
+    if (onCatalogPage) {
+        // Правка 3: на Каталоге — обычный вертикальный список (не рельса),
+        // Главную (.cat-rail/.cat-tile, см. ниже) эта ветка не трогает.
+        const chev = `<span class="cat-list__chevron">${iconSvg('chev', 18)}</span>`;
+        const saleRow = hasSale
+            ? `<button class="cat-list__item cat-list__item--sale" onclick="${openTile("'sale'")}">
+                <span class="cat-list__ic">${iconSvg('sale', 18)}</span>
+                <span class="cat-list__label">Акции</span>
+                ${chev}
+            </button>`
+            : '';
+        rail.innerHTML = saleRow + nonEmptyCats.map(c =>
+            `<button class="cat-list__item" onclick="${openTile(c.id)}">
+                <span class="cat-list__ic">${categoryIconSvg(c, 18)}</span>
+                <span class="cat-list__label">${c.name}</span>
+                ${chev}
+            </button>`
+        ).join('');
+        return;
+    }
+
     const saleTile = hasSale
         ? `<button class="cat-tile cat-tile--sale" onclick="${openTile("'sale'")}">
             <span class="cat-tile__ic">${iconSvg('sale', 20)}</span>
             <span>Акции</span>
         </button>`
         : '';
-
-    // Категории без единого товара не показываем — тапать на них всё
-    // равно было бы некуда (пустой экран подкатегорий/товаров).
-    const nonEmptyCats = _categories.filter(c => _products.some(p => p.categoryId === c.id));
-
     rail.innerHTML = saleTile + nonEmptyCats.map(c =>
         `<button class="cat-tile" onclick="${openTile(c.id)}">
             <span class="cat-tile__ic">${categoryIconSvg(c, 20)}</span>
@@ -580,6 +600,17 @@ let _historyPushed = false;
 function catalogPushOrReplace(url, navMode) {
     if (navMode === 'none') return;
     if (navMode === 'push') {
+        // Пуш на URL, который и так совпадает с текущим location, не нужен —
+        // он создавал бы в истории два подряд идентичных пункта (один и тот
+        // же экран дважды). Баг 2: именно такой «невидимый» дубль заставлял
+        // системную «Назад» срабатывать через раз — первое нажатие просто
+        // перескакивало дубль молча (сам браузер меняет историю на
+        // идентичный URL без видимого эффекта), а следующее уходило дальше,
+        // чем ожидалось. Если место то же — ничего не делаем, не трогаем
+        // ни историю, ни _historyPushed (он мог быть false, если сюда
+        // попали по прямой ссылке, — это не должно стать push задним числом).
+        const target = new URL(url, location.href);
+        if (target.pathname === location.pathname && target.search === location.search) return;
         history.pushState(null, '', url);
         _historyPushed = true;
     } else {
@@ -587,9 +618,21 @@ function catalogPushOrReplace(url, navMode) {
     }
 }
 
+/* Подкатегории без единого товара не показываем — тапать в них всё равно
+   было бы некуда (та же логика, что уже применяется к пустым категориям
+   в renderCategoryRail()). Единая точка, чтобы openCategoryDrilldown,
+   openSubcatsScreen и closePairScreen видели один и тот же список. */
+function categoryNonEmptySubs(catId) {
+    return _subcategories.filter(s => s.categoryId === catId && _products.some(p => p.subId === s.id));
+}
+
 function openCategoryDrilldown(catId, subId, restoreOpts, navMode = 'push') {
     if (subId != null && !Number.isNaN(subId)) { openPairProducts(catId, subId, restoreOpts, navMode); return; }
-    const subs = _subcategories.filter(s => s.categoryId === catId);
+    const subs = categoryNonEmptySubs(catId);
+    // Если у категории в принципе есть товары (иначе её тайла на корне не
+    // было бы), но ни одна подкатегория не непуста — подкатегории тут
+    // бессмысленны, показываем товары категории напрямую (как у категорий
+    // без подкатегорий вовсе), не скрывая саму категорию.
     if (subs.length) openSubcatsScreen(catId, navMode);
     else openPairProducts(catId, null, restoreOpts, navMode);
 }
@@ -604,15 +647,22 @@ function openSubcatsScreen(catId, navMode = 'push') {
     titleEl.textContent = cat.name;
     const crumb = document.getElementById('subcatsBreadcrumb');
     if (crumb) crumb.textContent = cat.name;
-    const subs = _subcategories.filter(s => s.categoryId === catId);
+    // Правка 3: вертикальный список вместо сетки 2×N. У подкатегорий своей
+    // иконки в API нет (только у категорий) — строки без иконки, только
+    // название + стрелка; «Все товары» — функциональная строка, не данные
+    // из API, поэтому у неё иконка остаётся (помогает отличить от обычных
+    // подкатегорий на глаз).
+    const chev = `<span class="subcat-list__chevron">${iconSvg('chev', 18)}</span>`;
+    const subs = categoryNonEmptySubs(catId);
     grid.innerHTML = subs.map(s => `
-        <button class="subcat-tile" onclick="openPairProducts(${catId},${s.id})">
-            <span class="subcat-tile__ic">${categoryIconSvg(cat, 22)}</span>
-            <span>${s.name}</span>
+        <button class="subcat-list__item" onclick="openPairProducts(${catId},${s.id})">
+            <span class="subcat-list__label">${s.name}</span>
+            ${chev}
         </button>`).join('')
-        + `<button class="subcat-tile subcat-tile--all" onclick="openPairProducts(${catId},null)">
-            <span class="subcat-tile__ic">${iconSvg('grid', 22)}</span>
-            <span>Все товары</span>
+        + `<button class="subcat-list__item subcat-list__item--all" onclick="openPairProducts(${catId},null)">
+            <span class="subcat-list__ic">${iconSvg('grid', 18)}</span>
+            <span class="subcat-list__label">Все товары</span>
+            ${chev}
         </button>`;
     catalogPushOrReplace(`catalog.html?category=${catId}`, navMode);
     showCatalogScreen('subcats');
@@ -753,7 +803,7 @@ function closePairScreen() {
     // числе из «Показать все товары», где _activeSubId сам null, но
     // подкатегории у категории всё равно есть). Категория без подкатегорий
     // (или «Акции») -> у неё никогда не было экрана подкатегорий, назад на корень.
-    const subs = _subcategories.filter(s => s.categoryId === _activeCatId);
+    const subs = categoryNonEmptySubs(_activeCatId);
     if (subs.length) { openSubcatsScreen(_activeCatId, 'replace'); return; }
     history.replaceState(null, '', 'catalog.html');
     showCatalogScreen('root');
@@ -795,21 +845,53 @@ function renderPairChips() {
     outer.classList.toggle('hidden', !any);
 }
 
+/* Два разных пустых состояния (баг 1): если в этой подкатегории/категории
+   нет ни одного товара вообще — фильтры тут ни при чём, показываем
+   pairNoProductsState («Назад к подкатегориям/категориям», без «Сбросить
+   фильтры» — сбрасывать нечего). Если товары есть, но фильтры исключили
+   все — текущее pairEmptyState («Сбросить фильтры»). */
 function renderPairProducts() {
     const all   = pairProductsList();
     const list  = sortPairList(all.filter(p => matchesPairFilters(p, pairFilters)), pairSort);
-    const grid  = document.getElementById('pairProductsGrid');
-    const empty = document.getElementById('pairEmptyState');
-    const count = document.getElementById('pairResultsCount');
+    const grid        = document.getElementById('pairProductsGrid');
+    const filteredOut = document.getElementById('pairEmptyState');
+    const noProducts  = document.getElementById('pairNoProductsState');
+    const count       = document.getElementById('pairResultsCount');
     if (!grid) return;
 
     if (count) count.textContent = list.length ? plural(list.length, 'товар', 'товара', 'товаров') : '';
-    if (!list.length) {
-        grid.innerHTML = '';
-        if (empty) empty.classList.remove('hidden');
-    } else {
-        if (empty) empty.classList.add('hidden');
+
+    if (list.length) {
         grid.innerHTML = list.map(productCardHTML).join('');
+        if (filteredOut) filteredOut.classList.add('hidden');
+        if (noProducts)  noProducts.classList.add('hidden');
+    } else {
+        grid.innerHTML = '';
+        if (all.length) {
+            // Товары есть, но под текущие фильтры не подошёл ни один.
+            if (noProducts)  noProducts.classList.add('hidden');
+            if (filteredOut) filteredOut.classList.remove('hidden');
+        } else {
+            // Товаров нет вообще — фильтры ни при чём.
+            if (filteredOut) filteredOut.classList.add('hidden');
+            if (noProducts) {
+                const titleEl = document.getElementById('pairNoProductsTitle');
+                const backBtn = document.getElementById('pairNoProductsBackBtn');
+                if (titleEl && backBtn) {
+                    if (_activeCatId === 'sale') {
+                        titleEl.textContent = 'Сейчас нет товаров по акции';
+                        backBtn.textContent  = 'Назад';
+                    } else if (_activeSubId == null) {
+                        titleEl.textContent = 'В этой категории пока нет товаров';
+                        backBtn.textContent  = 'Назад к категориям';
+                    } else {
+                        titleEl.textContent = 'В этой подкатегории пока нет товаров';
+                        backBtn.textContent  = 'Назад к подкатегориям';
+                    }
+                }
+                noProducts.classList.remove('hidden');
+            }
+        }
     }
     renderPairChips();
 }
@@ -1006,6 +1088,8 @@ function initFilterSheet() {
         updateFilterBadge();
         syncPairUrl();
     });
+    const noProductsBackBtn = document.getElementById('pairNoProductsBackBtn');
+    if (noProductsBackBtn) noProductsBackBtn.addEventListener('click', closePairScreen);
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && !sheet.classList.contains('hidden')) cancelFilterSheet();
     });
@@ -1439,15 +1523,23 @@ function restoreScreenFromUrl(navMode) {
 }
 
 /* Системная «Назад»/«Вперёд» — URL уже сменил браузер (см. комментарий у
-   catalogPushOrReplace), просто синхронизируем экран с ним. Пропускаем
-   повторную обработку одного и того же search, если событие почему-то
-   прилетело дважды подряд (защита от циклов/лишней перерисовки, см.
-   requirement 2) — на Главной этого слушателя нет смысла вешать вообще. */
-let _lastPopstateSearch = null;
+   catalogPushOrReplace), просто синхронизируем экран с ним. На Главной
+   этого слушателя нет смысла вешать вообще (нет screen-root).
+
+   Раньше здесь была защита «пропустить повторный popstate с тем же
+   location.search» — убрана: она была лишней (popstate сам по себе не
+   может вызвать ещё один popstate, а restoreScreenFromUrl('none') никогда
+   не трогает историю — зациклиться им было физически невозможно) и из-за
+   неё системная «Назад» срабатывала через раз (см. Баг 2): если
+   пользователь успевал попасть на URL, который уже совпадал с тем, что
+   эта защита запомнила с прошлого раза (например, после дубля в истории,
+   который теперь устранён в catalogPushOrReplace), перерисовка экрана
+   молча пропускалась, хотя браузер уже реально сменил позицию в истории —
+   следующее нажатие «Назад» уходило на экран, который должен был открыться
+   ещё предыдущим нажатием. restoreScreenFromUrl() сама по себе дешёвая
+   (без сетевых запросов) — обрабатывать её на каждый popstate безопасно. */
 window.addEventListener('popstate', () => {
     if (!document.getElementById('screen-root')) return;
-    if (location.search === _lastPopstateSearch) return;
-    _lastPopstateSearch = location.search;
     restoreScreenFromUrl('none');
 });
 
