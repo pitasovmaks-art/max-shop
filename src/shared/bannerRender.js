@@ -24,7 +24,23 @@
     'use strict';
 
     const VALID_BG_STYLES = new Set(['brand', 'dark', 'light', 'warm', 'cool', 'steel', 'custom']);
+    // Опорные px-значения — при ширине баннера ~390px (типичный телефон).
+    // Сам шрифт рендерится НЕ в px, а в cqw (container query width: 1cqw =
+    // 1% ширины .banner-slide, см. container-type:inline-size в catalog.css/
+    // admin.css) — иначе на узком превью в админке (может быть любой
+    // ширины, вплоть до широкого десктопа) и на Главной (320–430px) один
+    // и тот же размер 'm' выглядел бы по-разному КРУПНЫМ относительно
+    // баннера. clamp() не даёт тексту стать нечитаемо мелким/огромным на
+    // совсем уж экстремальных ширинах контейнера.
     const SIZE_PX = { s: 12, m: 15, l: 19, xl: 25 };
+    const FONT_REFERENCE_WIDTH = 390;
+    function fontSizeFor(sizeKey) {
+        const px  = SIZE_PX[sizeKey] || SIZE_PX.m;
+        const cqw = (px / FONT_REFERENCE_WIDTH * 100).toFixed(2);
+        const minPx = Math.round(px * 0.72);
+        const maxPx = Math.round(px * 1.35);
+        return `clamp(${minPx}px, ${cqw}cqw, ${maxPx}px)`;
+    }
 
     function hexLuminance(hex) {
         const n = String(hex || '').replace('#', '').trim();
@@ -103,14 +119,32 @@
         el.classList.add(`banner-slide--pos-${pos}`);
     }
 
-    function buildBlockNode(block, banner, scopeEl) {
+    /* index/interactive — только для интерактивного превью в админке (см.
+       admin/banners.js): data-block-index + tabindex нужны ТОЛЬКО там, где
+       реально есть что перетаскивать/двигать стрелками (настоящие
+       text_blocks, не синтетические title/subtitle-блоки ниже, и не
+       Главная — там interactive вообще не передаётся, см. catalog.js). */
+    function buildBlockNode(block, banner, scopeEl, index, interactive) {
         const p = document.createElement('p');
         p.className = 'banner-slide__block';
-        p.style.fontSize   = `${SIZE_PX[block.size] || SIZE_PX.m}px`;
+        p.style.fontSize   = fontSizeFor(block.size);
         p.style.fontWeight = block.weight === 'bold' ? '800' : '500';
         p.style.fontStyle  = block.italic ? 'italic' : 'normal';
         p.style.textAlign  = block.align || 'left';
         p.style.color      = resolveBlockColorHex(block, banner, scopeEl);
+        // x/y — опциональная позиция блока в % от баннера (0–100, левый
+        // верхний угол блока), см. server/routes/banners.js. Блок БЕЗ них
+        // остаётся в обычном потоке .banner-slide__blocks — выравнивается
+        // через text_pos, как и раньше (обратная совместимость, см. ТЗ).
+        if (typeof block.x === 'number' && typeof block.y === 'number') {
+            p.classList.add('banner-slide__block--positioned');
+            p.style.left = `${block.x}%`;
+            p.style.top  = `${block.y}%`;
+        }
+        if (interactive && typeof index === 'number') {
+            p.dataset.blockIndex = String(index);
+            p.tabIndex = 0;
+        }
         p.appendChild(document.createTextNode(block.text)); // textContent-эквивалент — никогда innerHTML
         return p;
     }
@@ -135,25 +169,23 @@
         return frag;
     }
 
-    /* Реальный баннер без text_blocks (title/subtitle) — тоже через
-       общий путь оформления фона/затемнения/положения (их админ мог
-       настроить даже не переходя на блоки), но текст — заголовок
-       крупным + подзаголовок мельче, как сейчас выглядит title/subtitle. */
-    function buildTitleSubtitleBlocks(banner, scopeEl) {
+    /* Реальный баннер без text_blocks (title/subtitle) — тоже через общий
+       путь оформления фона/затемнения/положения (их админ мог настроить
+       даже не переходя на блоки), но текст — заголовок крупным + подзаголовок
+       мельче, как сейчас выглядит title/subtitle. Возвращает ДАННЫЕ (как
+       настоящие text_blocks), а не готовые DOM-узлы — buildBannerSlideElement
+       строит из них узлы той же функцией buildBlockNode, что и для настоящих
+       блоков, так что опечатка/расхождение в оформлении исключены. У этих
+       синтетических блоков x/y никогда не бывает (title/subtitle — не
+       перетаскиваемые data-блоки, см. admin/banners.js), поэтому они всегда
+       остаются в обычном потоке .banner-slide__blocks. */
+    function buildTitleSubtitleBlocksData(banner) {
         const blocks = [];
         if (banner.title) {
-            blocks.push(buildBlockNode(
-                { text: banner.title, size: 'm', weight: 'bold', italic: false, color: 'auto', align: 'left' },
-                banner, scopeEl
-            ));
+            blocks.push({ text: banner.title, size: 'm', weight: 'bold', italic: false, color: 'auto', align: 'left' });
         }
         if (banner.subtitle) {
-            const sub = buildBlockNode(
-                { text: banner.subtitle, size: 's', weight: 'regular', italic: false, color: 'auto', align: 'left' },
-                banner, scopeEl
-            );
-            sub.style.opacity = '.9';
-            blocks.push(sub);
+            blocks.push({ text: banner.subtitle, size: 's', weight: 'regular', italic: false, color: 'auto', align: 'left', _opacity: '.9' });
         }
         return blocks;
     }
@@ -166,8 +198,9 @@
        УЖЕ в документе на момент вызова — иначе getComputedStyle не
        сможет унаследовать переменные (на оторванном от DOM узле
        наследования нет). */
-    function buildBannerSlideElement(banner, scopeEl) {
+    function buildBannerSlideElement(banner, scopeEl, options) {
         scopeEl = scopeEl || document.documentElement;
+        const interactive = !!(options && options.interactive); // только admin/banners.js
         const el = document.createElement('div');
         el.className = 'banner-slide';
 
@@ -185,11 +218,25 @@
         const blocksWrap = document.createElement('div');
         blocksWrap.className = 'banner-slide__blocks';
 
-        const blocks = (banner.textBlocks && banner.textBlocks.length)
-            ? banner.textBlocks.map(b => buildBlockNode(b, banner, scopeEl))
-            : buildTitleSubtitleBlocks(banner, scopeEl);
+        // interactive (data-block-index/tabindex, см. buildBlockNode) —
+        // только для настоящих text_blocks, никогда для синтетических
+        // title/subtitle-блоков (их не существует как отдельных записей,
+        // двигать там нечего — см. комментарий у buildTitleSubtitleBlocksData).
+        const isRealBlocks = !!(banner.textBlocks && banner.textBlocks.length);
+        const blockData    = isRealBlocks ? banner.textBlocks : buildTitleSubtitleBlocksData(banner);
+        const canInteract  = interactive && isRealBlocks;
 
-        blocks.forEach(node => blocksWrap.appendChild(node));
+        blockData.forEach((b, i) => {
+            const node = buildBlockNode(b, banner, scopeEl, i, canInteract);
+            if (b._opacity) node.style.opacity = b._opacity;
+            // Позиционированные блоки (x/y) — прямо в .banner-slide (их
+            // position:absolute считается от него, см. catalog.css/admin.css),
+            // обычные — в .banner-slide__blocks, выравниваются через text_pos,
+            // как раньше.
+            if (node.classList.contains('banner-slide__block--positioned')) el.appendChild(node);
+            else blocksWrap.appendChild(node);
+        });
+
         el.appendChild(blocksWrap);
         return el;
     }

@@ -1534,14 +1534,17 @@ button.product-row__hit:active  { opacity: .7; }
    Если меняешь оформление баннера в catalog.css — продублируй сюда. */
 .banner-preview-scope .banner-slide {
     position: relative;
-    min-height: 130px;
+    /* cqw-контейнер для размера шрифта блоков — см. тот же комментарий у
+       .banner-slide в src/catalog/catalog.css. */
+    container-type: inline-size;
+    min-height: 76px; /* как на Главной без фото — было 130px всегда, из-за чего Y-позиция блока расходилась с Главной у баннеров без фото */
     padding: 14px 16px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     color: #fff;
 }
-.banner-preview-scope .banner-slide--photo { background-size: cover; background-position: center; }
+.banner-preview-scope .banner-slide--photo { min-height: 130px; background-size: cover; background-position: center; }
 .banner-preview-scope .banner-slide b { font-size: 14.5px; font-weight: 800; line-height: 1.25; }
 .banner-preview-scope .banner-slide span { font-size: 12px; opacity: .9; margin-top: 3px; display: block; }
 .banner-preview-scope .banner-bg--brand { background: linear-gradient(135deg, var(--accent), var(--accent-press)); }
@@ -1561,6 +1564,69 @@ button.product-row__hit:active  { opacity: .7; }
 .banner-preview-scope .banner-slide--pos-top-left    { justify-content: flex-start; align-items: flex-start; }
 .banner-preview-scope .banner-slide__blocks { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 4px; max-width: 100%; }
 .banner-preview-scope .banner-slide__block { line-height: 1.25; overflow-wrap: break-word; }
+.banner-preview-scope .banner-slide__block--positioned {
+    position: absolute;
+    width: max-content;
+    max-width: 80%;
+    z-index: 2; /* выше .banner-slide__blocks (z-index:1) — см. тот же комментарий в catalog.css */
+}
+
+/* ─── Баннер: перетаскивание текстовых блоков на превью (мышь/палец) ──
+   Только здесь (админка) — Главная рендерит те же .banner-slide__block
+   без data-block-index/tabindex вообще (см. interactive в
+   src/shared/bannerRender.js), поэтому ничего из этого её не касается. */
+.banner-preview-scope .banner-slide__block[data-block-index] {
+    cursor: grab;
+    touch-action: none; /* именно на блоке, не на всём превью — скролл страницы на телефоне не блокируется */
+    border-radius: 4px;
+    outline: 1.5px dashed transparent;
+    outline-offset: 2px;
+}
+.banner-preview-scope .banner-slide__block--selected {
+    outline-color: rgba(255,255,255,.85);
+}
+.banner-preview-scope .banner-slide__block--dragging {
+    cursor: grabbing;
+    outline: 2px dashed #fff;
+    outline-offset: 2px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.35);
+    z-index: 5;
+}
+.banner-drag-hint {
+    position: absolute;
+    background: rgba(0,0,0,.72);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 6;
+}
+.banner-overlap-warning {
+    margin-top: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #D9822B;
+}
+.banner-block-row__pos {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: var(--text-secondary, rgba(255,255,255,.55));
+}
+.banner-block-row__pos-reset {
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 8px;
+    background: var(--bg-secondary, #1C1C1E);
+    color: inherit;
+}
+.banner-block-row__pos-reset:disabled { opacity: .4; }
 
 /* ─── Баннер: плитки фона / затемнение / положение текста ──────────── */
 .bg-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }

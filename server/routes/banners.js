@@ -35,7 +35,9 @@ function normalize(b) {
    Один источник правды для POST и PUT. Схема блока (ТЗ, строго):
    { text: string 1–120 без переносов строк, size: s|m|l|xl,
      weight: regular|bold, italic: boolean, color: auto|light|dark|accent|custom,
-     customColor: #RRGGBB (только при color='custom'), align: left|center|right }.
+     customColor: #RRGGBB (только при color='custom'), align: left|center|right,
+     x, y: числа 0–100 (округляются до 0,1) — позиция блока на баннере,
+     необязательные, задаются ТОЛЬКО вместе (см. sanitizeBlockPosition) }.
    XSS сюда не относится — это не санитайзер HTML, просто проверка формы;
    защита от XSS — на фронтенде (textContent/createTextNode, см.
    src/shared/bannerRender.js), текст как есть разрешён и здесь, и там. */
@@ -75,9 +77,31 @@ function sanitizeTextBlock(raw, index) {
         customColor = raw.customColor;
     }
 
+    const pos = sanitizeBlockPosition(raw, label);
+    if (pos.error) return { error: pos.error };
+
     return {
-        block: { text, size: raw.size, weight: raw.weight, italic: !!raw.italic, color: raw.color, customColor, align: raw.align },
+        block: { text, size: raw.size, weight: raw.weight, italic: !!raw.italic, color: raw.color, customColor, align: raw.align, x: pos.x, y: pos.y },
     };
+}
+
+/* Позиция блока (x/y, ТЗ п.8) — необязательна, но ТОЛЬКО вместе: одно
+   поле без другого позиционировать блок не может (см. рендерер), поэтому
+   отклоняется как некорректные данные, а не отбрасывается наполовину.
+   Строки/NaN/выход за 0–100 — отклоняются (не приводятся к числу молча,
+   чтобы кривой клиент сразу увидел ошибку, а не тихо потерял позицию). */
+function sanitizeBlockPosition(raw, label) {
+    const hasX = raw.x !== undefined && raw.x !== null;
+    const hasY = raw.y !== undefined && raw.y !== null;
+    if (!hasX && !hasY) return { x: null, y: null };
+    if (!hasX || !hasY) return { error: `${label}: x и y должны быть заданы вместе` };
+    if (typeof raw.x !== 'number' || !Number.isFinite(raw.x) || raw.x < 0 || raw.x > 100) {
+        return { error: `${label}: x должен быть числом от 0 до 100` };
+    }
+    if (typeof raw.y !== 'number' || !Number.isFinite(raw.y) || raw.y < 0 || raw.y > 100) {
+        return { error: `${label}: y должен быть числом от 0 до 100` };
+    }
+    return { x: Math.round(raw.x * 10) / 10, y: Math.round(raw.y * 10) / 10 };
 }
 
 function sanitizeBannerStyle(body) {

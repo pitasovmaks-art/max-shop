@@ -385,7 +385,12 @@ html.city-unknown #city-screen { display: flex; }
     touch-action: pan-y;
 }
 .banner-slide {
-    position: relative; /* точка отсчёта для .banner-slide--overlay-*::before */
+    position: relative; /* точка отсчёта для .banner-slide--overlay-*::before и .banner-slide__block--positioned */
+    /* Контейнер cqw-единиц для размера шрифта блоков (см. fontSizeFor() в
+       src/shared/bannerRender.js) — 1cqw = 1% ширины ИМЕННО баннера, не
+       вьюпорта, поэтому текст масштабируется одинаково что на Главной
+       (320–430px), что в превью админки (любой ширины). */
+    container-type: inline-size;
     flex: 0 0 100%;
     min-height: 76px;
     padding: 14px 16px;
@@ -456,6 +461,20 @@ html.city-unknown #city-screen { display: flex; }
     max-width: 100%;
 }
 .banner-slide__block { line-height: 1.25; overflow-wrap: break-word; }
+/* Блок с заданной позицией (banners.text_blocks[].x/y, см. ТЗ) — вместо
+   обычного потока .banner-slide__blocks. left/top в % выставляются инлайн
+   в src/shared/bannerRender.js; width:max-content+max-width:80% — блок
+   сжимается по содержимому, но переносится по строкам, если текст шире
+   80% баннера (в т.ч. длинный текст), не растягиваясь на всю ширину. */
+.banner-slide__block--positioned {
+    position: absolute;
+    width: max-content;
+    max-width: 80%;
+    /* Выше .banner-slide__blocks (z-index:1) — иначе при случайном наложении
+       (предупреждение в админке, см. banners.js) позиционированный блок
+       оказывался бы НИЖЕ обычного и его было бы не захватить кликом/тапом. */
+    z-index: 2;
+}
 .banner-dots { display: flex; gap: 6px; justify-content: center; padding: 8px 0 2px; }
 .banner-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--border); display: block; }
 .banner-dots span.on { background: var(--accent); width: 16px; border-radius: 3px; transition: width .2s, background .2s; }

@@ -9,7 +9,7 @@ const BG_STYLE_LABELS = { brand: 'Бренд', dark: 'Тёмный', light: 'С�
 const OVERLAY_LABELS  = { none: 'Нет', light: 'Лёгкое', medium: 'Среднее', strong: 'Сильное' };
 const TEXT_POS_LABELS = { 'bottom-left': 'Внизу слева', 'center': 'По центру', 'top-left': 'Вверху слева' };
 
-let _bannerFormBlocks  = []; // [{text,size,weight,italic,color,customColor,align}], максимум 4
+let _bannerFormBlocks  = []; // [{text,size,weight,italic,color,customColor,align,x,y}], максимум 4; x/y — позиция блока в % (null, если блок не перетаскивали — тогда выравнивается по text_pos)
 let _bannerFormBgStyle = 'brand';
 let _bannerFormBgColor = '#0E7C6B';
 let _bannerFormOverlay = 'medium';
@@ -263,8 +263,11 @@ function renderBannerPreview() {
     if (!scope || typeof BannerRender === 'undefined') return;
     const banner = currentBannerFormState();
     scope.innerHTML = '';
-    scope.appendChild(BannerRender.buildBannerSlideElement(banner, scope));
+    scope.appendChild(BannerRender.buildBannerSlideElement(banner, scope, { interactive: true }));
     renderBannerBlocksWarnings(banner, scope);
+    initBannerBlockDrag(scope);
+    applySelectedBlockClass(scope);
+    checkBannerBlockOverlap(scope);
 }
 
 /* ─── Оформление: фон / затемнение / положение ──────────────────── */
@@ -309,7 +312,7 @@ function selectTextPos(key) { _bannerFormTextPos = key; renderTextPosChoices(); 
 
 /* ─── Текстовые блоки (до 4) ─────────────────────────────────────── */
 function newBannerBlock() {
-    return { text: '', size: 'm', weight: 'regular', italic: false, color: 'auto', customColor: null, align: 'left' };
+    return { text: '', size: 'm', weight: 'regular', italic: false, color: 'auto', customColor: null, align: 'left', x: null, y: null };
 }
 
 function renderBannerBlocksEditor() {
@@ -341,6 +344,10 @@ function renderBannerBlocksEditor() {
                     <button type="button" class="banner-block-row__toggle" ${i===0?'disabled':''} onclick="moveBannerBlock(${i},-1)" aria-label="Выше">▲</button>
                     <button type="button" class="banner-block-row__toggle" ${i===_bannerFormBlocks.length-1?'disabled':''} onclick="moveBannerBlock(${i},1)" aria-label="Ниже">▼</button>
                 </div>
+            </div>
+            <div class="banner-block-row__pos">
+                ${typeof b.x === 'number' && typeof b.y === 'number' ? `<span>Позиция: X ${b.x}% · Y ${b.y}%</span>` : `<span>Позиция: авто (по положению текста)</span>`}
+                <button type="button" class="banner-block-row__pos-reset" ${typeof b.x !== 'number' ? 'disabled' : ''} onclick="resetBannerBlockPosition(${i})">Сбросить позицию</button>
             </div>
             <div class="banner-block-row__warning hidden" id="block-warning-${i}"></div>
         </div>
@@ -402,6 +409,232 @@ function renderBannerBlocksWarnings(banner, scopeEl) {
             warnEl.classList.add('hidden');
         }
     });
+}
+
+/* ─── Текстовые блоки: перетаскивание на превью (мышь/палец) ────────────
+   x/y блока — % от баннера (0–100, левый верхний угол блока), необязательные
+   поля text_blocks (см. server/routes/banners.js: sanitizeTextBlock). Блок
+   без x/y остаётся в обычном потоке (text_pos), как раньше — ничего не
+   ломается у уже сохранённых баннеров (ТЗ, п.7).
+   Pointer Events — один код для мыши и пальца; touch-action:none стоит
+   ТОЛЬКО на самом блоке (.banner-slide__block[data-block-index] в
+   admin.css), не на всём превью — скролл страницы на телефоне не блокируется
+   нигде, кроме как при реальном хватании блока (п.4 ТЗ). */
+const DRAG_MARGIN_PCT = 4; // безопасные поля от краёв баннера — показались разумным балансом между "не прилипает к самому краю" и "не отъедает слишком много места на маленьком баннере"
+let _selectedBlockIndex = null;
+let _dragState  = null; // { index, el, slide, pointerId, startClientX, startClientY, startLeftPx, startTopPx, moved }
+let _dragHintEl = null;
+
+function round1(n) { return Math.round(n * 10) / 10; }
+
+function initBannerBlockDrag(scope) {
+    const slide = scope.querySelector('.banner-slide');
+    if (!slide) return;
+    slide.querySelectorAll('[data-block-index]').forEach(el => {
+        el.addEventListener('pointerdown', onBannerBlockPointerDown);
+        el.addEventListener('keydown', onBannerBlockKeyDown);
+    });
+}
+
+function onBannerBlockPointerDown(e) {
+    if (e.button !== undefined && e.button !== 0) return; // только левая кнопка/касание
+    const el = e.currentTarget;
+    const index = +el.dataset.blockIndex;
+    const slide = el.closest('.banner-slide');
+    if (!slide) return;
+
+    selectBannerBlock(index, { focus: true });
+
+    const slideRect = slide.getBoundingClientRect();
+    const blockRect = el.getBoundingClientRect();
+    _dragState = {
+        index, el, slide,
+        pointerId: e.pointerId,
+        startClientX: e.clientX, startClientY: e.clientY,
+        startLeftPx: blockRect.left - slideRect.left,
+        startTopPx:  blockRect.top  - slideRect.top,
+        // Ширина/высота баннера на момент начала жеста — переиспользуются
+        // на pointerup вместо повторного getBoundingClientRect() (см. lastLeftPx
+        // ниже): на некоторых кадрах, прямо на границе смены position:static→
+        // absolute у блока с container-relative (cqw) шрифтом, повторный замер
+        // геометрии ловил «призрачный» layout (высота блока временно в разы
+        // больше настоящей) — координата получалась в разы смещена. Баннер
+        // сам не меняет размер во время перетаскивания одного блока, поэтому
+        // переиспользовать исходные значения безопасно и даёт стабильный результат.
+        slideWidthPx:  slideRect.width,
+        slideHeightPx: slideRect.height,
+        lastLeftPx: blockRect.left - slideRect.left,
+        lastTopPx:  blockRect.top  - slideRect.top,
+        moved: false,
+    };
+    el.setPointerCapture(e.pointerId);
+    el.addEventListener('pointermove', onBannerBlockPointerMove);
+    el.addEventListener('pointerup', onBannerBlockPointerUp);
+    el.addEventListener('pointercancel', onBannerBlockPointerUp);
+    e.preventDefault();
+}
+
+function onBannerBlockPointerMove(e) {
+    if (!_dragState || e.pointerId !== _dragState.pointerId) return;
+    const { el, slide, startClientX, startClientY, startLeftPx, startTopPx } = _dragState;
+    const dx = e.clientX - startClientX;
+    const dy = e.clientY - startClientY;
+    if (!_dragState.moved && Math.abs(dx) < 2 && Math.abs(dy) < 2) return; // порог — не путать клик с микро-дрожанием пальца
+    _dragState.moved = true;
+
+    const slideRect = slide.getBoundingClientRect();
+    const blockRect = el.getBoundingClientRect();
+    const marginXPx = slideRect.width  * DRAG_MARGIN_PCT / 100;
+    const marginYPx = slideRect.height * DRAG_MARGIN_PCT / 100;
+
+    let left = startLeftPx + dx;
+    let top  = startTopPx  + dy;
+    left = Math.max(marginXPx, Math.min(left, Math.max(marginXPx, slideRect.width  - marginXPx - blockRect.width)));
+    top  = Math.max(marginYPx, Math.min(top,  Math.max(marginYPx, slideRect.height - marginYPx - blockRect.height)));
+
+    el.classList.add('banner-slide__block--positioned', 'banner-slide__block--dragging');
+    el.style.position = 'absolute';
+    el.style.left = `${left}px`;
+    el.style.top  = `${top}px`;
+    _dragState.lastLeftPx = left;
+    _dragState.lastTopPx  = top;
+
+    updateBannerDragHint(slide, left, top, slideRect);
+}
+
+function onBannerBlockPointerUp(e) {
+    if (!_dragState || e.pointerId !== _dragState.pointerId) return;
+    const { el, index, moved, lastLeftPx, lastTopPx, slideWidthPx, slideHeightPx } = _dragState;
+    el.removeEventListener('pointermove', onBannerBlockPointerMove);
+    el.removeEventListener('pointerup', onBannerBlockPointerUp);
+    el.removeEventListener('pointercancel', onBannerBlockPointerUp);
+    el.classList.remove('banner-slide__block--dragging');
+    removeBannerDragHint();
+
+    if (moved && _bannerFormBlocks[index]) {
+        // Намеренно НЕ перечитываем geometry через getBoundingClientRect() здесь
+        // ещё раз — берём px, уже посчитанные и применённые в последнем
+        // pointermove (см. его комментарий про «призрачный» layout-кадр).
+        _bannerFormBlocks[index].x = round1(lastLeftPx / slideWidthPx  * 100);
+        _bannerFormBlocks[index].y = round1(lastTopPx  / slideHeightPx * 100);
+        renderBannerBlocksEditor(); // перерисует превью+редактор, пересчитает предупреждения/наложение
+    }
+    _dragState = null;
+}
+
+function updateBannerDragHint(slide, leftPx, topPx, slideRect) {
+    if (!_dragHintEl) {
+        _dragHintEl = document.createElement('div');
+        _dragHintEl.className = 'banner-drag-hint';
+        slide.appendChild(_dragHintEl);
+    }
+    const xPct = round1(leftPx / slideRect.width  * 100);
+    const yPct = round1(topPx  / slideRect.height * 100);
+    _dragHintEl.textContent = `X ${xPct}% · Y ${yPct}%`;
+    _dragHintEl.style.left = `${leftPx}px`;
+    _dragHintEl.style.top  = `${topPx > 22 ? topPx - 20 : topPx + 4}px`;
+}
+
+function removeBannerDragHint() {
+    if (_dragHintEl) { _dragHintEl.remove(); _dragHintEl = null; }
+}
+
+/* Стрелки клавиатуры двигают выделенный блок на 1% (Shift — на 5%, ТЗ п.6).
+   Реагирует, только когда фокус реально на самом блоке (tabindex=0, см.
+   bannerRender.js) — не перехватывает стрелки, когда админ печатает в
+   текстовом поле или где-либо ещё. */
+function onBannerBlockKeyDown(e) {
+    const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    const delta = ARROWS[e.key];
+    if (!delta) return;
+    e.preventDefault();
+
+    const el = e.currentTarget;
+    const index = +el.dataset.blockIndex;
+    const block = _bannerFormBlocks[index];
+    const slide = el.closest('.banner-slide');
+    if (!block || !slide) return;
+
+    const step = e.shiftKey ? 5 : 1;
+    const slideRect = slide.getBoundingClientRect();
+    const blockRect = el.getBoundingClientRect();
+
+    // Если блок ещё ни разу не двигали (x/y нет) — берём его ТЕКУЩУЮ
+    // отрисованную позицию (по text_pos) как стартовую, чтобы первое
+    // нажатие стрелки сдвигало от места, где блок реально виден, а не
+    // «телепортировало» его откуда-то с нуля.
+    const curX = typeof block.x === 'number' ? block.x : round1((blockRect.left - slideRect.left) / slideRect.width  * 100);
+    const curY = typeof block.y === 'number' ? block.y : round1((blockRect.top  - slideRect.top)  / slideRect.height * 100);
+
+    const blockWPct = blockRect.width  / slideRect.width  * 100;
+    const blockHPct = blockRect.height / slideRect.height * 100;
+    const maxX = Math.max(DRAG_MARGIN_PCT, 100 - DRAG_MARGIN_PCT - blockWPct);
+    const maxY = Math.max(DRAG_MARGIN_PCT, 100 - DRAG_MARGIN_PCT - blockHPct);
+
+    block.x = round1(Math.max(DRAG_MARGIN_PCT, Math.min(curX + delta[0] * step, maxX)));
+    block.y = round1(Math.max(DRAG_MARGIN_PCT, Math.min(curY + delta[1] * step, maxY)));
+
+    renderBannerBlocksEditor();
+    const scope = document.getElementById('bannerPreview');
+    const newEl = scope && scope.querySelector(`[data-block-index="${index}"]`);
+    if (newEl) newEl.focus({ preventScroll: true }); // перерисовка уничтожает старый узел — фокус нужно вернуть явно
+}
+
+/* Клик/тап по блоку без реального перетаскивания (см. moved в
+   onBannerBlockPointerUp) — просто выделение, чтобы стрелками на
+   клавиатуре двигать именно его. focus:true — только из настоящего
+   пользовательского жеста (pointerdown/клавиатура), НИКОГДА из обычной
+   перерисовки превью (иначе фокус воровался бы у текстового поля при
+   каждом нажатии клавиши во время ввода текста блока). */
+function selectBannerBlock(index, opts) {
+    _selectedBlockIndex = index;
+    const scope = document.getElementById('bannerPreview');
+    if (!scope) return;
+    applySelectedBlockClass(scope);
+    if (opts && opts.focus) {
+        const el = scope.querySelector(`[data-block-index="${index}"]`);
+        if (el) el.focus({ preventScroll: true });
+    }
+}
+
+function applySelectedBlockClass(scope) {
+    scope.querySelectorAll('.banner-slide__block--selected').forEach(el => el.classList.remove('banner-slide__block--selected'));
+    if (_selectedBlockIndex == null) return;
+    const el = scope.querySelector(`[data-block-index="${_selectedBlockIndex}"]`);
+    if (el) el.classList.add('banner-slide__block--selected');
+}
+
+/* Кнопка «Сбросить позицию» у блока (ТЗ п.6) — убирает x/y, блок
+   возвращается в обычный поток и выравнивается по text_pos, как раньше. */
+function resetBannerBlockPosition(i) {
+    if (!_bannerFormBlocks[i]) return;
+    _bannerFormBlocks[i].x = null;
+    _bannerFormBlocks[i].y = null;
+    if (_selectedBlockIndex === i) _selectedBlockIndex = null;
+    renderBannerBlocksEditor();
+}
+
+/* Предупреждение о наложении блоков (ТЗ п.5) — не блокирует сохранение,
+   просто текст рядом с превью. Сравнивает реальные отрисованные
+   прямоугольники всех блоков (и позиционированных, и обычных) попарно —
+   общий случай, без допущений о том, кто где должен быть. */
+function checkBannerBlockOverlap(scope) {
+    const warnEl = document.getElementById('bannerOverlapWarning');
+    if (!warnEl) return;
+    const blocks = [...scope.querySelectorAll('[data-block-index]')];
+    let overlap = false;
+    outer:
+    for (let i = 0; i < blocks.length; i++) {
+        for (let j = i + 1; j < blocks.length; j++) {
+            const a = blocks[i].getBoundingClientRect();
+            const b = blocks[j].getBoundingClientRect();
+            if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) {
+                overlap = true;
+                break outer;
+            }
+        }
+    }
+    warnEl.classList.toggle('hidden', !overlap);
 }
 
 /* ─── Эмодзи ──────────────────────────────────────────────────────── */

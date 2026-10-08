@@ -307,6 +307,51 @@ async function main() {
         check('POST /api/banners: эмодзи возвращается без искажений', body.textBlocks?.[0]?.text === emojiText);
     }
 
+    // x/y позиция блока (ТЗ п.8/9) — опциональные числа 0–100, округление
+    // до 0,1, задаются только вместе, иначе отклоняются как весь остальной
+    // белый список (400), а не отбрасываются молча.
+    {
+        const { status, body } = await postBanner({ title: 'T', textBlocks: [{ text: 'x', size: 'm', weight: 'regular', italic: false, color: 'auto', align: 'left', x: 42.37, y: 68.04 }] });
+        check('POST /api/banners: валидные x/y -> 201', status === 201);
+        check('POST /api/banners: x/y округляются до 0,1', body.textBlocks?.[0]?.x === 42.4 && body.textBlocks?.[0]?.y === 68.0);
+    }
+    {
+        const { status } = await postBanner({ title: 'T', textBlocks: [{ text: 'x', size: 'm', weight: 'regular', italic: false, color: 'auto', align: 'left', x: 150, y: 50 }] });
+        check('POST /api/banners: x вне диапазона (150) -> 400', status === 400);
+    }
+    {
+        const { status } = await postBanner({ title: 'T', textBlocks: [{ text: 'x', size: 'm', weight: 'regular', italic: false, color: 'auto', align: 'left', x: 50, y: -5 }] });
+        check('POST /api/banners: y вне диапазона (-5) -> 400', status === 400);
+    }
+    {
+        const { status } = await postBanner({ title: 'T', textBlocks: [{ text: 'x', size: 'm', weight: 'regular', italic: false, color: 'auto', align: 'left', x: '50', y: 50 }] });
+        check('POST /api/banners: x строкой вместо числа -> 400', status === 400);
+    }
+    {
+        // Валидный JSON не может закодировать NaN (JSON.stringify(NaN) === 'null') — чтобы
+        // реально проверить реакцию на NaN, шлём вручную собранное тело с
+        // литеральным NaN-токеном (само по себе невалидный JSON). Защита в
+        // sanitizeBlockPosition (Number.isFinite) рассчитана именно на такой
+        // случай, если он всё же как-то дойдёт до неё; здесь же проверяем,
+        // что сервер не падает (500), а аккуратно отвечает ошибкой.
+        const r = await fetch(`${base}/api/banners`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...AUTH },
+            body: '{"title":"T","textBlocks":[{"text":"x","size":"m","weight":"regular","italic":false,"color":"auto","align":"left","x":NaN,"y":50}]}',
+        });
+        check('POST /api/banners: x:NaN (невалидный JSON) -> не 201/500, сервер не падает', r.status !== 201 && r.status !== 500);
+    }
+    {
+        const { status } = await postBanner({ title: 'T', textBlocks: [{ text: 'x', size: 'm', weight: 'regular', italic: false, color: 'auto', align: 'left', x: 50 }] });
+        check('POST /api/banners: только x без y -> 400', status === 400);
+    }
+    {
+        // Старый формат — блок вовсе без x/y (обратная совместимость, ТЗ п.7)
+        const { status, body } = await postBanner({ title: 'T', textBlocks: [{ text: 'x', size: 'm', weight: 'regular', italic: false, color: 'auto', align: 'left' }] });
+        check('POST /api/banners: блок без x/y (старый формат) -> 201', status === 201);
+        check('POST /api/banners: без x/y -> x и y сохраняются как null', body.textBlocks?.[0]?.x === null && body.textBlocks?.[0]?.y === null);
+    }
+
     // XSS-строка — сохраняется и возвращается как обычный текст, не отклоняется
     {
         const xss = '<img src=x onerror=alert(1)>';

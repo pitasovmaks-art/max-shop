@@ -583,6 +583,10 @@
                 <div class="banner-preview-viewport">
                     <div class="banner-preview-scope" id="bannerPreview"></div>
                 </div>
+                <!-- Текстовые блоки на превью можно зажать и подвинуть
+                     мышью/пальцем (admin/banners.js: initBannerBlockDrag).
+                     Предупреждение о наложении — не блокирует сохранение. -->
+                <div class="banner-overlap-warning hidden" id="bannerOverlapWarning">⚠ Тексты накладываются друг на друга</div>
             </div>
 
             <!-- Photo upload -->
@@ -721,7 +725,7 @@
 <script src="lib/xlsx.full.min.js"></script>
 <script src="categories.js"></script>
 <script src="stores.js"></script>
-<script src="../src/shared/bannerRender.js?v=20261007"></script>
+<script src="../src/shared/bannerRender.js?v=20261008"></script>
 <script src="banners.js"></script>
 <script src="../src/components/FileUploader.js"></script>
 <script src="admin.js?v=6"></script>
