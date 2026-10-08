@@ -414,9 +414,29 @@ const HOME_BANNERS = [
     { cls: 'banner-slide--b', title: 'Монтажные пистолеты', sub: 'Toua, FengBao и другие бренды',             linkType: 'category', linkId: null, categoryName: 'Монтажные пистолеты' },
     { cls: 'banner-slide--c', title: 'Расходники',          sub: 'Для монтажных пистолетов и инструмента',    linkType: 'category', linkId: null, categoryName: 'Расходники' },
 ];
-let _bannerIndex    = 0;
-let _bannerTimer    = null;
+
+/* Карусель — бесконечная по кругу (1→2→…→N→1), без «пинг-понга» на
+   границе. Механизм (стандартный приём для бесшовной бесконечной
+   карусели): когда баннеров >1 и анимация не отключена
+   (prefers-reduced-motion), в трек ДОБАВЛЯЮТСЯ клоны — копия последнего
+   слайда ПЕРЕД первым и копия первого ПОСЛЕ последнего:
+   [клон-последнего, 0, 1, …, N-1, клон-первого]. _bannerTrackPos — позиция
+   в этом треке (1..N — реальные слайды, 0 и N+1 — клоны); _bannerIndex —
+   логический индекс реального баннера (0..N-1, то, что показывают точки).
+   Переход на клон анимируется как обычно, а сразу после (transitionend)
+   трек мгновенно (transition:none) телепортируется на настоящий слайд с
+   тем же номером — глазу разницы не видно, но нет скачка через все N
+   слайдов. При reduced-motion или N<=1 клонов нет вообще — там и так
+   нечего бесшовно анимировать (переход либо мгновенный, либо его нет). */
+let _bannerIndex       = 0;     // логический индекс текущего реального баннера
+let _bannerTrackPos    = 0;     // позиция в треке (с учётом клонов, если они есть)
+let _bannerTimer       = null;  // автопрокрутка (setInterval)
+let _bannerResumeTimer = null;  // отложенный resume через ~6с бездействия после касания
+let _bannerBusy        = false; // идёт анимация шага — новые шаги (автопрокрутка) ждут следующего тика
+let _bannerDrag         = null; // активный свайп: { pointerId, startX, startY, dragging, baseTrackPos, trackWidth }
+let _bannerSuppressClick = false; // следующий click по треку — следствие свайпа, а не тапа, игнорируем
 let _activeBanners  = HOME_BANNERS;
+const _bannerReducedMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const BANNERS_CACHE_KEY = 'banners_cache_v1';
 
@@ -432,24 +452,211 @@ function saveBannersCache(banners) {
     try { localStorage.setItem(BANNERS_CACHE_KEY, JSON.stringify(banners)); } catch { /* приватный режим и т.п. — не критично */ }
 }
 
-function _bannerGoTo(i) {
+function _bannerUsesClones() {
+    return _activeBanners.length > 1 && !_bannerReducedMotionMQ.matches;
+}
+
+/* pos — позиция В ТРЕКЕ (с учётом клонов). animate=false — мгновенно,
+   без CSS-перехода (используется для первой отрисовки и для
+   телепортации с клона на настоящий слайд). */
+function _bannerSnapInstant(pos) {
     const track = document.getElementById('bannerTrack');
-    const dots  = document.getElementById('bannerDots');
-    if (!track || !_activeBanners.length) return;
-    _bannerIndex = ((i % _activeBanners.length) + _activeBanners.length) % _activeBanners.length;
-    track.style.transform = `translateX(-${_bannerIndex * 100}%)`;
-    if (dots) {
-        [...dots.children].forEach((dot, idx) => dot.classList.toggle('on', idx === _bannerIndex));
+    if (!track) return;
+    track.style.transition = 'none';
+    track.style.transform  = `translateX(-${pos * 100}%)`;
+    void track.offsetWidth; // форсируем reflow — иначе браузер схлопнёт это с следующим transition и анимирует и его тоже
+    track.style.transition = '';
+}
+function _bannerAnimateTo(pos) {
+    const track = document.getElementById('bannerTrack');
+    if (!track) return;
+    track.style.transition = ''; // вернуть CSS-переход из .banner-track (.35s ease; none — при reduced-motion, см. catalog.css)
+    track.style.transform  = `translateX(-${pos * 100}%)`;
+}
+
+function _bannerUpdateDots() {
+    const dots = document.getElementById('bannerDots');
+    if (!dots) return;
+    [...dots.children].forEach((dot, idx) => dot.classList.toggle('on', idx === _bannerIndex));
+}
+
+/* Вызывает cb один раз — либо по transitionend трека, либо (страховка,
+   на случай прерванного/не случившегося transitionend) по таймеру чуть
+   длиннее самого перехода (.35s в catalog.css). */
+function _bannerAfterTransition(cb) {
+    const track = document.getElementById('bannerTrack');
+    if (!track) { cb(); return; }
+    let done = false;
+    const finish = () => {
+        if (done) return;
+        done = true;
+        track.removeEventListener('transitionend', onEnd);
+        cb();
+    };
+    const onEnd = (e) => { if (e.target === track && e.propertyName === 'transform') finish(); };
+    track.addEventListener('transitionend', onEnd);
+    setTimeout(finish, 450);
+}
+
+/* Один шаг карусели (direction: +1 — вперёд, -1 — назад), по кругу.
+   onSettled вызывается, когда анимация шага (и, если нужно, телепортация
+   с клона) полностью завершилась — используется автопрокруткой/свайпом/
+   точками, чтобы не запускать следующий шаг поверх ещё не осевшего. */
+function _bannerStep(direction, onSettled) {
+    const N = _activeBanners.length;
+    if (!N) { if (onSettled) onSettled(); return; }
+    _bannerBusy  = true;
+    _bannerIndex = ((_bannerIndex + direction) % N + N) % N;
+
+    if (!_bannerUsesClones()) {
+        // Без клонов (reduced-motion или N<=1) — трек-позиция совпадает с
+        // логическим индексом, прыжок мгновенный (переход и так отключён
+        // через @media (prefers-reduced-motion: reduce) в catalog.css).
+        _bannerTrackPos = _bannerIndex;
+        _bannerSnapInstant(_bannerTrackPos);
+        _bannerUpdateDots();
+        _bannerBusy = false;
+        if (onSettled) onSettled();
+        return;
     }
+
+    _bannerTrackPos += direction;
+    _bannerAnimateTo(_bannerTrackPos);
+    _bannerUpdateDots();
+    _bannerAfterTransition(() => {
+        if (_bannerTrackPos === 0)      { _bannerTrackPos = N; _bannerSnapInstant(N); }
+        else if (_bannerTrackPos === N + 1) { _bannerTrackPos = 1; _bannerSnapInstant(1); }
+        _bannerBusy = false;
+        if (onSettled) onSettled();
+    });
+}
+
+function _bannerQueueSteps(direction, steps) {
+    if (steps <= 0) return;
+    _bannerStep(direction, () => { if (steps > 1) _bannerQueueSteps(direction, steps - 1); });
+}
+
+/* Переход на конкретный логический индекс (клик по точке) — кратчайшим
+   путём по кругу, тем же механизмом _bannerStep (так что бесшовность на
+   границе гарантированно та же, что у свайпа/автопрокрутки, без
+   отдельного кода). */
+function _bannerGoToLogical(targetIndex) {
+    const N = _activeBanners.length;
+    if (!N) return;
+    targetIndex = ((targetIndex % N) + N) % N;
+    if (targetIndex === _bannerIndex) return;
+
+    if (!_bannerUsesClones()) {
+        _bannerIndex    = targetIndex;
+        _bannerTrackPos = targetIndex;
+        _bannerSnapInstant(_bannerTrackPos);
+        _bannerUpdateDots();
+        return;
+    }
+
+    const forwardDist  = (targetIndex - _bannerIndex + N) % N;
+    const backwardDist = N - forwardDist;
+    _bannerQueueSteps(forwardDist <= backwardDist ? 1 : -1, Math.min(forwardDist, backwardDist));
 }
 
 function _bannerStart() {
     clearInterval(_bannerTimer);
-    if (_activeBanners.length > 1) _bannerTimer = setInterval(() => _bannerGoTo(_bannerIndex + 1), 3000);
+    clearTimeout(_bannerResumeTimer);
+    if (document.hidden) return; // скрытая вкладка — пауза (возобновит visibilitychange ниже)
+    if (_bannerReducedMotionMQ.matches) return; // reduced-motion — без автопрокрутки вообще
+    if (_activeBanners.length > 1) {
+        _bannerTimer = setInterval(() => {
+            if (_bannerBusy || _bannerDrag) return; // не перебиваем уже идущий шаг/активный свайп
+            _bannerStep(1);
+        }, 3000);
+    }
 }
 
-function _bannerPause() {
+/* Касание/свайп — немедленная пауза; возобновление — через ~6с полного
+   бездействия (не сразу по отпусканию пальца, см. ТЗ). */
+function _bannerPauseForInteraction() {
     clearInterval(_bannerTimer);
+    clearTimeout(_bannerResumeTimer);
+}
+function _bannerResumeAfterInteraction() {
+    clearTimeout(_bannerResumeTimer);
+    _bannerResumeTimer = setTimeout(_bannerStart, 6000);
+}
+
+/* ─── Свайп (Pointer Events — один код для мыши и пальца) ──────────
+   touch-action:pan-y на .banner-track (catalog.css) уже отдаёт
+   вертикальный скролл браузеру нативно; это — горизонтальный жест.
+   Слушатели на document (не capture/setPointerCapture) — так жест не
+   обрывается, если палец на миг выходит за пределы трека. */
+function _bannerOnPointerDown(e) {
+    if (e.button !== undefined && e.button !== 0) return; // только левая кнопка мыши/касание
+    if (_activeBanners.length <= 1) return; // один баннер — нечего свайпать (ТЗ п.5)
+    const track = document.getElementById('bannerTrack');
+    if (!track) return;
+    _bannerPauseForInteraction();
+    _bannerDrag = {
+        pointerId: e.pointerId,
+        startX: e.clientX, startY: e.clientY,
+        dragging: false,
+        baseTrackPos: _bannerTrackPos,
+        trackWidth: track.getBoundingClientRect().width,
+    };
+    document.addEventListener('pointermove', _bannerOnPointerMove);
+    document.addEventListener('pointerup', _bannerOnPointerUp);
+    document.addEventListener('pointercancel', _bannerOnPointerUp);
+}
+
+function _bannerOnPointerMove(e) {
+    if (!_bannerDrag || e.pointerId !== _bannerDrag.pointerId) return;
+    const dx = e.clientX - _bannerDrag.startX;
+    const dy = e.clientY - _bannerDrag.startY;
+    if (!_bannerDrag.dragging) {
+        // Порог ~10px (ТЗ п.4) — до него ещё не ясно, тап это или жест.
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+        if (Math.abs(dy) > Math.abs(dx)) { // вертикальный жест — это скролл страницы, не наш
+            document.removeEventListener('pointermove', _bannerOnPointerMove);
+            document.removeEventListener('pointerup', _bannerOnPointerUp);
+            document.removeEventListener('pointercancel', _bannerOnPointerUp);
+            _bannerDrag = null;
+            return;
+        }
+        _bannerDrag.dragging = true;
+        const track = document.getElementById('bannerTrack');
+        track.style.transition = 'none';
+        track.classList.add('banner-track--dragging');
+    }
+    e.preventDefault(); // не даём мышью выделить текст / не мешаем жесту
+    const track = document.getElementById('bannerTrack');
+    track.style.transform = `translateX(calc(-${_bannerDrag.baseTrackPos * 100}% + ${dx}px))`;
+}
+
+function _bannerOnPointerUp(e) {
+    if (!_bannerDrag || e.pointerId !== _bannerDrag.pointerId) return;
+    document.removeEventListener('pointermove', _bannerOnPointerMove);
+    document.removeEventListener('pointerup', _bannerOnPointerUp);
+    document.removeEventListener('pointercancel', _bannerOnPointerUp);
+
+    const drag = _bannerDrag;
+    _bannerDrag = null;
+
+    if (!drag.dragging) {
+        // Движение меньше ~10px — это тап, клик сработает сам по себе
+        // (ссылка баннера открывается обычным DOM-событием click, ТЗ п.4).
+        _bannerResumeAfterInteraction();
+        return;
+    }
+
+    _bannerSuppressClick = true; // реальный свайп — следующий click (от тапа при отпускании) не должен открыть ссылку
+    const track = document.getElementById('bannerTrack');
+    track.classList.remove('banner-track--dragging');
+    const dx = e.clientX - drag.startX;
+    const threshold = drag.trackWidth * 0.18; // достаточно далеко утянули — считаем осознанным свайпом, не просто дрожью
+    if (Math.abs(dx) > threshold) {
+        _bannerStep(dx < 0 ? 1 : -1); // свайп влево — вперёд (следующий), вправо — назад
+    } else {
+        _bannerAnimateTo(_bannerTrackPos); // не дотянули — откат на текущий слайд
+    }
+    _bannerResumeAfterInteraction();
 }
 
 /* Клик по баннеру — с проверкой, что цель ещё существует среди уже
@@ -486,25 +693,45 @@ function _resolveFallbackBanners() {
 /* Собирает DOM разметку слайда через общий src/shared/bannerRender.js
    (textContent/createTextNode внутри — никакого innerHTML с данными
    баннера, это и есть защита от XSS в text_blocks/title/subtitle).
-   Клик вешается здесь, а не в bannerRender.js — это уже специфика
-   страницы (Главная), а не внешний вид. */
+   Клик по ссылке баннера обрабатывается делегированием на #bannerTrack
+   (см. initBanner) — через data-slide-index, а не addEventListener на
+   каждом слайде: клоны для бесшовной карусели (см. выше) создаются через
+   cloneNode и не копируют JS-обработчики, зато копируют data-атрибуты и
+   инлайн-стили (включая position:absolute/left/top у x/y-блоков текста,
+   см. предыдущую задачу — они переживают клонирование как есть). */
 function _renderBannerSlides(banners) {
     const track = document.getElementById('bannerTrack');
     const dots  = document.getElementById('bannerDots');
     if (!track || !dots || !window.BannerRender) return;
     _activeBanners = banners;
     track.innerHTML = '';
-    banners.forEach(b => {
+    track.classList.remove('banner-track--dragging');
+
+    const slideEls = banners.map((b, i) => {
         const el = BannerRender.buildBannerSlideElement(b, document.documentElement);
-        if (b.linkType && b.linkType !== 'none') {
-            el.style.cursor = 'pointer';
-            el.addEventListener('click', () => openBannerTarget(b.linkType, b.linkId));
-        }
-        track.appendChild(el);
+        el.dataset.slideIndex = String(i);
+        if (b.linkType && b.linkType !== 'none') el.style.cursor = 'pointer';
+        return el;
     });
+
+    const useClones = _bannerUsesClones();
+    if (useClones) {
+        const lastClone  = slideEls[slideEls.length - 1].cloneNode(true);
+        const firstClone = slideEls[0].cloneNode(true);
+        lastClone.setAttribute('aria-hidden', 'true');
+        firstClone.setAttribute('aria-hidden', 'true');
+        track.appendChild(lastClone);
+        slideEls.forEach(el => track.appendChild(el));
+        track.appendChild(firstClone);
+    } else {
+        slideEls.forEach(el => track.appendChild(el));
+    }
+
     dots.innerHTML = banners.length > 1 ? banners.map(() => `<span></span>`).join('') : '';
-    _bannerIndex = 0;
-    _bannerGoTo(0);
+    _bannerIndex    = 0;
+    _bannerTrackPos = useClones ? 1 : 0;
+    _bannerSnapInstant(_bannerTrackPos);
+    _bannerUpdateDots();
     _bannerStart();
 }
 
@@ -513,7 +740,12 @@ function _renderBannerSkeleton() {
     const dots  = document.getElementById('bannerDots');
     if (!track) return;
     clearInterval(_bannerTimer);
-    track.style.transform = 'translateX(0)';
+    clearTimeout(_bannerResumeTimer);
+    track.classList.remove('banner-track--dragging');
+    track.style.transition = 'none';
+    track.style.transform  = 'translateX(0)';
+    void track.offsetWidth;
+    track.style.transition = '';
     track.innerHTML = '<div class="banner-slide banner-slide--skeleton" aria-hidden="true"></div>';
     if (dots) dots.innerHTML = '';
 }
@@ -550,10 +782,31 @@ async function initBanner() {
         // иначе на экране уже что-то из кэша — оставляем как есть
     }
 
-    track.addEventListener('touchstart', _bannerPause, { passive: true });
-    track.addEventListener('touchend',   _bannerStart,  { passive: true });
-    track.addEventListener('mousedown',  _bannerPause);
-    window.addEventListener('mouseup',   _bannerStart);
+    // Делегирование кликов — один раз на персистентном #bannerTrack
+    // (его innerHTML переписывается при каждом _renderBannerSlides, но
+    // сам элемент и слушатель на нём — нет).
+    track.addEventListener('pointerdown', _bannerOnPointerDown);
+    track.addEventListener('click', (e) => {
+        if (_bannerSuppressClick) { _bannerSuppressClick = false; return; }
+        const slide = e.target.closest('.banner-slide[data-slide-index]');
+        if (!slide) return;
+        const banner = _activeBanners[+slide.dataset.slideIndex];
+        if (!banner || !banner.linkType || banner.linkType === 'none') return;
+        openBannerTarget(banner.linkType, banner.linkId);
+    });
+    dots.addEventListener('click', (e) => {
+        const dot = e.target.closest('span');
+        if (!dot) return;
+        const idx = [...dots.children].indexOf(dot);
+        if (idx === -1) return;
+        _bannerPauseForInteraction();
+        _bannerGoToLogical(idx);
+        _bannerResumeAfterInteraction();
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) { clearInterval(_bannerTimer); clearTimeout(_bannerResumeTimer); }
+        else { _bannerStart(); }
+    });
 }
 
 /* ─── Home: hits rail (товары с isHit, рельса под баннером) ──────── */

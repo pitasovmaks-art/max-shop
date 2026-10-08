@@ -382,7 +382,11 @@ html.city-unknown #city-screen { display: flex; }
     display: flex;
     will-change: transform;
     transition: transform .35s ease;
-    touch-action: pan-y;
+    touch-action: pan-y; /* вертикальный скролл страницы — браузеру нативно, горизонтальный свайп — нам (см. catalog.js) */
+}
+.banner-track--dragging { transition: none; user-select: none; } /* во время активного свайпа — см. catalog.js */
+@media (prefers-reduced-motion: reduce) {
+    .banner-track { transition: none; }
 }
 .banner-slide {
     position: relative; /* точка отсчёта для .banner-slide--overlay-*::before и .banner-slide__block--positioned */
@@ -476,7 +480,7 @@ html.city-unknown #city-screen { display: flex; }
     z-index: 2;
 }
 .banner-dots { display: flex; gap: 6px; justify-content: center; padding: 8px 0 2px; }
-.banner-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--border); display: block; }
+.banner-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--border); display: block; cursor: pointer; }
 .banner-dots span.on { background: var(--accent); width: 16px; border-radius: 3px; transition: width .2s, background .2s; }
 
 /* ─── Catalog: hits rail (layout shared with .cat-rail above) ──── */
