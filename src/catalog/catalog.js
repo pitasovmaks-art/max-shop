@@ -427,16 +427,38 @@ const HOME_BANNERS = [
    трек мгновенно (transition:none) телепортируется на настоящий слайд с
    тем же номером — глазу разницы не видно, но нет скачка через все N
    слайдов. При reduced-motion или N<=1 клонов нет вообще — там и так
-   нечего бесшовно анимировать (переход либо мгновенный, либо его нет). */
-let _bannerIndex       = 0;     // логический индекс текущего реального баннера
-let _bannerTrackPos    = 0;     // позиция в треке (с учётом клонов, если они есть)
-let _bannerTimer       = null;  // автопрокрутка (setInterval)
-let _bannerResumeTimer = null;  // отложенный resume через ~6с бездействия после касания
-let _bannerBusy        = false; // идёт анимация шага — новые шаги (автопрокрутка) ждут следующего тика
+   нечего бесшовно анимировать (переход либо мгновенный, либо его нет).
+
+   Конечный автомат idle/dragging/animating + _bannerStepToken (см. ниже) —
+   устраняет три бага, найденные стресс-тестом на предыдущей версии (без
+   автомата, с отдельными булевыми _bannerBusy/_bannerDrag):
+   - новый pointerdown во время ещё идущей анимации захватывал
+     _bannerTrackPos, который в этот момент мог стоять на позиции КЛОНА
+     (0 или N+1) — ещё не телепортированной на настоящий слайд, потому что
+     teleport случается в колбэке transitionend/таймера ПОЗЖЕ. Следующий
+     шаг прибавлял direction поверх этого непосредствованного значения, и
+     _bannerTrackPos уходил за пределы [0, N+1] без возврата (наблюдалось
+     вплоть до -6 в стресс-тесте) — баннер уезжал с экрана насовсем (баг C,
+     "пропадает") и мог visуально поехать не в ту сторону при следующем
+     свайпе, т.к. базовая точка жеста была в заведомо неверном месте (баг B).
+   - у каждого вызова шага была СВОЯ независимая подписка на transitionend/
+     таймер без отмены предыдущей — несколько параллельных «доездов»
+     срабатывали по одному и тому же событию и каждый по-своему мутировал
+     общее состояние.
+   _bannerStepToken — счётчик поколений: при начале НОВОГО жеста/шага он
+   увеличивается, и колбэки СТАРЫХ (уже отменённых) анимаций, даже если
+   всё-таки сработают позже, видят чужой token и ничего не делают. */
+let _bannerIndex    = 0;     // логический индекс текущего реального баннера
+let _bannerTrackPos = 0;     // позиция в треке (с учётом клонов, если они есть)
+let _bannerState    = 'idle'; // 'idle' | 'dragging' | 'animating'
+let _bannerStepToken = 0;    // поколение текущего шага/жеста — см. комментарий выше
+let _bannerAutoTimer = null; // ОДИН setTimeout на следующий автошаг, пересоздаётся заново при каждом settle (ТЗ п.1) — не setInterval
 let _bannerDrag         = null; // активный свайп: { pointerId, startX, startY, dragging, baseTrackPos, trackWidth }
 let _bannerSuppressClick = false; // следующий click по треку — следствие свайпа, а не тапа, игнорируем
 let _activeBanners  = HOME_BANNERS;
 const _bannerReducedMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+const BANNER_TRANSITION_MS = 350; // совпадает с .35s в .banner-track (catalog.css)
+const BANNER_AUTO_MS       = 3000; // интервал автошага (ТЗ п.1: ровно 3с после остановки)
 
 const BANNERS_CACHE_KEY = 'banners_cache_v1';
 
@@ -481,42 +503,44 @@ function _bannerUpdateDots() {
 }
 
 /* Вызывает cb один раз — либо по transitionend трека, либо (страховка,
-   на случай прерванного/не случившегося transitionend) по таймеру чуть
-   длиннее самого перехода (.35s в catalog.css). */
+   на случай прерванного/не случившегося transitionend — например, фоновая
+   вкладка или анимация была отменена сменой transition на 'none' до
+   завершения) по таймеру чуть длиннее самого перехода (ТЗ п.3: длительность
+   + 50мс). cb вызывается БЕЗУСЛОВНО — актуальность своего поколения
+   (_bannerStepToken) каждый вызывающий код проверяет сам, см. ниже. */
 function _bannerAfterTransition(cb) {
     const track = document.getElementById('bannerTrack');
     if (!track) { cb(); return; }
     let done = false;
+    let safetyTimer;
     const finish = () => {
         if (done) return;
         done = true;
         track.removeEventListener('transitionend', onEnd);
+        clearTimeout(safetyTimer);
         cb();
     };
     const onEnd = (e) => { if (e.target === track && e.propertyName === 'transform') finish(); };
     track.addEventListener('transitionend', onEnd);
-    setTimeout(finish, 450);
+    safetyTimer = setTimeout(finish, BANNER_TRANSITION_MS + 50);
 }
 
-/* Один шаг карусели (direction: +1 — вперёд, -1 — назад), по кругу.
-   onSettled вызывается, когда анимация шага (и, если нужно, телепортация
-   с клона) полностью завершилась — используется автопрокруткой/свайпом/
-   точками, чтобы не запускать следующий шаг поверх ещё не осевшего. */
-function _bannerStep(direction, onSettled) {
+/* ОДИН шаг (direction: +1/-1), по кругу. token — поколение этого конкретного
+   шага (см. _bannerStepToken выше): колбэк проверяет его перед тем, как
+   трогать общее состояние — если за время анимации уже начался новый
+   жест/шаг (token успел измениться), колбэк молча ничего не делает, вместо
+   того чтобы прибавить своё смещение поверх уже неактуальной позиции
+   (это и была причина бага C/B — см. комментарий у _bannerIndex). */
+function _bannerAnimateStep(direction, token, cb) {
     const N = _activeBanners.length;
-    if (!N) { if (onSettled) onSettled(); return; }
-    _bannerBusy  = true;
+    if (!N) { cb(); return; }
     _bannerIndex = ((_bannerIndex + direction) % N + N) % N;
 
     if (!_bannerUsesClones()) {
-        // Без клонов (reduced-motion или N<=1) — трек-позиция совпадает с
-        // логическим индексом, прыжок мгновенный (переход и так отключён
-        // через @media (prefers-reduced-motion: reduce) в catalog.css).
         _bannerTrackPos = _bannerIndex;
         _bannerSnapInstant(_bannerTrackPos);
         _bannerUpdateDots();
-        _bannerBusy = false;
-        if (onSettled) onSettled();
+        cb();
         return;
     }
 
@@ -524,63 +548,144 @@ function _bannerStep(direction, onSettled) {
     _bannerAnimateTo(_bannerTrackPos);
     _bannerUpdateDots();
     _bannerAfterTransition(() => {
-        if (_bannerTrackPos === 0)      { _bannerTrackPos = N; _bannerSnapInstant(N); }
-        else if (_bannerTrackPos === N + 1) { _bannerTrackPos = 1; _bannerSnapInstant(1); }
-        _bannerBusy = false;
-        if (onSettled) onSettled();
+        if (token !== _bannerStepToken) return; // устарело — см. комментарий функции
+        // Нормализация — НЕ точечная проверка "===0/===N+1" (как было),
+        // а общая: если трек-позиция в итоге не совпадает с ожидаемой для
+        // текущего _bannerIndex (клон или ЛЮБОЙ больший перелёт), приводим
+        // к настоящему эквиваленту. _bannerIndex — источник истины, он
+        // обновляется синхронно в начале шага и не зависит от анимации.
+        const expected = _bannerIndex + 1; // 1..N — позиция настоящего слайда в треке с клонами
+        if (_bannerTrackPos !== expected) {
+            _bannerTrackPos = expected;
+            _bannerSnapInstant(_bannerTrackPos);
+        }
+        cb();
     });
 }
 
-function _bannerQueueSteps(direction, steps) {
-    if (steps <= 0) return;
-    _bannerStep(direction, () => { if (steps > 1) _bannerQueueSteps(direction, steps - 1); });
+/* Один самостоятельный шаг (автошаг/подтверждённый свайп) — от начала
+   жеста/тика до полного settle (idle + запланированный следующий автошаг). */
+function _bannerStepTo(direction) {
+    _bannerClearAutoTimer();
+    _bannerState = 'animating';
+    const token = ++_bannerStepToken;
+    _bannerAnimateStep(direction, token, () => {
+        if (token !== _bannerStepToken) return;
+        _bannerSettle(token);
+    });
+}
+
+/* Цепочка шагов в одну сторону (клик по точке на несколько слайдов сразу) —
+   один token на всю цепочку: если жест прервёт её на середине, оставшиеся
+   шаги сами увидят чужой token и не выполнятся (см. _bannerForceSettleNow). */
+function _bannerQueueSteps(direction, steps, token) {
+    if (token !== _bannerStepToken) return;
+    if (steps <= 0) { _bannerSettle(token); return; }
+    _bannerAnimateStep(direction, token, () => _bannerQueueSteps(direction, steps - 1, token));
 }
 
 /* Переход на конкретный логический индекс (клик по точке) — кратчайшим
-   путём по кругу, тем же механизмом _bannerStep (так что бесшовность на
-   границе гарантированно та же, что у свайпа/автопрокрутки, без
-   отдельного кода). */
+   путём по кругу, тем же механизмом _bannerAnimateStep (так что бесшовность
+   на границе гарантированно та же, что у свайпа/автопрокрутки). */
 function _bannerGoToLogical(targetIndex) {
     const N = _activeBanners.length;
-    if (!N) return;
+    if (!N || _bannerState === 'dragging') return; // во время активного жеста точки не трогаем
     targetIndex = ((targetIndex % N) + N) % N;
     if (targetIndex === _bannerIndex) return;
+
+    _bannerClearAutoTimer();
+    if (_bannerState === 'animating') _bannerForceSettleNow(); // ТЗ п.2
+    _bannerState = 'animating';
+    const token = ++_bannerStepToken;
 
     if (!_bannerUsesClones()) {
         _bannerIndex    = targetIndex;
         _bannerTrackPos = targetIndex;
         _bannerSnapInstant(_bannerTrackPos);
         _bannerUpdateDots();
+        _bannerSettle(token);
         return;
     }
 
     const forwardDist  = (targetIndex - _bannerIndex + N) % N;
     const backwardDist = N - forwardDist;
-    _bannerQueueSteps(forwardDist <= backwardDist ? 1 : -1, Math.min(forwardDist, backwardDist));
+    _bannerQueueSteps(forwardDist <= backwardDist ? 1 : -1, Math.min(forwardDist, backwardDist), token);
 }
 
-function _bannerStart() {
-    clearInterval(_bannerTimer);
-    clearTimeout(_bannerResumeTimer);
-    if (document.hidden) return; // скрытая вкладка — пауза (возобновит visibilitychange ниже)
-    if (_bannerReducedMotionMQ.matches) return; // reduced-motion — без автопрокрутки вообще
-    if (_activeBanners.length > 1) {
-        _bannerTimer = setInterval(() => {
-            if (_bannerBusy || _bannerDrag) return; // не перебиваем уже идущий шаг/активный свайп
-            _bannerStep(1);
-        }, 3000);
+function _bannerClearAutoTimer() {
+    clearTimeout(_bannerAutoTimer);
+    _bannerAutoTimer = null;
+}
+
+/* Планирует ОДИН следующий автошаг через ровно BANNER_AUTO_MS от текущего
+   момента (ТЗ п.1) — вызывается только из _bannerSettle, то есть именно
+   «через 3с после того, как карусель остановилась», а не от предыдущего
+   тика (как было раньше с setInterval, из-за чего реальный интервал
+   плавал). Единственный таймер — предыдущий всегда отменяется первой
+   строкой _bannerClearAutoTimer. */
+function _bannerScheduleAuto() {
+    _bannerClearAutoTimer();
+    if (document.hidden) return;              // скрытая вкладка — пауза (возобновит visibilitychange ниже)
+    if (_bannerReducedMotionMQ.matches) return; // reduced-motion — без автопрокрутки вообще (ТЗ п.6)
+    if (_activeBanners.length <= 1) return;
+    _bannerAutoTimer = setTimeout(_bannerAutoTick, BANNER_AUTO_MS);
+}
+
+function _bannerAutoTick() {
+    _bannerAutoTimer = null;
+    if (_bannerState !== 'idle') return; // страховка — таймер и так всегда отменяется при выходе из idle
+    _bannerStepTo(1); // автошаг всегда вперёд (ТЗ п.1)
+}
+
+/* Жест/шаг завершились — единая точка входа в состояние "можно всё":
+   нормализованный индекс, активный слайд гарантированно виден (ТЗ п.5),
+   запланирован следующий автошаг. */
+function _bannerSettle(token) {
+    if (token !== _bannerStepToken) return;
+    _bannerState = 'idle';
+    _bannerEnsureActiveSlideVisible();
+    _bannerScheduleAuto();
+}
+
+/* ТЗ п.5 — страховка: активный слайд всегда должен быть ПОЛНОСТЬЮ виден
+   во вьюпорте (.banner-viewport, overflow:hidden). Если из-за какого-то
+   ещё не предусмотренного случая это не так (или _bannerTrackPos вообще
+   не совпадает с ожидаемой для _bannerIndex позицией) — мгновенно
+   возвращаем трек в нормализованное положение. */
+function _bannerEnsureActiveSlideVisible() {
+    const track = document.getElementById('bannerTrack');
+    if (!track) return;
+    const viewport = track.parentElement;
+    if (!viewport) return;
+    const vp = viewport.getBoundingClientRect();
+    if (vp.width === 0) return; // баннер сейчас не на экране (display:none и т.п.) — нечего проверять
+    const N = _activeBanners.length;
+    if (!N) return;
+    const expectedPos = _bannerUsesClones() ? _bannerIndex + 1 : _bannerIndex;
+    const activeSlide = track.children[expectedPos];
+    const sr = activeSlide ? activeSlide.getBoundingClientRect() : null;
+    const EPS = 1; // запас на дробные px при пересчёте %→px браузером
+    const visible = !!sr && sr.width > 0 && sr.left >= vp.left - EPS && sr.right <= vp.right + EPS;
+    if (!visible || _bannerTrackPos !== expectedPos) {
+        _bannerTrackPos = expectedPos;
+        _bannerSnapInstant(_bannerTrackPos);
     }
 }
 
-/* Касание/свайп — немедленная пауза; возобновление — через ~6с полного
-   бездействия (не сразу по отпусканию пальца, см. ТЗ). */
-function _bannerPauseForInteraction() {
-    clearInterval(_bannerTimer);
-    clearTimeout(_bannerResumeTimer);
-}
-function _bannerResumeAfterInteraction() {
-    clearTimeout(_bannerResumeTimer);
-    _bannerResumeTimer = setTimeout(_bannerStart, 6000);
+/* ТЗ п.2 — новый жест начался прямо во время анимации: вместо того чтобы
+   плодить параллельные колбэки (см. комментарий у _bannerIndex), сразу
+   (без ожидания transitionend) доводим трек до конечной точки ТЕКУЩЕГО
+   шага — _bannerIndex уже обновлён синхронно в начале шага, поэтому его
+   ожидаемая позиция в треке известна прямо сейчас, ждать анимацию не
+   нужно. _bannerStepToken++ обесценивает колбэк прерванной анимации —
+   когда он всё же сработает (transitionend или страховочный таймер), он
+   увидит чужой token и ничего не сделает. */
+function _bannerForceSettleNow() {
+    _bannerStepToken++;
+    const N = _activeBanners.length;
+    if (!N) return;
+    _bannerTrackPos = _bannerUsesClones() ? _bannerIndex + 1 : _bannerIndex;
+    _bannerSnapInstant(_bannerTrackPos);
 }
 
 /* ─── Свайп (Pointer Events — один код для мыши и пальца) ──────────
@@ -590,10 +695,20 @@ function _bannerResumeAfterInteraction() {
    обрывается, если палец на миг выходит за пределы трека. */
 function _bannerOnPointerDown(e) {
     if (e.button !== undefined && e.button !== 0) return; // только левая кнопка мыши/касание
-    if (_activeBanners.length <= 1) return; // один баннер — нечего свайпать (ТЗ п.5)
+    if (_activeBanners.length <= 1) return; // один баннер — нечего свайпать (ТЗ п.6)
     const track = document.getElementById('bannerTrack');
     if (!track) return;
-    _bannerPauseForInteraction();
+
+    _bannerClearAutoTimer(); // касание — немедленная отмена таймера (ТЗ п.1)
+    if (_bannerState === 'animating') _bannerForceSettleNow(); // ТЗ п.2 — не начинаем жест поверх недоехавшей анимации
+    _bannerState = 'dragging';
+
+    // Направление и амплитуда следующего жеста считаются только по тому,
+    // что произойдёт МЕЖДУ этим down и будущим up — никакого унаследованного
+    // состояния направления/скорости от прошлого свайпа или автошага не
+    // переносим (ТЗ п.4): объект жеста создаётся заново целиком, а
+    // baseTrackPos берётся из уже нормализованного (force-settle выше)
+    // _bannerTrackPos, а не из возможно «подвисшей» клоновой позиции.
     _bannerDrag = {
         pointerId: e.pointerId,
         startX: e.clientX, startY: e.clientY,
@@ -608,26 +723,26 @@ function _bannerOnPointerDown(e) {
 
 function _bannerOnPointerMove(e) {
     if (!_bannerDrag || e.pointerId !== _bannerDrag.pointerId) return;
+    const track = document.getElementById('bannerTrack');
     const dx = e.clientX - _bannerDrag.startX;
     const dy = e.clientY - _bannerDrag.startY;
     if (!_bannerDrag.dragging) {
-        // Порог ~10px (ТЗ п.4) — до него ещё не ясно, тап это или жест.
+        // Порог ~10px (ТЗ п.6) — до него ещё не ясно, тап это или жест.
         if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
         if (Math.abs(dy) > Math.abs(dx)) { // вертикальный жест — это скролл страницы, не наш
             document.removeEventListener('pointermove', _bannerOnPointerMove);
             document.removeEventListener('pointerup', _bannerOnPointerUp);
             document.removeEventListener('pointercancel', _bannerOnPointerUp);
             _bannerDrag = null;
+            _bannerState = 'idle';
+            _bannerScheduleAuto();
             return;
         }
         _bannerDrag.dragging = true;
-        const track = document.getElementById('bannerTrack');
-        track.style.transition = 'none';
-        track.classList.add('banner-track--dragging');
+        if (track) { track.style.transition = 'none'; track.classList.add('banner-track--dragging'); }
     }
     e.preventDefault(); // не даём мышью выделить текст / не мешаем жесту
-    const track = document.getElementById('bannerTrack');
-    track.style.transform = `translateX(calc(-${_bannerDrag.baseTrackPos * 100}% + ${dx}px))`;
+    if (track) track.style.transform = `translateX(calc(-${_bannerDrag.baseTrackPos * 100}% + ${dx}px))`;
 }
 
 function _bannerOnPointerUp(e) {
@@ -641,22 +756,35 @@ function _bannerOnPointerUp(e) {
 
     if (!drag.dragging) {
         // Движение меньше ~10px — это тап, клик сработает сам по себе
-        // (ссылка баннера открывается обычным DOM-событием click, ТЗ п.4).
-        _bannerResumeAfterInteraction();
+        // (ссылка баннера открывается обычным DOM-событием click, ТЗ п.6).
+        _bannerState = 'idle';
+        _bannerScheduleAuto();
         return;
     }
 
     _bannerSuppressClick = true; // реальный свайп — следующий click (от тапа при отпускании) не должен открыть ссылку
     const track = document.getElementById('bannerTrack');
-    track.classList.remove('banner-track--dragging');
+    if (track) track.classList.remove('banner-track--dragging');
     const dx = e.clientX - drag.startX;
     const threshold = drag.trackWidth * 0.18; // достаточно далеко утянули — считаем осознанным свайпом, не просто дрожью
+
+    _bannerState = 'animating';
     if (Math.abs(dx) > threshold) {
-        _bannerStep(dx < 0 ? 1 : -1); // свайп влево — вперёд (следующий), вправо — назад
+        const direction = dx < 0 ? 1 : -1; // свайп влево — вперёд (следующий), вправо — назад; направление берётся ТОЛЬКО из dx этого жеста
+        _bannerClearAutoTimer();
+        const token = ++_bannerStepToken;
+        _bannerAnimateStep(direction, token, () => {
+            if (token !== _bannerStepToken) return;
+            _bannerSettle(token);
+        });
     } else {
+        const token = ++_bannerStepToken;
         _bannerAnimateTo(_bannerTrackPos); // не дотянули — откат на текущий слайд
+        _bannerAfterTransition(() => {
+            if (token !== _bannerStepToken) return;
+            _bannerSettle(token);
+        });
     }
-    _bannerResumeAfterInteraction();
 }
 
 /* Клик по баннеру — с проверкой, что цель ещё существует среди уже
@@ -728,19 +856,28 @@ function _renderBannerSlides(banners) {
     }
 
     dots.innerHTML = banners.length > 1 ? banners.map(() => `<span></span>`).join('') : '';
+    // Полный сброс автомата — _renderBannerSlides может вызываться ВТОРОЙ
+    // раз (сперва кэш, потом свежий ответ /api/banners, см. initBanner),
+    // и если первый рендер к этому моменту ещё анимировался/тащился,
+    // нельзя унаследовать его состояние на новый набор баннеров.
+    _bannerStepToken++;
+    _bannerDrag  = null;
+    _bannerState = 'idle';
     _bannerIndex    = 0;
     _bannerTrackPos = useClones ? 1 : 0;
     _bannerSnapInstant(_bannerTrackPos);
     _bannerUpdateDots();
-    _bannerStart();
+    _bannerScheduleAuto();
 }
 
 function _renderBannerSkeleton() {
     const track = document.getElementById('bannerTrack');
     const dots  = document.getElementById('bannerDots');
     if (!track) return;
-    clearInterval(_bannerTimer);
-    clearTimeout(_bannerResumeTimer);
+    _bannerStepToken++;
+    _bannerClearAutoTimer();
+    _bannerDrag  = null;
+    _bannerState = 'idle';
     track.classList.remove('banner-track--dragging');
     track.style.transition = 'none';
     track.style.transform  = 'translateX(0)';
@@ -799,13 +936,12 @@ async function initBanner() {
         if (!dot) return;
         const idx = [...dots.children].indexOf(dot);
         if (idx === -1) return;
-        _bannerPauseForInteraction();
-        _bannerGoToLogical(idx);
-        _bannerResumeAfterInteraction();
+        _bannerGoToLogical(idx); // сама отменяет автотаймер и планирует следующий через _bannerSettle
     });
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden) { clearInterval(_bannerTimer); clearTimeout(_bannerResumeTimer); }
-        else { _bannerStart(); }
+        if (document.hidden) { _bannerClearAutoTimer(); }
+        else if (_bannerState === 'idle') { _bannerScheduleAuto(); }
+        // если не idle — своё планирование сделает _bannerSettle, когда текущий жест/анимация завершится
     });
 }
 
