@@ -366,21 +366,22 @@ function renderCategoryRail() {
     const nonEmptyCats = _categories.filter(c => _products.some(p => p.categoryId === c.id));
 
     if (onCatalogPage) {
-        // Правка 3: на Каталоге — обычный вертикальный список (не рельса),
-        // Главную (.cat-rail/.cat-tile, см. ниже) эта ветка не трогает.
-        const chev = `<span class="cat-list__chevron">${iconSvg('chev', 18)}</span>`;
-        const saleRow = hasSale
-            ? `<button class="cat-list__item cat-list__item--sale" onclick="${openTile("'sale'")}">
-                <span class="cat-list__ic">${iconSvg('sale', 18)}</span>
-                <span class="cat-list__label">Акции</span>
-                ${chev}
+        // Карточки 2 колонки (не рельса, не список строк) — Главную
+        // (.cat-rail/.cat-tile ниже) эта ветка не трогает. cat.icon
+        // проверяем явно: если его нет в API — иконку не показываем вообще
+        // (ни свою, ни дефолтную; categoryIconSvg() сама всегда возвращает
+        // какую-то иконку через фолбэк на DEFAULT_CATEGORY_ICON — тут он
+        // сознательно не используется, чтобы не придумывать данных).
+        const saleCard = hasSale
+            ? `<button class="cat-card cat-card--sale" onclick="${openTile("'sale'")}">
+                <span class="cat-card__ic">${iconSvg('sale', 18)}</span>
+                <span class="cat-card__label">Акции</span>
             </button>`
             : '';
-        rail.innerHTML = saleRow + nonEmptyCats.map(c =>
-            `<button class="cat-list__item" onclick="${openTile(c.id)}">
-                <span class="cat-list__ic">${categoryIconSvg(c, 18)}</span>
-                <span class="cat-list__label">${c.name}</span>
-                ${chev}
+        rail.innerHTML = saleCard + nonEmptyCats.map(c =>
+            `<button class="cat-card" onclick="${openTile(c.id)}">
+                ${c.icon ? `<span class="cat-card__ic">${categoryIconSvg(c, 18)}</span>` : ''}
+                <span class="cat-card__label">${c.name}</span>
             </button>`
         ).join('');
         return;
@@ -959,7 +960,7 @@ function renderHitsRail() {
 
 /* ─── Catalog: category → subcategory → products screens ────────── */
 function showCatalogScreen(name) {
-    ['root', 'subcats', 'pair'].forEach(n => {
+    ['root', 'subcats', 'pair', 'search'].forEach(n => {
         const el = document.getElementById('screen-' + n);
         if (el) el.classList.toggle('hidden', n !== name);
     });
@@ -973,7 +974,7 @@ function showCatalogScreen(name) {
    выходила на предыдущую страницу (история каталога не разрастается на
    плоских операциях — поиск/фильтры/сортировка всегда replaceState, см.
    requirement 4). navMode, который принимают openSubcatsScreen/
-   openPairProducts/syncPairUrl/performCatalogSearch:
+   openPairProducts/syncPairUrl/handleSearch:
      'push'    — обычный клик по категории/подкатегории/плитке (глубже);
      'replace' — восстановление состояния при первой загрузке страницы
                  (прямая ссылка/обновление) — тот же уровень, новой записи
@@ -985,6 +986,14 @@ function showCatalogScreen(name) {
    от каталога; используется собственной кнопкой «назад» в хедере (см.
    closeSubcatsScreen/closePairScreen) — see requirement 3. */
 let _historyPushed = false;
+
+/* Экран, с которого реально начали поиск (root/subcats/pair) — нужен
+   closeSearchScreen() на случай фолбэка без истории (прямая ссылка
+   catalog.html?q=..., ни одного pushState за эту загрузку ещё не было —
+   тот же случай, что уже обрабатывают closeSubcatsScreen/closePairScreen).
+   При обычном history.back() эта переменная не нужна — URL восстановит
+   браузер сам. */
+let _searchFromScreen = 'root';
 
 function catalogPushOrReplace(url, navMode) {
     if (navMode === 'none') return;
@@ -1511,76 +1520,109 @@ function initFilterSheet() {
 }
 
 /* ─── Search ────────────────────────────────────────────────── */
-/* На Каталоге (screen-root существует) поиск параметризованным
-   запросом уходит на сервер (GET /api/products?q=, см. products.js) —
-   с задержкой ввода и заменой категорий результатами, см.
-   performCatalogSearch() ниже. На Главной (тот же HTML/JS, без
+/* На Каталоге (screen-root существует) поиск — глобальный по всему
+   каталогу, с любого из 3 экранов (root/subcats/pair, у каждого свой
+   инпут — см. catalog.html), без учёта фильтров текущего экрана, и ведёт
+   на отдельный экран результатов (#screen-search, свой инпут там тоже
+   есть — для продолжения набора уже на нём). Первый введённый символ
+   сразу переключает экран и делает ровно один pushState (см.
+   catalogPushOrReplace); дальнейший ввод обновляет URL через
+   replaceState; сам сетевой запрос — отдельно, с debounce (см.
+   performCatalogSearchFetch). На Главной (тот же HTML/JS, без
    screen-root) поведение не меняется: как и раньше, фильтрует уже
    загруженный локальный список товаров через render()/getFiltered(). */
-function handleSearch() {
-    const input = document.getElementById('searchInput');
-    const onCatalogPage = !!document.getElementById('screen-root');
+const CATALOG_SEARCH_DEBOUNCE_MS = 300;
+let _searchSeq = 0; // против гонки: показываем только самый свежий ответ
+
+/* inputEl — конкретный инпут, из которого пришёл ввод (на Каталоге их 4:
+   по одному на root/subcats/pair + один на самом экране результатов,
+   см. catalog.html); на Главной инпут всегда один (#searchInput),
+   поэтому там он необязателен — handleSearch() без аргумента (как и
+   раньше дёргает index.html) сам найдёт #searchInput. */
+function handleSearch(inputEl) {
     clearTimeout(_searchTimer);
-    if (onCatalogPage) {
-        state.query = input.value.trim();
-        document.getElementById('searchClear').classList.toggle('hidden', !state.query);
-        _searchTimer = setTimeout(performCatalogSearch, CATALOG_SEARCH_DEBOUNCE_MS);
-    } else {
-        state.query = input.value.trim().toLowerCase();
+    const onCatalogPage = !!document.getElementById('screen-root');
+
+    if (!onCatalogPage) {
+        inputEl = inputEl || document.getElementById('searchInput');
+        state.query = inputEl.value.trim().toLowerCase();
         document.getElementById('searchClear').classList.toggle('hidden', !state.query);
         _searchTimer = setTimeout(render, 250);
+        return;
     }
+
+    const q = inputEl.value;
+
+    if (_activeScreen !== 'search') {
+        if (!q) return; // пустой ввод на исходном экране (напр. del на и так пустом поле) — отменять нечего
+        const fromScreen = _activeScreen;
+        inputEl.value = ''; // поле экрана-источника не "принадлежит" поиску — остаётся пустым
+        const resultsInput = document.getElementById('searchScreenInput');
+        resultsInput.value = q;
+        state.query = q.trim();
+        _searchFromScreen = fromScreen;
+        showCatalogScreen('search');
+        catalogPushOrReplace('catalog.html?q=' + encodeURIComponent(state.query), 'push');
+        document.getElementById('searchScreenClear')?.classList.toggle('hidden', !state.query);
+        resultsInput.focus();
+        const len = resultsInput.value.length;
+        resultsInput.setSelectionRange(len, len); // каретка в конец — иначе на части браузеров улетает в начало
+        _searchTimer = setTimeout(performCatalogSearchFetch, CATALOG_SEARCH_DEBOUNCE_MS);
+        return;
+    }
+
+    // Уже на экране результатов — обычный дальнейший ввод.
+    state.query = q.trim();
+    document.getElementById('searchScreenClear')?.classList.toggle('hidden', !state.query);
+    if (!state.query) { closeSearchScreen(); return; }
+    catalogPushOrReplace('catalog.html?q=' + encodeURIComponent(state.query), 'replace');
+    _searchTimer = setTimeout(performCatalogSearchFetch, CATALOG_SEARCH_DEBOUNCE_MS);
 }
 
+/* Только Главная — у Каталога больше нет своей кнопки очистки на
+   root/subcats/pair (поиск сразу уводит на #screen-search, см. выше);
+   там за очистку/выход отвечает closeSearchScreen(). */
 function clearSearch() {
     document.getElementById('searchInput').value = '';
     state.query = '';
     document.getElementById('searchClear').classList.add('hidden');
-    if (document.getElementById('screen-root')) {
-        showCategoriesView();
-        history.replaceState(null, '', 'catalog.html');
-    } else {
-        render();
-    }
+    render();
 }
 
-/* ─── Catalog root search: server-side, debounced ──────────────────
-   Пустой запрос -> список категорий (см. ТЗ); непустой -> запрос на
-   сервер (параметризованный, экранирование %/_ и лимиты — на сервере,
-   см. GET /api/products в server/routes/products.js), результаты
-   заменяют список категорий на экране. */
-const CATALOG_SEARCH_DEBOUNCE_MS = 300;
-let _searchSeq = 0; // против гонки: показываем только самый свежий ответ
+/* Очистка запроса (стёрли вручную до пустого ИЛИ нажали ✕/стрелку назад
+   в шапке #screen-search) — всегда возврат на исходный экран через
+   history.back() (ТЗ: "без новой записи"), с теми же фильтрами и
+   позицией — они не трогались всё это время, пока был активен поиск.
+   Фолбэк на _historyPushed — тот же приём, что у closeSubcatsScreen()/
+   closePairScreen(): прямая ссылка/обновление страницы с ?q=... в адресе
+   не оставляет в истории ничего "нашего", на что можно было бы вернуться. */
+function closeSearchScreen() {
+    clearTimeout(_searchTimer);
+    _searchSeq++; // отменяем ещё не прилетевший (или даже не отправленный) ответ
+    const input = document.getElementById('searchScreenInput');
+    if (input) input.value = '';
+    document.getElementById('searchScreenClear')?.classList.add('hidden');
+    state.query = '';
 
-function showCategoriesView() {
-    const catSection    = document.getElementById('catRailSection');
-    const searchSection = document.getElementById('searchResultsSection');
-    if (catSection)    catSection.classList.remove('hidden');
-    if (searchSection) searchSection.classList.add('hidden');
+    if (_historyPushed) { history.back(); return; }
+
+    if (_searchFromScreen === 'subcats' && _activeCatId != null) { openSubcatsScreen(_activeCatId, 'replace'); return; }
+    if (_searchFromScreen === 'pair' && _activeCatId != null) { syncPairUrl('replace'); showCatalogScreen('pair'); return; }
+    history.replaceState(null, '', 'catalog.html');
+    showCatalogScreen('root');
 }
 
-function showSearchResultsView() {
-    const catSection    = document.getElementById('catRailSection');
-    const searchSection = document.getElementById('searchResultsSection');
-    if (catSection)    catSection.classList.add('hidden');
-    if (searchSection) searchSection.classList.remove('hidden');
-}
-
-/* navMode — см. комментарий у catalogPushOrReplace(): поиск никогда не
-   делает pushState (requirement 4 — ввод в строку поиска не должен
-   засорять историю), по умолчанию 'replace'; 'none' приходит только из
-   restoreScreenFromUrl() при реакции на popstate. */
-async function performCatalogSearch(navMode = 'replace') {
+/* Собственно сетевой запрос (GET /api/products?q=, см. products.js) —
+   экранирование %/_ и лимиты на сервере. Вызывается с debounce (см.
+   handleSearch) и при восстановлении состояния из URL (см.
+   restoreScreenFromUrl/init). seq — та же защита от гонки устаревших
+   ответов, что была и раньше. */
+async function performCatalogSearchFetch() {
     const q = state.query;
-    if (!q) { showCategoriesView(); catalogPushOrReplace('catalog.html', navMode); return; }
-
-    showSearchResultsView();
-    catalogPushOrReplace('catalog.html?q=' + encodeURIComponent(q), navMode);
-
     const seq   = ++_searchSeq;
-    const grid  = document.getElementById('searchResultsGrid');
-    const empty = document.getElementById('searchEmptyState');
-    const count = document.getElementById('searchResultsCount');
+    const grid  = document.getElementById('searchScreenGrid');
+    const empty = document.getElementById('searchScreenEmptyState');
+    const count = document.getElementById('searchScreenCount');
     try {
         const results = await apiFetch('/api/products?q=' + encodeURIComponent(q));
         if (seq !== _searchSeq) return; // устарело — пришёл более новый запрос, этот ответ игнорируем
@@ -1762,7 +1804,7 @@ function productCardHTML(p) {
 /* ─── Render: root/home grid ────────────────────────────────── */
 function render() {
     const grid      = document.getElementById('productsGrid');
-    if (!grid) return; // Каталог больше не показывает общий список товаров на корне (см. performCatalogSearch) — это теперь только для Главной
+    if (!grid) return; // Каталог больше не показывает общий список товаров на корне (поиск теперь свой экран, см. handleSearch) — это теперь только для Главной
     const empty     = document.getElementById('emptyState');
     const count     = document.getElementById('resultsCount');
     const loadMore  = document.getElementById('popularLoadMore');
@@ -1863,18 +1905,26 @@ function openFavorites() {
    категории/подкатегории/товары уже в памяти (_categories/_subcategories/
    _products), просто перерисовываются. */
 function restoreScreenFromUrl(navMode) {
+    // Отменяем любой ещё не сработавший debounce поиска и инвалидируем
+    // уже летящий запрос — иначе системная «Назад» посреди набора могла
+    // бы перерисовать уже скрытый экран результатов чуть погодя (см.
+    // performCatalogSearchFetch()/handleSearch()).
+    clearTimeout(_searchTimer);
+    _searchSeq++;
+
     const params = new URLSearchParams(location.search);
     const urlQ   = params.get('q');
     const urlCat = params.get('category');
     const urlSub = params.get('sub');
 
     if (urlQ) {
-        const input = document.getElementById('searchInput');
+        const input = document.getElementById('searchScreenInput');
         if (input) {
             input.value = urlQ;
             state.query = urlQ.trim();
-            document.getElementById('searchClear')?.classList.toggle('hidden', !state.query);
-            performCatalogSearch(navMode);
+            document.getElementById('searchScreenClear')?.classList.toggle('hidden', !state.query);
+            showCatalogScreen('search');
+            performCatalogSearchFetch();
         }
         return;
     }
@@ -1907,7 +1957,6 @@ function restoreScreenFromUrl(navMode) {
     // При первой загрузке (init()) это уже и так показано по умолчанию;
     // explicit-вызов нужен для popstate (пользователь дошёл «Назад» до
     // самого корня каталога, экран должен переключиться обратно).
-    showCategoriesView();
     showCatalogScreen('root');
 }
 
@@ -2010,6 +2059,12 @@ async function init() {
     if (isBack && backScreen === 'pair' && backCatId != null) {
         // Returning from a product page opened inside the pair-products screen
         openPairProducts(backCatId, backSubId, undefined, 'replace');
+    } else if (isBack && backScreen === 'search') {
+        // Товар открывали прямо с экрана результатов поиска (ТЗ: «Назад» ->
+        // те же результаты с тем же запросом) — ?q= уже сохранён в URL
+        // (replaceState на каждый символ, см. handleSearch()), просто
+        // перечитываем его тем же общим путём, что и обычная restore.
+        restoreScreenFromUrl('replace');
     } else if (!isBack) {
         // Coming from a Home/Catalog rail tile (?category=ID[&sub=ID][&brand=&priceMin=&priceMax=&sort=],
         // ?category=sale, or a search ?q=...) — restore the matching screen

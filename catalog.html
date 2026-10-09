@@ -12,7 +12,7 @@
         html { background: #EEF3F1; }
         @media (prefers-color-scheme: dark) { html { background: #0E1613; } }
     </style>
-    <link rel="stylesheet" href="src/catalog/catalog.css?v=20261012">
+    <link rel="stylesheet" href="src/catalog/catalog.css?v=20261013">
     <link rel="stylesheet" href="src/cookie.css?v=20261005">
     <script>
     /* Решает, показывать ли экран выбора города, ДО первой отрисовки —
@@ -92,6 +92,11 @@
             </button>
         </header>
 
+        <!-- Поиск глобальный (ищет по всему каталогу, не только с этого
+             экрана) — первый введённый символ сразу уводит на отдельный
+             экран результатов (#screen-search), см. handleSearch() в
+             catalog.js. Поэтому своей кнопки очистки тут не нужно: поле
+             всегда пустое, кроме как в момент самого перехода. -->
         <div class="search-wrap">
             <div class="search-bar">
                 <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -103,43 +108,26 @@
                     class="search-input"
                     id="searchInput"
                     placeholder="Поиск по каталогу..."
-                    oninput="handleSearch()"
+                    oninput="handleSearch(this)"
                     autocomplete="off"
                 >
-                <button class="search-clear hidden" id="searchClear" onclick="clearSearch()">✕</button>
             </div>
         </div>
 
-        <!-- Categories — the only thing shown here when there's no search
-             query. Skeleton placeholder — renderCategoryRail() fully
-             replaces it. Hidden instead while a search is active. -->
+        <!-- Categories — карточки 2 колонки (renderCategoryRail() в
+             catalog.js). Skeleton placeholder ниже — renderCategoryRail()
+             полностью его заменяет. -->
         <div id="catRailSection">
             <p class="rail-caption">Категории</p>
-            <div class="cat-list" id="catRail">
-                <div class="cat-list__item cat-list__item--skel" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
-                <div class="cat-list__item cat-list__item--skel" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
-                <div class="cat-list__item cat-list__item--skel" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
-                <div class="cat-list__item cat-list__item--skel" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
+            <div class="cat-grid" id="catRail">
+                <div class="cat-card cat-card--skel" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
+                <div class="cat-card cat-card--skel" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
+                <div class="cat-card cat-card--skel" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
+                <div class="cat-card cat-card--skel" aria-hidden="true"><div class="skel-tile__ic"></div><div class="skel-line skel-line--title"></div></div>
             </div>
         </div>
 
         <main class="main">
-            <!-- Search results — shown only while searchInput has a non-empty
-                 query (see performCatalogSearch() in catalog.js); replaces the
-                 category list for the duration of the search. -->
-            <div class="hidden" id="searchResultsSection">
-                <div class="section-head">
-                    <h2 class="section-title">Результаты поиска</h2>
-                    <span class="section-count" id="searchResultsCount"></span>
-                </div>
-                <div class="products-grid" id="searchResultsGrid"></div>
-                <div class="empty-state hidden" id="searchEmptyState">
-                    <div class="empty-state__icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
-                    <p class="empty-state__title">Ничего не найдено</p>
-                    <p class="empty-state__sub">Попробуйте изменить запрос</p>
-                </div>
-            </div>
-
             <!-- Legal footer inside main so padding-bottom clears the fixed nav -->
             <div class="legal-footer">
                 <div class="legal-footer__info">
@@ -164,6 +152,16 @@
             </button>
             <span class="header__title" id="subcatsTitle">Категория</span>
         </header>
+        <!-- Поиск глобальный — см. комментарий у searchInput на корневом экране. -->
+        <div class="search-wrap">
+            <div class="search-bar">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                    <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input type="text" class="search-input" id="subcatsSearchInput" placeholder="Поиск по каталогу..." oninput="handleSearch(this)" autocomplete="off">
+            </div>
+        </div>
         <p class="breadcrumb" id="subcatsBreadcrumb"></p>
         <div class="subcat-list" id="subcatGrid"></div>
     </div>
@@ -181,6 +179,16 @@
                 <span class="header__filter-badge hidden" id="filterBadge">0</span>
             </button>
         </header>
+        <!-- Поиск глобальный — см. комментарий у searchInput на корневом экране. -->
+        <div class="search-wrap">
+            <div class="search-bar">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                    <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input type="text" class="search-input" id="pairSearchInput" placeholder="Поиск по каталогу..." oninput="handleSearch(this)" autocomplete="off">
+            </div>
+        </div>
         <p class="breadcrumb" id="pairBreadcrumb"></p>
         <div class="chips-row-wrap hidden" id="chipsRowWrap"><div class="chips-row" id="chipsRow"></div></div>
         <div class="results-bar"><span id="pairResultsCount"></span></div>
@@ -200,6 +208,40 @@
                 <p class="empty-state__title">Ничего не найдено по этим фильтрам</p>
                 <p class="empty-state__sub">Попробуйте изменить или сбросить фильтры</p>
                 <button class="error-state__btn" id="pairEmptyResetBtn" type="button">Сбросить фильтры</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- ══ SEARCH: глобальные результаты поиска по всему каталогу,
+         с любого из экранов выше (см. handleSearch()/closeSearchScreen()
+         в catalog.js) ══ -->
+    <div id="screen-search" class="cscreen hidden">
+        <header class="header">
+            <button class="header__back" onclick="closeSearchScreen()" aria-label="Назад">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <span class="header__title">Поиск</span>
+        </header>
+        <div class="search-wrap">
+            <div class="search-bar">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                    <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input type="text" class="search-input" id="searchScreenInput" placeholder="Поиск по каталогу..." oninput="handleSearch(this)" autocomplete="off">
+                <button class="search-clear hidden" id="searchScreenClear" onclick="closeSearchScreen()">✕</button>
+            </div>
+        </div>
+        <main class="main">
+            <div class="section-head">
+                <h2 class="section-title">Результаты поиска</h2>
+                <span class="section-count" id="searchScreenCount"></span>
+            </div>
+            <div class="products-grid" id="searchScreenGrid"></div>
+            <div class="empty-state hidden" id="searchScreenEmptyState">
+                <div class="empty-state__icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+                <p class="empty-state__title">Ничего не найдено</p>
+                <p class="empty-state__sub">Попробуйте изменить запрос</p>
             </div>
         </main>
     </div>
@@ -264,7 +306,7 @@
 
 </div>
 <script src="/src/icons.js?v=20261005" defer></script>
-<script src="src/catalog/catalog.js?v=20261013" defer></script>
+<script src="src/catalog/catalog.js?v=20261014" defer></script>
 <script src="src/cookie.js?v=20261005" defer></script>
 </body>
 </html>
