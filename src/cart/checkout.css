@@ -19,22 +19,25 @@ a      { text-decoration: none; color: inherit; }
 .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; background: transparent; }
 
 /* ─── Header ────────────────────────────────────────────── */
+/* background: var(--bg-card)/текст var(--text-primary), не --accent/
+   --accent-ink — см. тот же комментарий у .header в src/catalog/catalog.css
+   (направление «Стройплощадка»: акцент экономно, не на весь фон шапки). */
 .header {
     position: sticky;
     top: 0; z-index: 100;
     display: flex; align-items: center; justify-content: space-between;
     height: var(--header-h);
     padding: 0 16px 0 4px;
-    background: var(--accent);
+    background: var(--bg-card);
     box-shadow: 0 1px 8px rgba(0,0,0,0.08);
 }
 .header__back {
     width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; color: var(--accent-ink);
+    border-radius: 50%; color: var(--text-primary);
 }
-.header__back:active { background: rgba(255,255,255,.16); }
-.header__title { font-size: 17px; font-weight: 700; letter-spacing: -.3px; color: var(--accent-ink); }
+.header__back:active { background: rgba(var(--ink-rgb),.08); }
+.header__title { font-size: 17px; font-weight: 700; letter-spacing: -.3px; color: var(--text-primary); }
 .header__placeholder { width: 44px; }
 
 /* ─── Content ───────────────────────────────────────────── */
@@ -45,7 +48,7 @@ a      { text-decoration: none; color: inherit; }
 .section--last { margin-bottom: 0; }
 .section__title {
     font-size: 13px; font-weight: 600;
-    color: var(--accent);
+    color: var(--accent-ink);
     text-transform: uppercase; letter-spacing: .5px;
     padding: 14px 4px 8px;
 }
@@ -62,8 +65,8 @@ a      { text-decoration: none; color: inherit; }
 .order-item__price { font-size: 14px; font-weight: 600; color: var(--text-primary); flex-shrink: 0; text-align: right; min-width: 72px; }
 .order-divider { height: 1px; background: rgba(0,0,0,0.06); margin: 0 0; }
 .order-total-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
-.order-total-label { font-size: 15px; font-weight: 700; color: var(--accent); }
-.order-total-price { font-size: 17px; font-weight: 700; color: var(--accent); }
+.order-total-label { font-size: 15px; font-weight: 700; color: var(--accent-ink); }
+.order-total-price { font-size: 17px; font-weight: 700; color: var(--accent-ink); }
 
 /* ─── Store cards ───────────────────────────────────────── */
 .stores { display: flex; flex-direction: column; gap: 8px; }
@@ -100,7 +103,7 @@ a      { text-decoration: none; color: inherit; }
 /* ─── Form fields ───────────────────────────────────────── */
 .field { padding: 0 0 10px; }
 .field-divider { height: 1px; background: rgba(0,0,0,0.06); margin: 0 0 10px; }
-.field__label { display: block; font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+.field__label { display: block; font-size: 12px; font-weight: 600; color: var(--accent-ink); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
 .field__input { display: block; width: 100%; border: 1.5px solid var(--border); outline: none; font-size: 16px; color: var(--text-primary); background: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); font-family: inherit; }
 .field__input::placeholder { color: rgba(var(--ink-rgb),0.4); }
 .field__textarea { display: block; width: 100%; border: 1.5px solid var(--border); outline: none; font-size: 16px; color: var(--text-primary); background: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); font-family: inherit; resize: none; line-height: 1.5; }
@@ -159,7 +162,7 @@ a      { text-decoration: none; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
     .success-icon { animation: none; }
 }
-.success-title { font-size: 26px; font-weight: 800; color: var(--accent); letter-spacing: -.5px; }
+.success-title { font-size: 26px; font-weight: 800; color: var(--accent-ink); letter-spacing: -.5px; }
 .success-order { font-size: 14px; color: rgba(var(--ink-rgb),0.55); margin-top: -4px; }
 .success-card { width: 100%; background: var(--bg-card); border-radius: var(--radius-md); box-shadow: var(--card-shadow); overflow: hidden; margin-top: 4px; text-align: left; }
 .success-card__row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; }
@@ -203,7 +206,7 @@ a      { text-decoration: none; color: inherit; }
 .consent-checkbox:checked ~ .consent-box { background: var(--accent); border-color: var(--accent); }
 .consent-checkbox:checked ~ .consent-box::after { border-color: var(--accent-ink); }
 .consent-text { font-size: 14px; color: var(--text-primary); line-height: 1.5; padding-top: 2px; }
-.consent-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.consent-link { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
 .consent-error { font-size: 12px; color: var(--red); padding-left: 34px; }
 .consent-wrap--error .consent-box { border-color: var(--red); }
 .submit-btn--disabled { opacity: .35; cursor: not-allowed; }
@@ -284,8 +287,8 @@ a      { text-decoration: none; color: inherit; }
 .legal-checks { margin: 16px 0 4px; display: flex; flex-direction: column; gap: 12px; }
 .legal-check { display: flex; gap: 10px; align-items: flex-start; color: rgba(var(--ink-rgb),0.75); font-size: 13px; cursor: pointer; line-height: 1.5; }
 .legal-check input { margin-top: 3px; flex-shrink: 0; }
-.legal-check a { color: var(--accent); text-decoration: underline; }
+.legal-check a { color: var(--accent-ink); text-decoration: underline; }
 .legal-footer { padding: 24px 16px; color: rgba(var(--ink-rgb),0.45); font-size: 11px; text-align: center; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 40px; }
 .legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
 .legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
-.legal-footer__links a { color: var(--accent); text-decoration: none; }
+.legal-footer__links a { color: var(--accent-ink); text-decoration: none; }

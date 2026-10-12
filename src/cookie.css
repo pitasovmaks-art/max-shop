@@ -1,3 +1,5 @@
+@import url('/src/theme.css');
+
 /* ─── Cookie banner ─────────────────────────────────────── */
 .cookie-banner {
     position: fixed;
@@ -17,14 +19,14 @@
 .cookie-banner__card {
     width: 100%;
     max-width: 480px;
-    background: #FFFFFF;
+    background: var(--bg-card);
     border-radius: 16px;
     padding: 14px 16px;
     display: flex;
     align-items: center;
     gap: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,.12);
-    border: 1px solid #F0F0F0;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border);
     pointer-events: all;
 }
 
@@ -32,11 +34,15 @@
     flex: 1;
     font-size: 13px;
     line-height: 1.4;
-    color: #888888;
+    color: var(--text-secondary);
 }
 
 .cookie-banner__text a {
-    color: var(--accent, #0E7C6B);
+    /* var(--accent-ink), не var(--accent) — accent в этой палитре
+       жёлтый, как цвет текста/ссылки на белом он почти невидим (см.
+       design-preview-colors.html); accent-ink — тёмный в обеих темах,
+       пара именно для текста/иконок на светлой поверхности. */
+    color: var(--accent-ink);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -61,13 +67,13 @@
 .cookie-btn:active { opacity: .75; }
 
 .cookie-btn--accept {
-    background: var(--accent, #0E7C6B);
-    color: #FFFFFF;
+    background: var(--accent);
+    color: var(--accent-ink);
 }
 
 .cookie-btn--decline {
-    background: #F0F0F0;
-    color: #888888;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
 }
 
 /* ─── Site footer links ─────────────────────────────────── */
@@ -83,13 +89,13 @@
 
 .site-footer__sep {
     font-size: 12px;
-    color: #CCCCCC;
+    color: var(--border);
     user-select: none;
 }
 
 .site-footer__link {
     font-size: 12px;
-    color: #888888;
+    color: var(--text-secondary);
     text-decoration: underline;
     text-underline-offset: 2px;
     text-decoration-color: transparent;
@@ -97,4 +103,4 @@
     white-space: nowrap;
 }
 .site-footer__link:hover,
-.site-footer__link:active { color: var(--accent, #0E7C6B); text-decoration-color: currentColor; }
+.site-footer__link:active { color: var(--accent-ink); text-decoration-color: currentColor; }

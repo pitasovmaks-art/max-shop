@@ -1,4 +1,4 @@
-@import url('/src/theme.css?v=20261007');
+@import url('/src/theme.css?v=20261016');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@600&display=swap');
 
 /* ─── Reset & Base ──────────────────────────────────────── */
@@ -32,6 +32,17 @@ html.city-unknown #city-screen { display: flex; }
 }
 
 /* ─── Header ────────────────────────────────────────────── */
+/* background: var(--bg-card), не var(--accent) — направление
+   «Стройплощадка» прямо требует не заливать жёлтым большие площади
+   (шапка на весь экран была бы именно такой заливкой), акцент
+   остаётся экономным (кнопки/бейджи/индикаторы), см. комментарий у
+   --accent в src/theme.css. Текст/иконки шапки поэтому тоже не
+   --accent-ink (он тёмный в ОБЕИХ темах специально для заливки
+   --accent — на var(--bg-card), который сам меняется по теме, это
+   дало бы невидимый тёмный-на-тёмном текст в тёмной теме), а
+   var(--text-primary), который меняется вместе с темой правильно;
+   полупрозрачные rgba(255,255,255,…) под «стекло на цветном» тоже
+   заменены на rgba(var(--ink-rgb),…) по той же причине. */
 .header {
     position: sticky;
     top: 0;
@@ -41,7 +52,7 @@ html.city-unknown #city-screen { display: flex; }
     justify-content: space-between;
     padding: 0 10px;
     height: var(--header-h);
-    background: var(--accent);
+    background: var(--bg-card);
     box-shadow: 0 1px 8px rgba(0,0,0,0.08);
 }
 .header__loc {
@@ -51,9 +62,9 @@ html.city-unknown #city-screen { display: flex; }
     height: 32px;
     padding: 0 12px;
     border-radius: var(--radius-pill);
-    background: rgba(255,255,255,.16);
-    border: 1px solid rgba(255,255,255,.3);
-    color: var(--accent-ink);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
     font-size: 12.5px;
     font-weight: 700;
     white-space: nowrap;
@@ -64,11 +75,11 @@ html.city-unknown #city-screen { display: flex; }
     width: 42px; height: 42px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    color: var(--accent-ink);
+    color: var(--text-primary);
     transition: background .15s;
     flex-shrink: 0;
 }
-.header__cart:active { background: rgba(255,255,255,.16); }
+.header__cart:active { background: rgba(var(--ink-rgb),.08); }
 .cart-badge {
     position: absolute;
     top: 2px; right: 2px;
@@ -87,17 +98,17 @@ html.city-unknown #city-screen { display: flex; }
     width: 42px; height: 42px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    color: var(--accent-ink);
+    color: var(--text-primary);
     flex-shrink: 0;
 }
-.header__back:active { background: rgba(255,255,255,.16); }
+.header__back:active { background: rgba(var(--ink-rgb),.08); }
 .header__title {
     flex: 1;
     text-align: center;
     font-size: 16px;
     font-weight: 700;
     letter-spacing: -.2px;
-    color: var(--accent-ink);
+    color: var(--text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -411,8 +422,14 @@ html.city-unknown #city-screen { display: flex; }
 }
 .banner-slide b { font-size: 14.5px; font-weight: 800; line-height: 1.25; }
 .banner-slide span { font-size: 12px; opacity: .9; margin-top: 3px; display: block; }
-.banner-slide--a { background: var(--accent); }
-.banner-slide--b { background: #123B33; }
+/* --a — акцентная (жёлтая) заливка: .banner-slide задаёт белый текст по
+   умолчанию, здесь он не читается (см. design-preview-colors.html) —
+   переопределяем на --accent-ink. --b — раньше буквальный #123B33
+   (старый тёмный акцент «Классики маркетплейса», остался сиротой при
+   смене палитры) — теперь плоский --banner-dark-1, тот же токен, что и
+   у одноимённого пресета админки, белый текст по умолчанию ему подходит. */
+.banner-slide--a { background: var(--accent); color: var(--accent-ink); }
+.banner-slide--b { background: var(--banner-dark-1); }
 .banner-slide--c { background: var(--bg-secondary); color: var(--text-secondary); border: 1.5px dashed var(--border); }
 /* Баннер из админки с фото (server/routes/banners.js imageUrl) — градиент
    поверх фото для читаемости текста поверх произвольного изображения
@@ -433,13 +450,25 @@ html.city-unknown #city-screen { display: flex; }
 
 /* ─── Оформление баннера: фон/затемнение/положение (banners.bg_style/
    overlay/text_pos) — рисуются через src/shared/bannerRender.js,
-   подробности о градиентах и переменных --banner-* см. src/theme.css. ── */
-.banner-bg--brand { background: linear-gradient(135deg, var(--accent), var(--accent-press)); }
-.banner-bg--dark  { background: linear-gradient(135deg, var(--banner-dark-1),  var(--banner-dark-2)); }
-.banner-bg--light { background: linear-gradient(135deg, var(--banner-light-1), var(--banner-light-2)); color: var(--text-primary); }
-.banner-bg--warm  { background: linear-gradient(135deg, var(--banner-warm-1),  var(--banner-warm-2)); }
-.banner-bg--cool  { background: linear-gradient(135deg, var(--banner-cool-1),  var(--banner-cool-2)); }
-.banner-bg--steel { background: linear-gradient(135deg, var(--banner-steel-1), var(--banner-steel-2)); }
+   подробности о переменных --banner-* см. src/theme.css. Плоские
+   цвета (направление «Стройплощадка»), не градиенты. --brand/--light
+   переопределяют color явно: --accent и --banner-light-1 в этой
+   палитре СВЕТЛЫЕ, а дефолтный цвет текста баннера (.banner-slide,
+   ниже) — белый; без переопределения текст слился бы с фоном.
+   --accent-ink — тёмный в обеих темах (жёлтый акцент одинаково ярок
+   что в светлой, что в тёмной), поэтому годится и для --banner-light,
+   который сам по себе от темы устройства не зависит (см. комментарий
+   у :root в theme.css). --banner-steel НЕ переопределяет color —
+   специально подобран тёмным (не светлым камнем) под дефолтный белый
+   текст, см. комментарий у --banner-steel-1 в theme.css. Текст
+   текстовых блоков ('auto'/'dark' в src/shared/bannerRender.js)
+   считается отдельно от этого CSS, см. фикс в том файле. */
+.banner-bg--brand { background: var(--accent); color: var(--accent-ink); }
+.banner-bg--dark  { background: var(--banner-dark-1); }
+.banner-bg--light { background: var(--banner-light-1); color: var(--accent-ink); }
+.banner-bg--warm  { background: var(--banner-warm-1); }
+.banner-bg--cool  { background: var(--banner-cool-1); }
+.banner-bg--steel { background: var(--banner-steel-1); }
 
 /* Затемнение — тот же приём, что раньше был только у --photo (градиент
    снизу вверх), теперь 4 уровня и применяется к любому фону, не только
@@ -515,13 +544,14 @@ html.city-unknown #city-screen { display: flex; }
     height: 36px;
     padding: 0 10px 0 8px;
     border-radius: var(--radius-pill);
-    color: var(--accent-ink);
+    color: var(--text-primary);
     flex-shrink: 0;
     font-size: 12px;
     font-weight: 700;
-    background: rgba(255,255,255,.16);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
 }
-.header__filter:active { background: rgba(255,255,255,.26); }
+.header__filter:active { background: rgba(var(--ink-rgb),.08); }
 .header__filter-badge {
     position: absolute;
     top: -4px; right: -4px;
@@ -679,7 +709,7 @@ html.city-unknown #city-screen { display: flex; }
 .product-card__badge-out {
     position: absolute;
     top: 8px; left: 8px;
-    background: rgba(192,57,43,0.10);
+    background: rgba(var(--red-rgb),0.10);
     color: var(--red);
     font-size: 9.5px;
     font-weight: 800;
@@ -755,23 +785,27 @@ html.city-unknown #city-screen { display: flex; }
     flex-wrap: wrap;
 }
 .product-card__price--service {
+    /* не var(--accent) — жёлтый текст на белом почти не читается (см.
+       design-preview-colors.html); var(--accent-ink) тёмный в обеих темах */
     font-size: 12.5px;
     font-weight: 700;
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 .price-old {
     font-size: 11px;
     font-weight: 400;
-    color: #9CA3AF;
+    color: var(--text-secondary);
     text-decoration: line-through;
 }
 .price-sale {
-    color: var(--red);
+    /* var(--sale) — «акция», не var(--red) — «ошибка»; цена по акции
+       семантически не ошибка (см. требование про статусные токены) */
+    color: var(--sale);
     font-size: 14px;
     font-weight: 800;
 }
 .cat-btn--sale {
-    background: rgba(192,57,43,0.10);
+    background: rgba(var(--red-rgb),0.10);
     color: var(--red);
     box-shadow: none;
 }
@@ -796,7 +830,7 @@ html.city-unknown #city-screen { display: flex; }
 .add-btn--disabled:active  { transform: none; }
 .add-btn--notify           { background: transparent; border: 1.5px solid var(--border); color: var(--text-primary); }
 .add-btn--notify:active    { background: var(--bg-secondary); }
-.add-btn--subscribed       { background: rgba(255,214,10,.18); color: #8A6F00; cursor: default; }
+.add-btn--subscribed       { background: rgba(var(--warning-rgb),.14); color: var(--warning); cursor: default; }
 .add-btn--subscribed:active{ transform: none; }
 .add-btn--service {
     width: 100%;
@@ -950,7 +984,7 @@ html.city-unknown #city-screen { display: flex; }
     font-weight: 600;
     transition: color .15s;
 }
-.nav-item.active { color: var(--accent); font-weight: 700; }
+.nav-item.active { color: var(--accent-ink); font-weight: 700; }
 .nav-item:active { opacity: .7; }
 .nav-ic {
     position: relative;
@@ -1004,4 +1038,4 @@ html.city-unknown #city-screen { display: flex; }
 .legal-footer { padding: 24px 16px; color: rgba(var(--ink-rgb),0.45); font-size: 11px; text-align: center; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 40px; }
 .legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
 .legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
-.legal-footer__links a { color: var(--accent); text-decoration: none; }
+.legal-footer__links a { color: var(--accent-ink); text-decoration: none; }

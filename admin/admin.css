@@ -21,6 +21,17 @@
     --red:          #EF4444;
     --green:        #34C759;
     --blue:         #4D9EFF;
+    /* Единственный осколок фирменного акцента в админке (раньше —
+       буквальный #F85800 в 5 местах ниже, старый оранжевый «Классики
+       маркетплейса»); остальная админка остаётся монохромной (--accent/
+       --orange/--dark выше умышленно = белый/серый, не трогалось) —
+       задача была только убрать СТАРЫЙ оранжевый, не перекрасить
+       админку целиком. Светлое значение (не светлое/тёмное по теме —
+       своей тёмной/светлой темы у админки нет) взято из тёмной версии
+       --accent в src/theme.css: admin.css всегда тёмный фон, светлая
+       версия акцента (#D9A520) здесь даёт меньший запас контраста. */
+    --brand-accent:     #E8B93A;
+    --brand-accent-ink: #141210; /* текст/иконки НА --brand-accent — он светлый, белый текст на нём нечитаем */
     --card-shadow:  none;
     --radius:       14px;
     --nav-h:        64px;
@@ -917,7 +928,7 @@ button.product-row__hit:active  { opacity: .7; }
 .order-card__num {
     font-size: 15px;
     font-weight: 700;
-    color: #F85800;
+    color: var(--brand-accent);
 }
 
 .order-status {
@@ -1229,7 +1240,7 @@ button.product-row__hit:active  { opacity: .7; }
     flex: 1;
     min-width: 100px;
 }
-.order-filter-sel:focus { border-color: #F85800; }
+.order-filter-sel:focus { border-color: var(--brand-accent); }
 
 /* ─── Variant blocks ─────────────────────────────────────── */
 .variant-block {
@@ -1260,12 +1271,12 @@ button.product-row__hit:active  { opacity: .7; }
     padding: 0 10px;
     outline: none;
 }
-.tracking-input:focus { border-color: #F85800; }
+.tracking-input:focus { border-color: var(--brand-accent); }
 .tracking-btn {
     height: 36px;
     padding: 0 12px;
-    background: #F85800;
-    color: #FFFFFF;
+    background: var(--brand-accent);
+    color: var(--brand-accent-ink);
     border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
@@ -1275,7 +1286,7 @@ button.product-row__hit:active  { opacity: .7; }
     border: none;
 }
 .tracking-btn:active { opacity: .8; }
-.order-status--shipped { background: rgba(248,88,0,.15); color: #F85800; }
+.order-status--shipped { background: rgba(232,185,58,.15); color: var(--brand-accent); }
 .variant-block .ff__hint { font-size: 11px; }
 
 /* ─── File uploader (seller-cabinet: Загрузка данных) ────── */
@@ -1510,17 +1521,18 @@ button.product-row__hit:active  { opacity: .7; }
    где scopeEl — этот самый узел, так что результат идентичен Главной.
    Обновлять вручную при смене палитры в src/theme.css. */
 .banner-preview-scope {
-    --accent:        #0E7C6B;
-    --accent-press:  #0B6558;
-    --text-primary:  #132420;
-    --bg-secondary:  #E1EAE6;
-    --border:        rgba(19,36,32,0.10);
+    --accent:        #D9A520;
+    --accent-press:  #B3850E;
+    --accent-ink:    #1A1712;
+    --text-primary:  #1A1712;
+    --bg-secondary:  #E3E0D6;
+    --border:        rgba(26,23,18,0.10);
     --font-body:     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --banner-dark-1:  #1C2420;  --banner-dark-2:  #0E1613;
-    --banner-light-1: #FFFFFF;  --banner-light-2: #E7F0EC;
-    --banner-warm-1:  #F7E7D6;  --banner-warm-2:  #F0C9A8;
-    --banner-cool-1:  #DCEAF5;  --banner-cool-2:  #B9D3E8;
-    --banner-steel-1: #5B6B73;  --banner-steel-2: #35414A;
+    --banner-dark-1:  #1A1712;  --banner-dark-2:  #1A1712;
+    --banner-light-1: #FFFFFF;  --banner-light-2: #FFFFFF;
+    --banner-warm-1:  #8A6F00;  --banner-warm-2:  #8A6F00;
+    --banner-cool-1:  #4A4639;  --banner-cool-2:  #4A4639;
+    --banner-steel-1: #6B6656;  --banner-steel-2: #6B6656;
 
     font-family: var(--font-body);
     border-radius: 14px;
@@ -1547,12 +1559,12 @@ button.product-row__hit:active  { opacity: .7; }
 .banner-preview-scope .banner-slide--photo { min-height: 130px; background-size: cover; background-position: center; }
 .banner-preview-scope .banner-slide b { font-size: 14.5px; font-weight: 800; line-height: 1.25; }
 .banner-preview-scope .banner-slide span { font-size: 12px; opacity: .9; margin-top: 3px; display: block; }
-.banner-preview-scope .banner-bg--brand { background: linear-gradient(135deg, var(--accent), var(--accent-press)); }
-.banner-preview-scope .banner-bg--dark  { background: linear-gradient(135deg, var(--banner-dark-1),  var(--banner-dark-2)); }
-.banner-preview-scope .banner-bg--light { background: linear-gradient(135deg, var(--banner-light-1), var(--banner-light-2)); color: var(--text-primary); }
-.banner-preview-scope .banner-bg--warm  { background: linear-gradient(135deg, var(--banner-warm-1),  var(--banner-warm-2)); }
-.banner-preview-scope .banner-bg--cool  { background: linear-gradient(135deg, var(--banner-cool-1),  var(--banner-cool-2)); }
-.banner-preview-scope .banner-bg--steel { background: linear-gradient(135deg, var(--banner-steel-1), var(--banner-steel-2)); }
+.banner-preview-scope .banner-bg--brand { background: var(--accent); color: var(--accent-ink); }
+.banner-preview-scope .banner-bg--dark  { background: var(--banner-dark-1); }
+.banner-preview-scope .banner-bg--light { background: var(--banner-light-1); color: var(--accent-ink); }
+.banner-preview-scope .banner-bg--warm  { background: var(--banner-warm-1); }
+.banner-preview-scope .banner-bg--cool  { background: var(--banner-cool-1); }
+.banner-preview-scope .banner-bg--steel { background: var(--banner-steel-1); }
 .banner-preview-scope .banner-slide--overlay-light::before,
 .banner-preview-scope .banner-slide--overlay-medium::before,
 .banner-preview-scope .banner-slide--overlay-strong::before { content: ''; position: absolute; inset: 0; pointer-events: none; }
@@ -1637,12 +1649,17 @@ button.product-row__hit:active  { opacity: .7; }
     cursor: pointer;
     position: relative;
 }
-.bg-tile--brand { background: linear-gradient(135deg, #0E7C6B, #0B6558); }
-.bg-tile--dark  { background: linear-gradient(135deg, #1C2420, #0E1613); }
-.bg-tile--light { background: linear-gradient(135deg, #FFFFFF, #E7F0EC); }
-.bg-tile--warm  { background: linear-gradient(135deg, #F7E7D6, #F0C9A8); }
-.bg-tile--cool  { background: linear-gradient(135deg, #DCEAF5, #B9D3E8); }
-.bg-tile--steel { background: linear-gradient(135deg, #5B6B73, #35414A); }
+/* Плоские цвета (без градиентов), те же значения, что в src/theme.css
+   (--accent/--banner-*) и .banner-preview-scope выше в этом файле —
+   обновлять руками вместе с ними при смене палитры. brand — цвет текста
+   плитки берём белым/тёмным по месту ниже не делаем (сама плитка без
+   текста, только --bg-tile--custom подписана). */
+.bg-tile--brand { background: #D9A520; }
+.bg-tile--dark  { background: #1A1712; }
+.bg-tile--light { background: #FFFFFF; }
+.bg-tile--warm  { background: #8A6F00; }
+.bg-tile--cool  { background: #4A4639; }
+.bg-tile--steel { background: #6B6656; }
 .bg-tile--custom {
     background: repeating-conic-gradient(#3A3A3A 0% 25%, #2E2E2E 0% 50%) 0 0/12px 12px;
     display: flex; align-items: center; justify-content: center;

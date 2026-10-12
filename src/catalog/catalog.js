@@ -1795,7 +1795,7 @@ function productCardHTML(p) {
         const isFav  = _favorites.has(p.id);
         const favBtn = tgId
             ? `<button class="fav-btn${isFav ? ' fav-btn--active' : ''}" onclick="event.stopPropagation();toggleFav(${p.id})" aria-label="Избранное">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="${isFav ? '#FF3B30' : 'none'}" stroke="${isFav ? '#FF3B30' : 'rgba(255,255,255,0.8)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:fill .2s,stroke .2s">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:fill .2s,stroke .2s;fill:${isFav ? 'var(--red)' : 'none'};stroke:${isFav ? 'var(--red)' : 'var(--accent-ink)'}">
                     <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
                 </svg>
                </button>`
@@ -1890,8 +1890,8 @@ async function toggleFav(productId) {
         if (!btn) return;
         btn.classList.toggle('fav-btn--active', active);
         if (svg) {
-            svg.setAttribute('fill',   active ? '#FF3B30' : 'none');
-            svg.setAttribute('stroke', active ? '#FF3B30' : 'rgba(255,255,255,0.8)');
+            svg.style.fill   = active ? 'var(--red)' : 'none';
+            svg.style.stroke = active ? 'var(--red)' : 'var(--accent-ink)';
         }
     }
     applyFavState(!wasFav);
@@ -2146,8 +2146,8 @@ async function reloadFavorites() {
             btn.classList.toggle('fav-btn--active', active);
             const svg = btn.querySelector('svg');
             if (svg) {
-                svg.setAttribute('fill',   active ? '#FF3B30' : 'none');
-                svg.setAttribute('stroke', active ? '#FF3B30' : 'rgba(255,255,255,0.8)');
+                svg.style.fill   = active ? 'var(--red)' : 'none';
+                svg.style.stroke = active ? 'var(--red)' : 'var(--accent-ink)';
             }
         });
         localStorage.removeItem('favorites_changed');

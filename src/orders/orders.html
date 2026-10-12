@@ -26,20 +26,23 @@
 
         .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding-bottom: 80px; }
 
+        /* Эта страница не входила в явный список задачи, но читает те же
+           токены темы — без правки шапка/цены красились бы нечитаемым
+           жёлтым (см. тот же фикс у .header в src/catalog/catalog.css). */
         .header {
             position: sticky; top: 0; z-index: 100;
             display: flex; align-items: center;
             height: 56px; padding: 0 8px 0 4px;
-            background: var(--accent);
+            background: var(--bg-card);
             box-shadow: 0 1px 8px rgba(0,0,0,0.08);
         }
         .header__back {
             width: 44px; height: 44px; display: flex; align-items: center;
-            justify-content: center; border-radius: 50%; color: var(--accent-ink); flex-shrink: 0;
+            justify-content: center; border-radius: 50%; color: var(--text-primary); flex-shrink: 0;
         }
-        .header__back:active { background: rgba(255,255,255,.16); }
+        .header__back:active { background: rgba(var(--ink-rgb),.08); }
         .header__title {
-            flex: 1; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: -.2px; color: var(--accent-ink);
+            flex: 1; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: -.2px; color: var(--text-primary);
         }
         .header__placeholder { width: 44px; flex-shrink: 0; }
 
@@ -62,20 +65,20 @@
         }
         .badge-new       { background: rgba(var(--ink-rgb),0.08); color: rgba(var(--ink-rgb),0.55); }
         .badge-in_progress { background: rgba(47,111,191,.2); color: var(--info); }
-        .badge-shipped   { background: rgba(14,124,107,.15);   color: var(--accent); }
+        .badge-shipped   { background: rgba(14,124,107,.15);   color: var(--accent-ink); }
         .badge-completed { background: rgba(47,143,78,.18);    color: var(--success); }
         .badge-cancelled { background: rgba(192,57,43,.15);    color: var(--red); }
 
         .order-card__items { font-size: 13px; opacity: .75; line-height: 1.5; }
         .order-card__store { font-size: 13px; opacity: .65; }
         .order-card__address { font-size: 13px; color: rgba(var(--ink-rgb),0.55); margin: 4px 0; }
-        .order-card__tracking { font-size: 13px; color: var(--accent); margin: 4px 0; }
-        .order-card__total { font-size: 17px; font-weight: 700; color: var(--accent); }
+        .order-card__tracking { font-size: 13px; color: var(--accent-ink); margin: 4px 0; }
+        .order-card__total { font-size: 17px; font-weight: 700; color: var(--accent-ink); }
 
         .track-btn {
             display: flex; align-items: center; justify-content: center; gap: 8px;
             height: 44px; background: rgba(14,124,107,0.15); border: 1px solid rgba(14,124,107,0.4);
-            border-radius: var(--radius-md); color: var(--accent); font-size: 14px; font-weight: 600;
+            border-radius: var(--radius-md); color: var(--accent-ink); font-size: 14px; font-weight: 600;
             width: 100%; text-decoration: none;
         }
         .track-btn:active { background: rgba(14,124,107,0.3); }
@@ -116,7 +119,7 @@
             justify-content: center; gap: 3px; height: 100%;
             color: var(--text-secondary); font-size: 10.5px; font-weight: 600;
         }
-        .nav-item.active { color: var(--accent); font-weight: 700; }
+        .nav-item.active { color: var(--accent-ink); font-weight: 700; }
         .nav-item:active { opacity: .7; }
         .nav-ic {
             position: relative; width: 30px; height: 30px; border-radius: 9px;
@@ -195,7 +198,7 @@
 .legal-footer { padding: 24px 16px; color: rgba(var(--ink-rgb),0.4); font-size: 11px; text-align: center; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 40px; margin-bottom: 80px; }
 .legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
 .legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
-.legal-footer__links a { color: var(--accent); text-decoration: none; }
+.legal-footer__links a { color: var(--accent-ink); text-decoration: none; }
 </style>
 <div class="legal-footer">
     <div class="legal-footer__info">

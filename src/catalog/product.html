@@ -30,6 +30,10 @@
         }
 
         /* ─── Header ────────────────────────────────────────── */
+        /* background: var(--bg-card)/текст var(--text-primary), не
+           --accent/--accent-ink — см. тот же комментарий у .header в
+           src/catalog/catalog.css (направление «Стройплощадка»: акцент
+           экономно, не на весь фон шапки). */
         .header {
             position: sticky;
             top: 0; z-index: 100;
@@ -37,17 +41,17 @@
             align-items: center;
             height: var(--header-h);
             padding: 0 8px 0 4px;
-            background: var(--accent);
+            background: var(--bg-card);
             box-shadow: 0 1px 8px rgba(0,0,0,0.08);
         }
         .header__back {
             width: 44px; height: 44px;
             display: flex; align-items: center; justify-content: center;
             border-radius: 50%;
-            color: var(--accent-ink);
+            color: var(--text-primary);
             flex-shrink: 0;
         }
-        .header__back:active { background: rgba(255,255,255,.16); }
+        .header__back:active { background: rgba(var(--ink-rgb),.08); }
         .header__title {
             flex: 1;
             font-size: 17px;
@@ -57,17 +61,17 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             padding: 0 4px;
-            color: var(--accent-ink);
+            color: var(--text-primary);
         }
         .header__cart {
             position: relative;
             width: 44px; height: 44px;
             display: flex; align-items: center; justify-content: center;
             border-radius: 50%;
-            color: var(--accent-ink);
+            color: var(--text-primary);
             flex-shrink: 0;
         }
-        .header__cart:active { background: rgba(255,255,255,.16); }
+        .header__cart:active { background: rgba(var(--ink-rgb),.08); }
         .cart-badge {
             position: absolute;
             top: 4px; right: 4px;
@@ -119,7 +123,7 @@
         .badge-out {
             position: absolute;
             top: 12px; right: 12px;
-            background: rgba(192,57,43,0.10);
+            background: rgba(var(--red-rgb),0.10);
             color: var(--red);
             font-size: 12px;
             font-weight: 700;
@@ -188,7 +192,7 @@
         .variant-label {
             font-size: 12px;
             font-weight: 600;
-            color: var(--accent);
+            color: var(--accent-ink);
             text-transform: uppercase;
             letter-spacing: .4px;
             margin-bottom: 8px;
@@ -238,7 +242,7 @@
         .product-price {
             font-size: 22px;
             font-weight: 700;
-            color: var(--accent);
+            color: var(--accent-ink);
             flex-shrink: 0;
             display: flex;
             align-items: baseline;
@@ -246,20 +250,23 @@
             flex-wrap: wrap;
         }
         .product-price--service {
+            /* не var(--accent) — жёлтый текст на белом почти не читается;
+               var(--accent-ink) тёмный в обеих темах */
             font-size: 16px;
             font-weight: 600;
-            color: var(--accent);
+            color: var(--accent-ink);
         }
         .price-old {
             font-size: 15px;
             font-weight: 400;
-            color: #9CA3AF;
+            color: var(--text-secondary);
             text-decoration: line-through;
         }
         .price-sale {
+            /* var(--sale) — «акция», не var(--red) — «ошибка» */
             font-size: 22px;
             font-weight: 700;
-            color: var(--red);
+            color: var(--sale);
         }
 
         .add-to-cart-btn {
@@ -280,8 +287,8 @@
             cursor: not-allowed;
         }
         .add-to-cart-btn--subscribed {
-            background: rgba(255,214,10,0.2);
-            color: #FFD60A;
+            background: rgba(var(--warning-rgb),.14);
+            color: var(--warning);
             cursor: default;
         }
         .add-to-cart-btn--subscribed:active { transform: none; }
@@ -335,7 +342,7 @@
             font-size: 10.5px;
             font-weight: 600;
         }
-        .nav-item.active { color: var(--accent); font-weight: 700; }
+        .nav-item.active { color: var(--accent-ink); font-weight: 700; }
         .nav-item:active { opacity: .7; }
         .nav-ic {
             position: relative;

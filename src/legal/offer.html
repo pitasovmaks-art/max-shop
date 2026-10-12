@@ -18,23 +18,26 @@
             -webkit-tap-highlight-color: transparent;
         }
         button { cursor: pointer; border: none; background: none; font: inherit; }
-        a { color: var(--accent); }
+        a { color: var(--accent-ink); }
 
         .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding-bottom: 40px; }
 
+        /* Эта страница не входила в явный список задачи, но читает те же
+           токены темы — без правки шапка/ссылки красились бы нечитаемым
+           жёлтым (см. тот же фикс у .header в src/catalog/catalog.css). */
         .header {
             position: sticky; top: 0; z-index: 100;
             display: flex; align-items: center;
             height: 56px; padding: 0 16px 0 4px;
-            background: var(--accent);
+            background: var(--bg-card);
             box-shadow: 0 1px 8px rgba(0,0,0,0.08);
         }
         .header__back {
             width: 44px; height: 44px; display: flex; align-items: center;
-            justify-content: center; border-radius: 50%; color: var(--accent-ink); flex-shrink: 0;
+            justify-content: center; border-radius: 50%; color: var(--text-primary); flex-shrink: 0;
         }
-        .header__back:active { background: rgba(255,255,255,.16); }
-        .header__title { font-size: 17px; font-weight: 700; color: var(--accent-ink); }
+        .header__back:active { background: rgba(var(--ink-rgb),.08); }
+        .header__title { font-size: 17px; font-weight: 700; color: var(--text-primary); }
 
         .content { padding: 16px 12px 32px; display: flex; flex-direction: column; gap: 12px; }
 
@@ -48,7 +51,7 @@
         }
 
         h1 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-        h2 { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+        h2 { font-size: 14px; font-weight: 700; color: var(--accent-ink); margin-bottom: 8px; }
         p { font-size: 14px; line-height: 1.65; color: rgba(var(--ink-rgb),0.8); margin-bottom: 8px; }
         ul { padding-left: 18px; margin-bottom: 8px; }
         ul li { font-size: 14px; line-height: 1.65; color: rgba(var(--ink-rgb),0.8); margin-bottom: 4px; }
@@ -159,7 +162,7 @@
 .legal-footer { padding: 24px 16px; color: rgba(var(--ink-rgb),0.45); font-size: 11px; text-align: center; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 40px; }
 .legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
 .legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
-.legal-footer__links a { color: var(--accent); text-decoration: none; }
+.legal-footer__links a { color: var(--accent-ink); text-decoration: none; }
 </style>
 <div class="legal-footer">
     <div class="legal-footer__info">

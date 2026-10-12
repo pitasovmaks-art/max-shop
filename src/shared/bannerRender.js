@@ -58,11 +58,18 @@
     }
 
     /* Реальные (посчитанные) hex-цвета фона — нужно и для авто-контраста,
-       и для админского предупреждения о низком контрасте. */
+       и для админского предупреждения о низком контрасте. 'brand' — один
+       реальный стоп (--accent), не [--accent, --accent-press]: раньше
+       .banner-bg--brand был двухцветным градиентом между ними, и среднее
+       двух стопов приближало яркость градиента; с переходом на плоскую
+       заливку (см. .banner-bg--brand в catalog.css/admin.css) фон — это
+       буквально --accent, усреднение с --accent-press только сбивало
+       оценку (в «Стройплощадке» уводило итог ниже порога 150 и включало
+       белый текст там, где реальный фон светлый жёлтый требует тёмного). */
     function getBgStopHexes(banner, scopeEl) {
         if (banner.bgStyle === 'custom' && banner.bgColor) return [banner.bgColor];
         const key = VALID_BG_STYLES.has(banner.bgStyle) ? banner.bgStyle : 'brand';
-        if (key === 'brand') return [cssVar(scopeEl, '--accent'), cssVar(scopeEl, '--accent-press')].filter(Boolean);
+        if (key === 'brand') return [cssVar(scopeEl, '--accent')].filter(Boolean);
         return [cssVar(scopeEl, `--banner-${key}-1`), cssVar(scopeEl, `--banner-${key}-2`)].filter(Boolean);
     }
 
@@ -77,17 +84,26 @@
     }
 
     /* Итоговый hex текста одного блока — используется и при рендере, и
-       админкой для предупреждения о контрасте. */
+       админкой для предупреждения о контрасте. 'dark' здесь и в ветке
+       'auto' ниже — НЕ --text-primary: --text-primary меняется вместе с
+       темой устройства (тёмный в светлой теме, светлый в тёмной), а
+       --banner-* фоны, с которыми этот текст сочетается ('dark'/'light'/
+       'custom' и 'auto' для плоских фонов без фото), сами от темы
+       устройства не зависят (см. комментарий у :root в src/theme.css) —
+       в тёмной теме 'dark'-текст на всегда-светлом баннере рендерился бы
+       светлым-на-светлом. --accent-ink — тёмный в обеих темах именно по
+       этой причине (жёлтый акцент в «Стройплощадке» одинаково ярок что в
+       светлой, что в тёмной — см. комментарий у --accent в theme.css). */
     function resolveBlockColorHex(block, banner, scopeEl) {
         switch (block.color) {
             case 'light':  return '#FFFFFF';
-            case 'dark':   return cssVar(scopeEl, '--text-primary') || '#132420';
+            case 'dark':   return cssVar(scopeEl, '--accent-ink') || '#1A1712';
             case 'accent': return cssVar(scopeEl, '--accent') || '#0E7C6B';
             case 'custom': return block.customColor || '#FFFFFF';
             case 'auto':
             default: {
                 const tone = getAutoTextTone(banner, scopeEl);
-                return tone === 'dark' ? (cssVar(scopeEl, '--text-primary') || '#132420') : '#FFFFFF';
+                return tone === 'dark' ? (cssVar(scopeEl, '--accent-ink') || '#1A1712') : '#FFFFFF';
             }
         }
     }

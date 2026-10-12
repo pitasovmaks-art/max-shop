@@ -24,6 +24,9 @@ a      { text-decoration: none; color: inherit; }
 }
 
 /* ─── Header — назад + заголовок по центру + доп. кнопка ─── */
+/* background: var(--bg-card)/текст var(--text-primary), не --accent/
+   --accent-ink — см. тот же комментарий у .header в src/catalog/catalog.css
+   (направление «Стройплощадка»: акцент экономно, не на весь фон шапки). */
 .header {
     position: sticky;
     top: 0; z-index: 100;
@@ -32,37 +35,37 @@ a      { text-decoration: none; color: inherit; }
     justify-content: space-between;
     height: var(--header-h);
     padding: 0 10px;
-    background: var(--accent);
+    background: var(--bg-card);
     box-shadow: 0 1px 8px rgba(0,0,0,0.08);
 }
 .header__back {
     width: 42px; height: 42px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
-    color: var(--accent-ink);
+    color: var(--text-primary);
     transition: background .15s;
     flex-shrink: 0;
 }
-.header__back:active { background: rgba(255,255,255,.16); }
+.header__back:active { background: rgba(var(--ink-rgb),.08); }
 .header__title {
     flex: 1;
     text-align: center;
     font-size: 16px;
     font-weight: 700;
     letter-spacing: -.2px;
-    color: var(--accent-ink);
+    color: var(--text-primary);
 }
 .header__clear {
     font-size: 13px;
     font-weight: 600;
-    color: var(--accent-ink);
+    color: var(--text-primary);
     padding: 0 12px;
     height: 36px;
     border-radius: var(--radius-sm);
     transition: background .15s;
     flex-shrink: 0;
 }
-.header__clear:active { background: rgba(255,255,255,.16); }
+.header__clear:active { background: rgba(var(--ink-rgb),.08); }
 
 /* ─── Main ──────────────────────────────────────────────── */
 .main {
@@ -84,7 +87,7 @@ a      { text-decoration: none; color: inherit; }
     width: 34px; height: 34px;
     border-radius: 10px;
     background: var(--bg-secondary);
-    color: var(--accent);
+    color: var(--accent-ink);
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
 }
@@ -134,8 +137,8 @@ a      { text-decoration: none; color: inherit; }
     text-overflow: ellipsis;
 }
 .cart-item__unit { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.price-old { font-size: 11px; font-weight: 400; color: #9CA3AF; text-decoration: line-through; }
-.price-sale { font-size: 12px; font-weight: 700; color: var(--red); }
+.price-old { font-size: 11px; font-weight: 400; color: var(--text-secondary); text-decoration: line-through; }
+.price-sale { font-size: 12px; font-weight: 700; color: var(--sale); }
 .cart-item__controls { display: flex; align-items: center; gap: 0; }
 
 .qty-btn {
@@ -301,7 +304,7 @@ a      { text-decoration: none; color: inherit; }
     font-size: 10.5px;
     font-weight: 600;
 }
-.nav-item.active { color: var(--accent); font-weight: 700; }
+.nav-item.active { color: var(--accent-ink); font-weight: 700; }
 .nav-item:active { opacity: .7; }
 .nav-ic {
     position: relative;
@@ -356,4 +359,4 @@ a      { text-decoration: none; color: inherit; }
 .legal-footer { padding: 24px 16px; color: rgba(var(--ink-rgb),0.45); font-size: 11px; text-align: center; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 40px; }
 .legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
 .legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
-.legal-footer__links a { color: var(--accent); text-decoration: none; }
+.legal-footer__links a { color: var(--accent-ink); text-decoration: none; }
