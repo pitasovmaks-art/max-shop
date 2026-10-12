@@ -1571,17 +1571,56 @@ function handleSearch(inputEl) {
         return;
     }
 
-    // Уже на экране результатов — обычный дальнейший ввод.
+    // Уже на экране результатов — обычный дальнейший ввод, ВКЛЮЧАЯ стирание
+    // до пустого (баг с телефона: раньше пустой запрос дёргал
+    // closeSearchScreen() -> history.back(), экран скрывался, поле теряло
+    // фокус — на телефоне в Max это закрывало клавиатуру прямо посреди
+    // набора следующего слова. Теперь пустой запрос НИКОГДА сам не уводит
+    // с экрана — только явная стрелка «Назад»/✕ не трогают фокус/системная
+    // «Назад», см. closeSearchScreen() и clearSearchScreenInput() ниже.
     state.query = q.trim();
     document.getElementById('searchScreenClear')?.classList.toggle('hidden', !state.query);
-    if (!state.query) { closeSearchScreen(); return; }
     catalogPushOrReplace('catalog.html?q=' + encodeURIComponent(state.query), 'replace');
+    if (!state.query) {
+        clearTimeout(_searchTimer);
+        clearSearchScreenResults(); // очищаем результаты без сетевого запроса и без "Ничего не найдено"
+        return;
+    }
     _searchTimer = setTimeout(performCatalogSearchFetch, CATALOG_SEARCH_DEBOUNCE_MS);
+}
+
+/* Очищает выдачу результатов (не трогая сам инпут/фокус/экран) — для
+   пустого запроса на #screen-search: без сетевого запроса и без
+   показа пустого состояния "Ничего не найдено" (пустой запрос — это не
+   "не нашли", это "ещё не искали"). _searchSeq++ отменяет любой уже
+   запущенный fetch/debounce-таймер предыдущего непустого запроса. */
+function clearSearchScreenResults() {
+    _searchSeq++;
+    const grid  = document.getElementById('searchScreenGrid');
+    const empty = document.getElementById('searchScreenEmptyState');
+    const count = document.getElementById('searchScreenCount');
+    if (grid)  grid.innerHTML = '';
+    if (empty) empty.classList.add('hidden');
+    if (count) count.textContent = '';
+}
+
+/* Кнопка ✕ на #screen-search — теперь просто очищает поле и оставляет
+   фокус в нём (не выходит с экрана, см. ТЗ п.2); .focus() вызывается
+   синхронно в этом же клик-обработчике — тот же приём, что и перенос
+   фокуса при входе в поиск (см. handleSearch), чтобы клавиатура на
+   телефоне не закрывалась и тут же не открывалась заново. */
+function clearSearchScreenInput() {
+    const input = document.getElementById('searchScreenInput');
+    if (!input) return;
+    input.value = '';
+    handleSearch(input);
+    input.focus();
 }
 
 /* Только Главная — у Каталога больше нет своей кнопки очистки на
    root/subcats/pair (поиск сразу уводит на #screen-search, см. выше);
-   там за очистку/выход отвечает closeSearchScreen(). */
+   там за очистку поля отвечает clearSearchScreenInput(), за выход с
+   экрана — closeSearchScreen() (только стрелка «Назад»/системная «Назад»). */
 function clearSearch() {
     document.getElementById('searchInput').value = '';
     state.query = '';
@@ -1589,8 +1628,11 @@ function clearSearch() {
     render();
 }
 
-/* Очистка запроса (стёрли вручную до пустого ИЛИ нажали ✕/стрелку назад
-   в шапке #screen-search) — всегда возврат на исходный экран через
+/* Единственный способ ДЕЙСТВИТЕЛЬНО выйти с #screen-search — стрелка
+   «Назад» в шапке (и системная «Назад», см. popstate/restoreScreenFromUrl
+   ниже). Пустой запрос (backspace/✕) больше НЕ вызывает эту функцию — см.
+   комментарий в handleSearch(): на телефоне в Max это закрывало клавиатуру
+   прямо посреди стирания слова, чтобы напечатать новое. Возврат — через
    history.back() (ТЗ: "без новой записи"), с теми же фильтрами и
    позицией — они не трогались всё это время, пока был активен поиск.
    Фолбэк на _historyPushed — тот же приём, что у closeSubcatsScreen()/
@@ -1913,18 +1955,26 @@ function restoreScreenFromUrl(navMode) {
     _searchSeq++;
 
     const params = new URLSearchParams(location.search);
-    const urlQ   = params.get('q');
+    // params.has('q'), а не params.get('q') — у пустого запроса на
+    // #screen-search URL теперь catalog.html?q= (ключ есть, значение
+    // пустое, см. handleSearch()/clearSearchScreenResults()): это и
+    // отличает "мы на экране поиска с пустым полем" (q= есть) от "совсем
+    // нет q в адресе" (обычный корень каталога) — иначе перезагрузка
+    // страницы на пустом запросе показывала бы не экран поиска, а корень.
+    const hasQ   = params.has('q');
+    const urlQ   = params.get('q') || '';
     const urlCat = params.get('category');
     const urlSub = params.get('sub');
 
-    if (urlQ) {
+    if (hasQ) {
         const input = document.getElementById('searchScreenInput');
         if (input) {
             input.value = urlQ;
             state.query = urlQ.trim();
             document.getElementById('searchScreenClear')?.classList.toggle('hidden', !state.query);
             showCatalogScreen('search');
-            performCatalogSearchFetch();
+            if (state.query) performCatalogSearchFetch();
+            else clearSearchScreenResults(); // пустой запрос — пустой экран поиска, без сетевого запроса и без ошибок
         }
         return;
     }
