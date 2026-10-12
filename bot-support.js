@@ -6,8 +6,8 @@ const path  = require('path');
 
 const API_BASE               = 'platform-api2.max.ru';
 const TOKEN                  = process.env.SUPPORT_BOT_TOKEN || '';
-const WEBHOOK_BASE           = (process.env.WEBHOOK_URL || 'https://pitasovmaks-art-max-shop-c149.twc1.net/webhook').replace('/webhook', '');
-const SUPPORT_WEBHOOK_URL    = WEBHOOK_BASE + '/webhook-support';
+const WEBHOOK_BASE           = process.env.WEBHOOK_URL ? process.env.WEBHOOK_URL.replace('/webhook', '') : '';
+const SUPPORT_WEBHOOK_URL    = WEBHOOK_BASE ? WEBHOOK_BASE + '/webhook-support' : '';
 const SUPPORT_ADMIN_USER_IDS = [5149723, 100067838];   // user_id одинаков у обоих ботов
 
 /* ─── DB helpers (прямой доступ, тот же процесс) ────────── */
@@ -115,6 +115,10 @@ function sendMessage(chatId, text) {
 
 /* ─── Webhook registration ──────────────────────────────── */
 function registerWebhook() {
+    if (!SUPPORT_WEBHOOK_URL) {
+        console.error('[support] WEBHOOK_URL не задан, вебхук не зарегистрирован');
+        return;
+    }
     const data = JSON.stringify({
         url:          SUPPORT_WEBHOOK_URL,
         update_types: ['message_created', 'bot_started'],

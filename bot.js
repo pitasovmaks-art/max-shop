@@ -8,7 +8,7 @@ const API_BASE     = 'platform-api2.max.ru';
 const TOKEN        = process.env.MAX_BOT_TOKEN || '';
 const SHOP_URL     = process.env.SHOP_URL || 'https://max-shop-production.up.railway.app';
 const BOT_USERNAME = process.env.BOT_USERNAME || '';
-const WEBHOOK_URL  = process.env.WEBHOOK_URL || 'https://pitasovmaks-art-max-shop-c149.twc1.net/webhook';
+const WEBHOOK_URL  = process.env.WEBHOOK_URL || '';
 
 /* ─── Admin chat IDs (persisted in Postgres, table bot_admins) ───
    Раньше хранилось в bot_admins.json в корне проекта — на Timeweb App
@@ -210,6 +210,10 @@ async function processUpdate(update) {
 
 /* ─── Register webhook ──────────────────────────────────── */
 async function registerWebhook() {
+    if (!WEBHOOK_URL) {
+        console.error('[bot] WEBHOOK_URL не задан, вебхук не зарегистрирован');
+        return;
+    }
     const data = JSON.stringify({
         url:          WEBHOOK_URL,
         update_types: ['message_created', 'bot_started'],

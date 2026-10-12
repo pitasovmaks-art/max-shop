@@ -11,6 +11,7 @@ const PROMPTS = require('../agents/prompts');
 const BOT_TOKEN       = process.env.AGENT_BOT_TOKEN;
 const GROUP_CHAT_ID   = process.env.AGENT_GROUP_CHAT_ID;
 const OPENROUTER_KEY  = process.env.OPENROUTER_API_KEY;
+const SHOP_URL        = process.env.SHOP_URL || '';
 const CLAUDE_MODEL    = 'anthropic/claude-sonnet-4-6';
 const TELEGRAM_LIMIT  = 4096;
 
@@ -62,7 +63,7 @@ async function callClaude(systemPrompt, userMessage) {
         headers: {
             'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
             'Content-Type':  'application/json',
-            'HTTP-Referer':  'https://pitasovmaks-art-max-shop-c149.twc1.net',
+            'HTTP-Referer':  SHOP_URL,
             'X-Title':       'Точка Монтажа Агенты',
         },
         body: JSON.stringify({
