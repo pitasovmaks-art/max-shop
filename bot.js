@@ -266,6 +266,22 @@ const CITY_MANAGERS = {
     msk: 392912448,
 };
 
+/* Заявки на ремонт (server/routes/service-requests.js) — независимая от
+   STORE_MANAGERS/CITY_MANAGERS маршрутизация: подтверждено Максимом
+   12.10.2026 — оба краснодарских магазина (Селезнева и Котлярова) идут
+   ему лично, московский — Александру; это те же user_id, что уже заданы
+   как SUPPORT_ADMIN_USER_IDS в bot-support.js (Максим 5149723, Александр
+   100067838) — Максим подтвердил, что это действительно они. ID
+   403249437 (сотрудник магазина на Котлярова, видно по STORE_MANAGERS
+   выше) сюда намеренно не входит — ему заявки на ремонт видеть не нужно.
+   Код магазина — тот же, что в SERVICE_STORES в server/routes/
+   service-requests.js (единственное место с проверкой допустимости). */
+const SERVICE_REQUEST_MANAGERS = {
+    krd_selezneva:  5149723,    // Максим
+    krd_kotlyarova: 5149723,    // Максим (не 403249437 — см. комментарий выше)
+    msk_maevka:     100067838,  // Александр
+};
+
 const DELIVERY_METHOD_LABELS = {
     pickup:  'Самовывоз',
     city:    'Доставка по городу',
@@ -322,6 +338,43 @@ async function notifyStore(order) {
             console.log('[bot] ответ API:', JSON.stringify(result));
         } catch (e) {
             console.error(`[bot] Не удалось отправить уведомление chat_id=${chatId}:`, e.message);
+        }
+    }
+}
+
+/* ─── Notify store manager about new service request ────── */
+async function notifyServiceRequest(request) {
+    if (!TOKEN) return;
+
+    const toolLines = request.items.map(i =>
+        i.problem ? `• ${i.toolName} — ${i.problem}` : `• ${i.toolName}`
+    );
+
+    const parts = [
+        `🔧 Новая заявка на ремонт ${request.number}!`,
+        `👤 Клиент: ${request.name}`,
+        `📞 Телефон: ${request.phone}`,
+        `🏪 Магазин: ${request.storeLabel || request.store}`,
+        `🛠 Инструменты:\n${toolLines.join('\n')}`,
+        request.deliveryNeeded
+            ? `🚚 Нужна доставка, адрес: ${request.address || 'не указан'}`
+            : `🚶 Без доставки (принесёт сам)`,
+        `💬 Комментарий: ${request.comment || 'нет'}`,
+    ];
+    const text = parts.join('\n');
+
+    const managerId = SERVICE_REQUEST_MANAGERS[request.store];
+    const recipients = managerId ? [managerId] : Object.values(SERVICE_REQUEST_MANAGERS);
+
+    console.log('[bot] notifyServiceRequest вызван, store:', request.store, 'получатели:', recipients);
+
+    for (const chatId of recipients) {
+        try {
+            const result = await sendMessage(chatId, text);
+            console.log('[bot] уведомление о заявке на ремонт отправлено:', chatId);
+            console.log('[bot] ответ API:', JSON.stringify(result));
+        } catch (e) {
+            console.error(`[bot] Не удалось отправить уведомление о заявке на ремонт chat_id=${chatId}:`, e.message);
         }
     }
 }
@@ -448,4 +501,4 @@ function startBot() {
     registerWebhook();
 }
 
-module.exports = { startBot, notifyStore, processUpdate, notifyCustomer, notifyStock, notifyPromo };
+module.exports = { startBot, notifyStore, processUpdate, notifyCustomer, notifyStock, notifyPromo, notifyServiceRequest, SERVICE_REQUEST_MANAGERS };

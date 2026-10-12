@@ -114,6 +114,7 @@ app.use('/api/categories',    require('./routes/categories'));
 app.use('/api/banners',       require('./routes/banners'));
 app.use('/api/subcategories', require('./routes/subcategories'));
 app.use('/api/orders',        require('./routes/orders'));
+app.use('/api/service-requests', require('./routes/service-requests'));
 app.use('/api/stores',        require('./routes/stores'));
 app.use('/api/cdek',          require('./routes/cdek'));
 app.use('/api/users',         require('./routes/users'));

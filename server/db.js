@@ -131,6 +131,40 @@ async function createSchema() {
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tg_id TEXT`);
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT`);
     await pool.query(`
+        CREATE TABLE IF NOT EXISTS service_requests (
+            id              SERIAL  PRIMARY KEY,
+            tg_id           TEXT    NOT NULL,
+            name            TEXT    NOT NULL,
+            phone           TEXT    NOT NULL,
+            store           TEXT    NOT NULL,
+            delivery_needed INTEGER NOT NULL DEFAULT 0,
+            address         TEXT,
+            comment         TEXT,
+            status          TEXT    NOT NULL DEFAULT 'accepted',
+            cost            INTEGER,
+            admin_comment   TEXT,
+            created_at      TEXT    NOT NULL DEFAULT TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+            updated_at      TEXT    NOT NULL DEFAULT TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+        )
+    `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS service_request_items (
+            id         SERIAL  PRIMARY KEY,
+            request_id INTEGER NOT NULL REFERENCES service_requests(id) ON DELETE CASCADE,
+            tool_name  TEXT    NOT NULL,
+            problem    TEXT
+        )
+    `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS service_request_events (
+            id         SERIAL  PRIMARY KEY,
+            request_id INTEGER NOT NULL REFERENCES service_requests(id) ON DELETE CASCADE,
+            status     TEXT    NOT NULL,
+            changed_by TEXT    NOT NULL DEFAULT 'system',
+            created_at TEXT    NOT NULL DEFAULT TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+        )
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS user_map (
             user_id    BIGINT PRIMARY KEY,
             chat_id    BIGINT NOT NULL,

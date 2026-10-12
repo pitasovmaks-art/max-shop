@@ -9,11 +9,111 @@ const STATUS_CONFIG = {
     cancelled:   { label: 'Отменён',         cls: 'badge-cancelled' },
 };
 
+/* Заявки на ремонт (service_requests) — свои 4 статуса, цветовые классы
+   переиспользуются из STATUS_CONFIG выше (тот же токен-язык, см.
+   src/orders/orders.html): accepted≈new (нейтральный), ready≈shipped
+   («готово к выдаче» по смыслу то же самое, что «готово к отправке»). */
+const SERVICE_STATUS_CONFIG = {
+    accepted:    { label: 'Принята',          cls: 'badge-new' },
+    in_progress: { label: 'В работе',         cls: 'badge-in_progress' },
+    ready:       { label: 'Готова к выдаче',  cls: 'badge-shipped' },
+    issued:      { label: 'Выдана',           cls: 'badge-completed' },
+};
+
 function fmt(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
 
-function renderOrders(orders) {
+/* Карточка заявки на ремонт — через textContent/createElement, а не
+   шаблонную строку с innerHTML (как у заказов ниже): здесь показываются
+   данные, которые ввёл сам покупатель (имя инструмента, описание
+   проблемы), значит потенциально содержат произвольный текст — не HTML,
+   см. требование п.4 ТЗ. Возвращает DOM-узел, вставляется напрямую. */
+function buildServiceRequestCard(r) {
+    const st = SERVICE_STATUS_CONFIG[r.status] || { label: r.status, cls: 'badge-new' };
+    const date = new Date(r.createdAt).toLocaleString('ru-RU', {
+        day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+    });
+
+    const card = document.createElement('div');
+    card.className = 'order-card';
+
+    const type = document.createElement('span');
+    type.className = 'order-card__type';
+    type.textContent = 'Ремонт';
+    card.appendChild(type);
+
+    const header = document.createElement('div');
+    header.className = 'order-card__header';
+    const num = document.createElement('span');
+    num.className = 'order-card__num';
+    num.textContent = r.number;
+    const badge = document.createElement('span');
+    badge.className = 'order-badge ' + st.cls;
+    badge.textContent = st.label;
+    header.appendChild(num);
+    header.appendChild(badge);
+    card.appendChild(header);
+
+    const dateEl = document.createElement('div');
+    dateEl.className = 'order-card__date';
+    dateEl.textContent = date;
+    card.appendChild(dateEl);
+
+    const tools = document.createElement('div');
+    tools.className = 'order-card__tools';
+    r.items.forEach((item, i) => {
+        if (i > 0) tools.appendChild(document.createElement('br'));
+        tools.appendChild(document.createTextNode(item.toolName));
+        if (item.problem) {
+            const problem = document.createElement('span');
+            problem.className = 'order-card__tool-problem';
+            problem.textContent = ' — ' + item.problem;
+            tools.appendChild(problem);
+        }
+    });
+    card.appendChild(tools);
+
+    const store = document.createElement('div');
+    store.className = 'order-card__store';
+    store.textContent = '📍 ' + r.storeLabel;
+    card.appendChild(store);
+
+    if (r.deliveryNeeded && r.address) {
+        const addr = document.createElement('div');
+        addr.className = 'order-card__address';
+        addr.textContent = '🚗 Адрес доставки: ' + r.address;
+        card.appendChild(addr);
+    }
+
+    if (r.comment) {
+        const comment = document.createElement('div');
+        comment.className = 'order-card__store';
+        comment.textContent = '💬 ' + r.comment;
+        card.appendChild(comment);
+    }
+
+    // Стоимость/комментарий мастера — пока на этапе 1 некому заполнять
+    // (нет экрана в админке), но отображение уже готово: как только
+    // появятся cost/adminComment, карточка покажет их без правок здесь.
+    if (r.adminComment) {
+        const adminComment = document.createElement('div');
+        adminComment.className = 'order-card__admin-comment';
+        adminComment.textContent = '🔧 Комментарий мастера: ' + r.adminComment;
+        card.appendChild(adminComment);
+    }
+    if (r.cost != null) {
+        const cost = document.createElement('div');
+        cost.className = 'order-card__cost';
+        cost.textContent = fmt(r.cost);
+        card.appendChild(cost);
+    }
+
+    return card;
+}
+
+function renderOrders(orders, serviceRequests) {
+    serviceRequests = serviceRequests || [];
     const content = document.getElementById('content');
-    if (!orders.length) {
+    if (!orders.length && !serviceRequests.length) {
         content.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state__icon">${iconSvg('orders', 48)}</div>
@@ -24,7 +124,39 @@ function renderOrders(orders) {
         return;
     }
 
-    content.innerHTML = orders.map(o => {
+    // Общий список, отсортирован по дате (новые сверху) — заказы и заявки
+    // на ремонт вперемешку, как попросили («в том же списке»).
+    const combined = [
+        ...orders.map(o => ({ type: 'order', createdAt: o.createdAt, data: o })),
+        ...serviceRequests.map(r => ({ type: 'service', createdAt: r.createdAt, data: r })),
+    ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    content.innerHTML = '';
+
+    // Заказы по-прежнему строкой (innerHTML) — код не трогался, см.
+    // orderCardHtml() ниже (1-в-1 то, что раньше было инлайн в renderOrders).
+    // Оборачиваем каждую карточку по отдельности (а не весь список разом),
+    // чтобы потом переставить узлы в общем порядке combined без повторного
+    // парсинга HTML.
+    const orderWrapper = document.createElement('div');
+    const orderNodes = new Map();
+    orders.forEach(o => {
+        orderWrapper.innerHTML = orderCardHtml(o);
+        orderNodes.set(o.id, orderWrapper.firstElementChild);
+    });
+
+    combined.forEach(entry => {
+        if (entry.type === 'order') {
+            content.appendChild(orderNodes.get(entry.data.id));
+        } else {
+            content.appendChild(buildServiceRequestCard(entry.data));
+        }
+    });
+
+    attachReorderHandlers(content);
+}
+
+function orderCardHtml(o) {
         const st   = STATUS_CONFIG[o.status] || { label: o.status, cls: 'badge-new' };
         const date = new Date(o.createdAt).toLocaleString('ru-RU', {
             day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
@@ -53,8 +185,9 @@ function renderOrders(orders) {
             <div class="order-card__total">${fmt(o.total)}</div>
             <button class="reorder-btn" data-items="${itemsData}">🔄 Заказать снова</button>
         </div>`;
-    }).join('');
+}
 
+function attachReorderHandlers(content) {
     content.querySelectorAll('.reorder-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             if (btn.disabled) return;
@@ -97,11 +230,18 @@ async function init() {
     }
 
     try {
-        const r = await authFetch('/api/orders/my');
-        if (r.status === 401) { renderAuthRequired(); return; }
-        if (!r.ok) throw new Error(r.status);
-        const orders = await r.json();
-        renderOrders(orders);
+        const [ordersRes, serviceRes] = await Promise.all([
+            authFetch('/api/orders/my'),
+            authFetch('/api/service-requests/my'),
+        ]);
+        if (ordersRes.status === 401 || serviceRes.status === 401) { renderAuthRequired(); return; }
+        if (!ordersRes.ok) throw new Error(ordersRes.status);
+        const orders = await ordersRes.json();
+        // Заявки на ремонт — тем же списком, но их отсутствие/ошибка не
+        // должна прятать уже загруженные заказы: при сбое просто ничего
+        // не добавляем, не роняем всю страницу (как при !serviceRes.ok).
+        const serviceRequests = serviceRes.ok ? await serviceRes.json() : [];
+        renderOrders(orders, serviceRequests);
     } catch {
         content.innerHTML = `
             <div class="empty-state">

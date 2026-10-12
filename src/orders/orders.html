@@ -75,6 +75,17 @@
         .order-card__tracking { font-size: 13px; color: var(--accent-ink); margin: 4px 0; }
         .order-card__total { font-size: 17px; font-weight: 700; color: var(--accent-ink); }
 
+        /* ─── Заявки на ремонт (service_requests) в том же списке ──── */
+        .order-card__type {
+            font-size: 10.5px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase;
+            color: var(--accent-ink); background: rgba(var(--warning-rgb),.18);
+            padding: 2px 8px; border-radius: 7px; align-self: flex-start;
+        }
+        .order-card__tools { font-size: 13px; color: var(--text-primary); line-height: 1.5; }
+        .order-card__tool-problem { color: var(--text-secondary); }
+        .order-card__admin-comment { font-size: 13px; color: var(--text-secondary); }
+        .order-card__cost { font-size: 17px; font-weight: 700; color: var(--text-primary); }
+
         .track-btn {
             display: flex; align-items: center; justify-content: center; gap: 8px;
             height: 44px; background: rgba(14,124,107,0.15); border: 1px solid rgba(14,124,107,0.4);
@@ -214,6 +225,6 @@
 </div>
 
 <script src="/src/icons.js?v=20260930"></script>
-<script src="orders.js?v=20260530b"></script>
+<script src="orders.js?v=20261017"></script>
 </body>
 </html>

@@ -70,6 +70,31 @@ html.city-unknown #city-screen { display: flex; }
     white-space: nowrap;
     flex-shrink: 0;
 }
+/* Группа действий справа шапки (между городом и корзиной) — кнопка
+   «Ремонт» + корзина рядом, а не раскиданы по justify-content:space-between
+   самой .header (с одной кнопкой между ними зазоры бы гуляли). */
+.header__actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+.header__repair {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    width: 44px; height: 44px;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 9.5px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background .15s;
+    flex-shrink: 0;
+}
+.header__repair:active { background: rgba(var(--ink-rgb),.08); }
 .header__cart {
     position: relative;
     width: 42px; height: 42px;

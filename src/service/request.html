@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Точка Монтажа — Заявка на ремонт</title>
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
+    <script src="/src/shopGuard.js"></script>
+    <script src="/src/utils/tgid.js?v=20260530b"></script>
+    <script src="/src/utils/authFetch.js?v=20261003"></script>
+    <style>
+        @import url('/src/theme.css');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-page);
+            color: var(--text-primary);
+            min-height: 100dvh;
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button { cursor: pointer; border: none; background: none; font: inherit; }
+        a { text-decoration: none; color: inherit; }
+        .hidden { display: none !important; }
+
+        .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; }
+
+        /* ─── Header (тот же паттерн, что в catalog.css/checkout.css —
+           заливка акцентом целиком, а не весь фон, см. сессию color-system) ── */
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center;
+            height: var(--header-h);
+            padding: 0 8px 0 4px;
+            background: var(--bg-card);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+        }
+        .header__back {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; color: var(--text-primary); flex-shrink: 0;
+        }
+        .header__back:active { background: rgba(var(--ink-rgb),.08); }
+        .header__title {
+            flex: 1; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: -.2px;
+            color: var(--text-primary);
+        }
+        .header__placeholder { width: 44px; flex-shrink: 0; }
+
+        .content { padding: 16px 12px calc(96px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 16px; }
+
+        .section__title {
+            font-size: 13px; font-weight: 600; color: var(--accent-ink);
+            text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
+        }
+        .section__optional { font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: 0; color: rgba(var(--ink-rgb),0.5); }
+        .card { background: var(--bg-card); box-shadow: var(--card-shadow); border-radius: var(--radius-md); padding: 16px; }
+
+        .field { margin-bottom: 14px; }
+        .field:last-child { margin-bottom: 0; }
+        .field__label { display: block; font-size: 12px; font-weight: 600; color: var(--accent-ink); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+        .field__input, .field__select, .field__textarea {
+            display: block; width: 100%; border: 1.5px solid var(--border); outline: none;
+            font-size: 16px; color: var(--text-primary); background: var(--bg-input);
+            padding: 12px; border-radius: var(--radius-sm); font-family: inherit;
+        }
+        .field__textarea { resize: none; line-height: 1.5; }
+        .field__input::placeholder, .field__textarea::placeholder { color: rgba(var(--ink-rgb),0.4); }
+        .field__select { appearance: none; -webkit-appearance: none; }
+        .field__error { display: block; font-size: 12px; color: var(--red); margin-top: 4px; min-height: 16px; }
+        .field--error .field__input,
+        .field--error .field__select,
+        .field--error .field__textarea { color: var(--red); border-color: var(--red); }
+        .field--error .field__label { color: var(--red); }
+
+        /* ─── Инструменты ───────────────────────────────────── */
+        .tool-row {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .tool-row__head {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .tool-row__label { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .4px; }
+        .tool-row__remove {
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--red);
+        }
+        .tool-row__remove:active { background: rgba(var(--red-rgb),.12); }
+        .tool-row .field { margin-bottom: 8px; }
+        .tool-row .field:last-child { margin-bottom: 0; }
+
+        .add-tool-btn {
+            width: 100%; height: 46px;
+            border: 1.5px dashed var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--accent-ink);
+            font-size: 14px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .add-tool-btn:active { background: rgba(var(--ink-rgb),.05); }
+        .add-tool-btn:disabled { opacity: .4; cursor: not-allowed; }
+        .tools-hint { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+        /* ─── Переключатель доставки ────────────────────────── */
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .toggle-row__label { font-size: 14px; color: var(--text-primary); line-height: 1.4; }
+        .toggle { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+        .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .toggle__slider {
+            position: absolute; inset: 0;
+            background: var(--bg-secondary);
+            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            transition: background .2s, border-color .2s;
+            cursor: pointer;
+        }
+        .toggle__slider::before {
+            content: '';
+            position: absolute;
+            width: 20px; height: 20px;
+            left: 2px; top: 2px;
+            background: var(--bg-card);
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,.25);
+            transition: transform .2s;
+        }
+        .toggle input:checked + .toggle__slider { background: var(--accent); border-color: var(--accent); }
+        .toggle input:checked + .toggle__slider::before { transform: translateX(20px); }
+
+        .address-field { margin-top: 14px; }
+
+        /* ─── Согласие (тот же паттерн, что checkout.html .legal-check) ── */
+        .legal-check { display: flex; gap: 10px; align-items: flex-start; color: rgba(var(--ink-rgb),0.75); font-size: 13px; cursor: pointer; line-height: 1.5; }
+        .legal-check input { margin-top: 3px; flex-shrink: 0; }
+        .legal-check a { color: var(--accent-ink); text-decoration: underline; }
+
+        /* ─── Sticky submit footer ──────────────────────────── */
+        .submit-footer {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 480px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+        }
+        .submit-btn {
+            width: 100%; height: 50px;
+            background: var(--accent); color: var(--accent-ink);
+            border-radius: var(--radius-md); font-size: 16px; font-weight: 700; letter-spacing: .1px;
+            transition: background .15s, transform .1s, opacity .15s;
+        }
+        .submit-btn:active { background: var(--accent-press); transform: scale(.98); }
+        .submit-btn--disabled { opacity: .35; cursor: not-allowed; }
+        .submit-btn--disabled:active { transform: none; background: var(--accent); }
+        .submit-error { font-size: 13px; color: var(--red); text-align: center; margin-top: 8px; }
+
+        /* ─── Success screen ────────────────────────────────── */
+        .success-screen {
+            position: fixed; inset: 0; z-index: 2000;
+            background: var(--bg-page);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 24px; text-align: center; gap: 12px;
+        }
+        .success-icon { color: var(--success); }
+        .success-title { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+        .success-sub { font-size: 14px; color: var(--text-secondary); line-height: 1.5; max-width: 320px; }
+        .success-btn {
+            margin-top: 12px; padding: 12px 28px;
+            background: var(--accent); color: var(--accent-ink);
+            border-radius: var(--radius-md); font-size: 15px; font-weight: 700;
+        }
+
+        /* ─── Auth-required ─────────────────────────────────── */
+        .auth-required { padding: 80px 24px; text-align: center; color: var(--text-secondary); }
+        .auth-required__title { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+<div class="app" id="app">
+
+    <header class="header">
+        <button class="header__back" onclick="history.back()" aria-label="Назад">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <span class="header__title">Заявка на ремонт</span>
+        <span class="header__placeholder"></span>
+    </header>
+
+    <div id="authRequired" class="auth-required hidden">
+        <p class="auth-required__title">Доступно только в Max</p>
+        <p>Откройте магазин через бота в Max Messenger, чтобы оформить заявку на ремонт</p>
+    </div>
+
+    <form id="requestForm" class="content" novalidate>
+
+        <section>
+            <h2 class="section__title">Контакты</h2>
+            <div class="card">
+                <div class="field" id="fieldName">
+                    <label class="field__label" for="inputName">Имя *</label>
+                    <input class="field__input" type="text" id="inputName" placeholder="Как к вам обращаться" maxlength="100" autocomplete="name">
+                    <span class="field__error"></span>
+                </div>
+                <div class="field" id="fieldPhone">
+                    <label class="field__label" for="inputPhone">Телефон *</label>
+                    <input class="field__input" type="tel" id="inputPhone" placeholder="+7 (___) ___-__-__" inputmode="numeric" autocomplete="tel"
+                           oninput="handlePhone(this)" onkeydown="handlePhoneKeydown(this, event)">
+                    <span class="field__error"></span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section__title">Магазин, куда сдать инструмент</h2>
+            <div class="card">
+                <div class="field" id="fieldStore" style="margin-bottom:0">
+                    <select class="field__select" id="inputStore">
+                        <option value="krd_selezneva">Краснодар — ул. Селезнева, 4/10</option>
+                        <option value="krd_kotlyarova">Краснодар — ул. Котлярова, 21</option>
+                        <option value="msk_maevka">Москва — Аллея Первой Маевки, 15</option>
+                    </select>
+                    <span class="field__error"></span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section__title">Инструменты <span class="section__optional">до 10 штук</span></h2>
+            <div id="toolsList"></div>
+            <button type="button" class="add-tool-btn" id="addToolBtn" onclick="addToolRow()">+ Добавить ещё инструмент</button>
+            <p class="tools-hint" id="toolsHint"></p>
+        </section>
+
+        <section>
+            <div class="card">
+                <div class="toggle-row">
+                    <span class="toggle-row__label">Нужна доставка<br><span style="color:var(--text-secondary);font-size:12px">Заберём инструмент и привезём после ремонта</span></span>
+                    <label class="toggle">
+                        <input type="checkbox" id="inputDeliveryNeeded" onchange="handleDeliveryToggle()">
+                        <span class="toggle__slider"></span>
+                    </label>
+                </div>
+                <div class="field address-field hidden" id="fieldAddress">
+                    <label class="field__label" for="inputAddress">Адрес *</label>
+                    <textarea class="field__textarea" id="inputAddress" rows="2" maxlength="300" placeholder="Город, улица, дом, квартира"></textarea>
+                    <span class="field__error"></span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section__title">Комментарий <span class="section__optional">необязательно</span></h2>
+            <div class="card">
+                <textarea class="field__textarea" id="inputComment" rows="3" maxlength="1000" placeholder="Любые уточнения к заявке"></textarea>
+            </div>
+        </section>
+
+        <section>
+            <label class="legal-check">
+                <input type="checkbox" id="agreePolicy" onchange="handleLegalCheck()">
+                <span>Я даю согласие на обработку моих персональных данных в соответствии с <a href="/src/legal/policy.html" target="_blank">Политикой обработки персональных данных</a></span>
+            </label>
+        </section>
+
+    </form>
+
+    <div class="submit-footer">
+        <button class="submit-btn submit-btn--disabled" id="submitBtn" disabled onclick="submitRequest()">Отправить заявку</button>
+        <p class="submit-error hidden" id="submitError"></p>
+    </div>
+
+    <div class="success-screen hidden" id="successScreen">
+        <div class="success-icon">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <path d="m8 12 3 3 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <p class="success-title" id="successTitle">Заявка принята</p>
+        <p class="success-sub">Мы свяжемся с вами по указанному телефону, чтобы уточнить детали.</p>
+        <a href="../orders/orders.html" class="success-btn">Мои заказы</a>
+    </div>
+
+</div>
+<script src="request.js?v=20261017"></script>
+</body>
+</html>

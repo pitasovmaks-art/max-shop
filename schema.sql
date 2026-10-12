@@ -125,6 +125,49 @@ CREATE TABLE IF NOT EXISTS orders (
     tracking_number TEXT
 );
 
+-- ─── Заявки на ремонт/обслуживание инструмента ──────────────────────────
+-- Этап 1 (см. PROGRESS.md): создание заявки покупателем + уведомление
+-- менеджера магазина. Назначение стоимости/мастера/статуса — этап 2,
+-- полей для них (cost, admin_comment) здесь уже достаточно.
+CREATE TABLE IF NOT EXISTS service_requests (
+    id              SERIAL  PRIMARY KEY,
+    tg_id           TEXT    NOT NULL,   -- MAX user id (как у orders.tg_id), из requireUser
+    name            TEXT    NOT NULL,
+    phone           TEXT    NOT NULL,
+    store           TEXT    NOT NULL,   -- код магазина, см. SERVICE_STORES в server/routes/service-requests.js
+    delivery_needed INTEGER NOT NULL DEFAULT 0,
+    address         TEXT,               -- обязателен, если delivery_needed=1 (проверяется в роуте)
+    comment         TEXT,
+    status          TEXT    NOT NULL DEFAULT 'accepted',  -- accepted|in_progress|ready|issued
+    cost            INTEGER,            -- NULL, пока мастер не оценит — этап 2
+    admin_comment   TEXT,               -- NULL, комментарий мастера — этап 2
+    created_at      TEXT    NOT NULL DEFAULT TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+    updated_at      TEXT    NOT NULL DEFAULT TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+);
+
+-- Номер для показа («Р-123») не хранится отдельным столбцом — это просто
+-- 'Р-' + id, вычисляется при чтении (см. normalize() в роуте); отдельная
+-- колонка потребовала бы двухшагового INSERT (узнать id → обновить номер)
+-- без какой-либо дополнительной гарантии, которую не даёт сам id.
+
+CREATE TABLE IF NOT EXISTS service_request_items (
+    id         SERIAL  PRIMARY KEY,
+    request_id INTEGER NOT NULL REFERENCES service_requests(id) ON DELETE CASCADE,
+    tool_name  TEXT    NOT NULL,
+    problem    TEXT
+);
+
+-- История смены статуса заявки. changed_by: 'system' для начальной записи
+-- при создании (status='accepted'), логин/метка админа — когда появится
+-- смена статуса из админки (этап 2, здесь не реализовывалось).
+CREATE TABLE IF NOT EXISTS service_request_events (
+    id         SERIAL  PRIMARY KEY,
+    request_id INTEGER NOT NULL REFERENCES service_requests(id) ON DELETE CASCADE,
+    status     TEXT    NOT NULL,
+    changed_by TEXT    NOT NULL DEFAULT 'system',
+    created_at TEXT    NOT NULL DEFAULT TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+);
+
 CREATE TABLE IF NOT EXISTS stores (
     id         SERIAL  PRIMARY KEY,
     name       TEXT    NOT NULL,
