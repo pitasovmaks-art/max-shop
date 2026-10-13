@@ -895,6 +895,33 @@ function _renderBannerSkeleton() {
    баннеры и не пустота. Нейтральные HOME_BANNERS показываются только
    после того, как запрос реально завершился пустым ответом или упал —
    не как стартовое состояние. */
+/* ─── Скрытая активация диагностики свайпа (src/catalog/bannerDebug.js) ───
+   У шапки нет отдельного лого/названия магазина — используем её пустой
+   фон (именно `e.target === header`, не кнопки города/ремонта/корзины:
+   слушатель на самой .header, с проверкой, что нажали мимо детей). 7
+   нажатий за 3с переключают localStorage.bannerDebug и перезагружают
+   страницу — тот же жест включает и выключает. Сам хук ничего не знает
+   о состоянии карусели, только переключает флаг; вся логика диагностики —
+   в отдельном файле, подгружаемом динамически ТОЛЬКО если флаг включён
+   (ТЗ: не раздувать catalog.js, не экспонировать _bannerState и т.п.). */
+let _bannerDebugTapTimes = [];
+function _bannerDebugTapHook() {
+    const header = document.querySelector('.header');
+    if (!header) return;
+    header.addEventListener('pointerdown', (e) => {
+        if (e.target !== header) return;
+        const now = performance.now();
+        _bannerDebugTapTimes = _bannerDebugTapTimes.filter(t => now - t < 3000);
+        _bannerDebugTapTimes.push(now);
+        if (_bannerDebugTapTimes.length >= 7) {
+            _bannerDebugTapTimes = [];
+            if (localStorage.getItem('bannerDebug') === '1') localStorage.removeItem('bannerDebug');
+            else localStorage.setItem('bannerDebug', '1');
+            location.reload();
+        }
+    }, { passive: true });
+}
+
 async function initBanner() {
     const track = document.getElementById('bannerTrack');
     const dots  = document.getElementById('bannerDots');
@@ -903,6 +930,13 @@ async function initBanner() {
     // первая проверка уже выходит раньше; вторая — на случай будущих
     // правок разметки, когда контейнер появится, а скрипт ещё нет).
     if (!track || !dots || !window.BannerRender) return;
+
+    _bannerDebugTapHook();
+    if (localStorage.getItem('bannerDebug') === '1') {
+        const s = document.createElement('script');
+        s.src = 'src/catalog/bannerDebug.js?v=20261019';
+        document.head.appendChild(s);
+    }
 
     const cached = loadBannersCache();
     if (cached !== undefined) {
