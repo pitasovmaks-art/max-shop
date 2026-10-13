@@ -1289,55 +1289,30 @@ button.product-row__hit:active  { opacity: .7; }
 .order-status--shipped { background: rgba(232,185,58,.15); color: var(--brand-accent); }
 .variant-block .ff__hint { font-size: 11px; }
 
-/* ─── File uploader (seller-cabinet: Загрузка данных) ────── */
-.uploader-list { padding: 12px 12px 8px; display:flex; flex-direction:column; gap:10px; }
-.uploader-card { background:var(--white); border-radius:var(--radius); box-shadow:var(--card-shadow); padding:14px; }
-.uploader-card__title { font-size:15px; font-weight:600; margin-bottom:4px; }
-.uploader-card__desc  { font-size:12px; color:var(--gray); line-height:1.4; }
-.uploader-card__body  { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-top:12px; }
-.uploader-btn {
-    display:inline-flex; align-items:center; justify-content:center;
-    height:40px; padding:0 16px;
-    background:#FFFFFF; color:#000000;
-    border-radius:10px; font-size:13px; font-weight:600;
-    cursor:pointer; transition:background .15s, transform .1s;
-}
-.uploader-btn:active { background:#DDDDDD; transform:scale(.97); }
-.uploader-btn--danger { background:var(--red); color:#FFFFFF; border:none; }
-.uploader-btn--danger:active { background:#C8302A; }
-.uploader-btn--danger:disabled { opacity:.5; cursor:default; }
-.uploader-result { font-size:13px; }
-.uploader-result__pending { color:var(--gray); }
-.uploader-result__ok {
-    display:inline-flex; align-items:center; gap:6px;
-    color:var(--green); font-weight:600;
-}
-.uploader-result__error { color:var(--red); }
+/* ─── Service requests (заявки на ремонт, вкладка «Сервис», этап 2) ───
+   Карточки списка и фильтры переиспользуют .order-card*/.order-filter-sel
+   (те же метрики, другой набор статусов — см. .sr-status--* ниже).
+   Детальная карточка переиспользует .overlay/.sheet/.ff — тот же шелл,
+   что у форм магазина/категории/баннера. Сам текст карточек и шторки
+   собирается в JS через createElement/textContent (см.
+   admin/serviceRequests.js) — здесь только раскладка контейнеров. */
+.sr-status--accepted    { background: #0D1E2E; color: #4D9EFF; }
+.sr-status--in_progress { background: #2A2018; color: #F5A800; }
+.sr-status--ready       { background: #0D2A1A; color: #34C759; }
+.sr-status--issued      { background: rgba(255,255,255,.12); color: var(--gray); }
 
-.uploader-history { padding: 4px 12px calc(var(--nav-h) + 24px); }
-.uploader-history__header {
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    margin:8px 0 10px;
-}
-.uploader-history__title { font-size:15px; font-weight:600; margin:0; }
-.uploader-history__table {
-    background:var(--white); border-radius:var(--radius); box-shadow:var(--card-shadow);
-    overflow:hidden; font-size:12px;
-}
-.uploader-history__row {
-    display:grid; grid-template-columns: 1.1fr 1fr 1.4fr .6fr .9fr;
-    gap:8px; padding:10px 12px; align-items:center;
-    border-bottom:1px solid var(--border);
-}
-.uploader-history__row:last-child { border-bottom:none; }
-.uploader-history__row--head { color:var(--gray); font-weight:600; font-size:11px; text-transform:uppercase; }
-.uploader-history__filename {
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
-.uploader-history__status { font-weight:600; }
-.uploader-history__status--success { color:var(--green); }
-.uploader-history__status--error   { color:var(--red); }
-.uploader-history__empty { padding:20px 12px; text-align:center; color:var(--gray); font-size:13px; }
+.sr-card__tools { font-size: 13px; color: var(--dark); line-height: 1.5; border-top: 1px solid var(--border); padding-top: 8px; }
+.sr-card__tool-problem { color: var(--gray); font-size: 12px; }
+
+.sr-detail-info { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; font-size: 13px; }
+.sr-detail-row { display: flex; gap: 6px; }
+.sr-detail-row__label { color: var(--gray); flex-shrink: 0; }
+.sr-detail-row__value { color: var(--dark); word-break: break-word; }
+.sr-detail-tools { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 2px; }
+
+.sr-detail-history__title { font-size: 14px; font-weight: 600; margin: 16px 0 8px; }
+.sr-detail-history { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--gray); }
+.sr-detail-history__empty { color: var(--gray); font-size: 12px; }
 
 /* ─── Exports section ───────────────────────────────────── */
 .exports-section {

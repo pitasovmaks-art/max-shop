@@ -54,7 +54,7 @@ app.use((req, res, next) => {
 
 /* Block direct desktop-browser access — mini-app is Max-only (mobile WebView).
    /public и /src исключены отдельно от /admin, потому что это статические
-   ассеты (логотип, FileUploader.js и т.п.), которые /admin грузит через
+   ассеты (логотип, bannerRender.js и т.п.), которые /admin грузит через
    отдельные HTTP-запросы со своим req.path — без этого исключения они
    получали 404 на десктопе, хотя сама страница /admin была разрешена. */
 app.use((req, res, next) => {

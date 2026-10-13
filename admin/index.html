@@ -80,7 +80,7 @@
         <button class="tab-btn" id="tabOrders" onclick="switchTab('orders')">Заказы</button>
         <button class="tab-btn" id="tabStores" onclick="switchTab('stores')">Магазины</button>
         <button class="tab-btn" id="tabBanners" onclick="switchTab('banners')">Баннеры</button>
-        <button class="tab-btn" id="tabUploads" onclick="switchTab('uploads')">📤 Загрузка данных</button>
+        <button class="tab-btn" id="tabService" onclick="switchTab('service')">🔧 Сервис</button>
         <button class="tab-btn" id="tabExports" onclick="switchTab('exports')">📥 Экспорт файлов</button>
     </div>
 
@@ -183,8 +183,20 @@
         </button>
     </div><!-- /sectionBanners -->
 
-    <!-- Uploads section -->
-    <div id="sectionUploads" class="hidden"></div><!-- /sectionUploads -->
+    <!-- Service requests section (заявки на ремонт, этап 2) -->
+    <div id="sectionService" class="hidden">
+        <div id="srFilters"></div>
+        <div class="search-wrap">
+            <div class="search-bar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                    <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input type="text" class="search-input" id="srSearchInput" placeholder="Поиск по номеру или телефону..." oninput="srSetSearch(this.value)">
+            </div>
+        </div>
+        <div id="srList"></div>
+    </div><!-- /sectionService -->
 
     <!-- Exports section -->
     <div id="sectionExports" class="hidden">
@@ -555,6 +567,63 @@
     </div><!-- /sheet -->
 </div><!-- /storeFormOverlay -->
 
+<!-- Service request detail/edit sheet (этап 2 заявок на ремонт) ─────────
+     #srDetailInfo и #srDetailHistory заполняются из JS через
+     createElement/textContent (данные клиента — не innerHTML, см.
+     admin/serviceRequests.js). Статус/стоимость/комментарий мастера —
+     обычные контролы формы, без пользовательского текста в разметке. -->
+<div class="overlay hidden" id="srDetailOverlay" onclick="handleSrDetailOverlayClick(event)">
+    <div class="sheet">
+        <div class="sheet__handle"></div>
+        <div class="sheet__header">
+            <button class="sheet__close" onclick="closeSrDetail()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <span class="sheet__title" id="srDetailTitle">Заявка</span>
+            <span class="sheet__placeholder"></span>
+        </div>
+
+        <div class="sheet__body">
+
+            <div id="srDetailInfo" class="sr-detail-info"></div>
+
+            <!-- Status -->
+            <div class="ff">
+                <label class="ff__label" for="sr-status">Статус</label>
+                <select class="ff__input" id="sr-status">
+                    <option value="accepted">Принята</option>
+                    <option value="in_progress">В работе</option>
+                    <option value="ready">Готова к выдаче</option>
+                    <option value="issued">Выдана</option>
+                </select>
+            </div>
+
+            <!-- Cost -->
+            <div class="ff">
+                <label class="ff__label" for="sr-cost">Стоимость, ₽</label>
+                <input class="ff__input" id="sr-cost" type="number" min="0" step="1" placeholder="Можно оставить пустым">
+            </div>
+
+            <!-- Master comment -->
+            <div class="ff">
+                <label class="ff__label" for="sr-admin-comment">Комментарий мастера</label>
+                <textarea class="ff__input" id="sr-admin-comment" rows="3"
+                    placeholder="Какая работа проделана..."
+                    style="resize:vertical;min-height:80px;padding-top:10px"></textarea>
+            </div>
+
+            <button class="save-btn" onclick="saveSrDetail()">Сохранить</button>
+
+            <div class="sr-detail-history__title">История статусов</div>
+            <div id="srDetailHistory" class="sr-detail-history"></div>
+
+        </div><!-- /sheet__body -->
+    </div><!-- /sheet -->
+</div><!-- /srDetailOverlay -->
+
 <!-- Banner form overlay -->
 <div class="overlay hidden" id="bannerFormOverlay" onclick="handleBannerFormOverlayClick(event)">
     <div class="sheet">
@@ -727,7 +796,7 @@
 <script src="stores.js"></script>
 <script src="../src/shared/bannerRender.js?v=20261016"></script>
 <script src="banners.js"></script>
-<script src="../src/components/FileUploader.js"></script>
-<script src="admin.js?v=6"></script>
+<script src="serviceRequests.js"></script>
+<script src="admin.js?v=7"></script>
 </body>
 </html>

@@ -1,7 +1,8 @@
 const router           = require('express').Router();
 const db               = require('../db');
 const { requireUser }  = require('../middleware/requireUser');
-const { notifyServiceRequest } = require('../../bot');
+const { requireAdmin } = require('../middleware/auth');
+const { notifyServiceRequest, notifyServiceRequestStatus } = require('../../bot');
 
 /* ─── Магазины, куда можно сдать инструмент на ремонт ───────────────────
    Единственное место, где перечислены допустимые коды (валидация ниже) и
@@ -20,6 +21,8 @@ const STATUS_LABELS = {
     ready:       'Готова к выдаче',
     issued:      'Выдана',
 };
+const ADMIN_STATUSES = Object.keys(STATUS_LABELS); // порядок для UI: accepted -> in_progress -> ready -> issued
+const MAX_COST        = 10000000; // разумный верхний предел, только чтобы отсечь мусорный ввод
 
 const MAX_ITEMS        = 10;
 const MAX_NAME_LEN     = 100;
@@ -196,10 +199,130 @@ router.get('/my', requireUser, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+/* GET /api/service-requests/admin — admin only, все заявки, новые сверху.
+   Регистрируется ДО /:id — иначе Express принял бы "admin" за значение
+   :id и отдал бы его requireUser-роуту (у неё ниже ровно этот же риск
+   устранён для /my, тем же порядком регистрации). Фильтры по статусу/
+   магазину и поиск по номеру/телефону — на клиенте (как и у /api/orders —
+   список не настолько большой, чтобы делать это на сервере). */
+router.get('/admin', requireAdmin, async (req, res) => {
+    try {
+        const rows = await db.query('SELECT * FROM service_requests ORDER BY id DESC');
+        const itemsByRequest = await loadItems(rows.map(r => r.id));
+        res.json(rows.map(r => normalizeRequest(r, itemsByRequest[r.id])));
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* GET /api/service-requests/admin/:id — admin only, с полной историей
+   статусов (которую покупателю в /api/service-requests/:id не отдаём —
+   там этой потребности нет, и changed_by='admin' там было бы лишним
+   раскрытием внутренней механики). */
+router.get('/admin/:id', requireAdmin, async (req, res) => {
+    const id = +req.params.id;
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid id' });
+    try {
+        const row = await db.queryOne('SELECT * FROM service_requests WHERE id=$1', [id]);
+        if (!row) return res.status(404).json({ error: 'Not found' });
+        const items  = await db.query('SELECT * FROM service_request_items WHERE request_id=$1 ORDER BY id', [id]);
+        const events = await db.query(
+            'SELECT status, changed_by, created_at FROM service_request_events WHERE request_id=$1 ORDER BY id',
+            [id]
+        );
+        res.json({ ...normalizeRequest(row, items), events });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* PUT /api/service-requests/admin/:id — admin only: статус, стоимость,
+   комментарий мастера. Любое подмножество полей — только переданные
+   реально пишутся (динамический SET, без COALESCE: для cost/adminComment
+   COALESCE не отличил бы "не передано" от "явно очистить в NULL", а
+   очистка — законный сценарий, не только у title/subtitle баннеров).
+   Уведомление клиенту — одно сообщение на вызов, собирается только из
+   полей, которые РЕАЛЬНО изменились по сравнению с БД (before/after) —
+   это и даёт «без дублей, если значение не изменилось» без отдельного
+   флага: если всё совпало с тем, что уже было, changes останется пустым
+   и notifyServiceRequestStatus вообще не вызовется. */
+router.put('/admin/:id', requireAdmin, async (req, res) => {
+    const id = +req.params.id;
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid id' });
+
+    const body = req.body || {};
+    const sets = [];
+    const params = [];
+    let touchesStatus = false, touchesCost = false, touchesComment = false;
+    let nextStatus, nextCost, nextAdminComment;
+
+    if (body.status !== undefined) {
+        if (!ADMIN_STATUSES.includes(body.status)) return res.status(400).json({ error: 'Некорректный статус' });
+        touchesStatus = true;
+        nextStatus = body.status;
+        params.push(nextStatus);
+        sets.push(`status=$${params.length}`);
+    }
+    if (body.cost !== undefined) {
+        if (body.cost === null || body.cost === '') {
+            nextCost = null;
+        } else {
+            const n = Number(body.cost);
+            if (!Number.isFinite(n) || n < 0 || n > MAX_COST) return res.status(400).json({ error: 'Некорректная стоимость' });
+            nextCost = Math.round(n);
+        }
+        touchesCost = true;
+        params.push(nextCost);
+        sets.push(`cost=$${params.length}`);
+    }
+    if (body.adminComment !== undefined) {
+        const c = typeof body.adminComment === 'string' ? body.adminComment.trim() : '';
+        if (c.length > MAX_COMMENT_LEN) return res.status(400).json({ error: `Комментарий мастера не длиннее ${MAX_COMMENT_LEN} символов` });
+        nextAdminComment = c || null;
+        touchesComment = true;
+        params.push(nextAdminComment);
+        sets.push(`admin_comment=$${params.length}`);
+    }
+    if (!sets.length) return res.status(400).json({ error: 'Нечего сохранять' });
+
+    sets.push(`updated_at=TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`);
+    params.push(id);
+
+    try {
+        const before = await db.queryOne('SELECT * FROM service_requests WHERE id=$1', [id]);
+        if (!before) return res.status(404).json({ error: 'Not found' });
+
+        await db.execute(`UPDATE service_requests SET ${sets.join(',')} WHERE id=$${params.length}`, params);
+
+        const changes = {};
+        if (touchesStatus && nextStatus !== before.status) changes.status = nextStatus;
+        if (touchesCost && nextCost !== (before.cost ?? null)) changes.cost = nextCost;
+        if (touchesComment && nextAdminComment !== (before.admin_comment ?? null)) changes.adminComment = nextAdminComment;
+
+        if (changes.status) {
+            await db.execute(
+                `INSERT INTO service_request_events (request_id, status, changed_by) VALUES ($1,$2,'admin')`,
+                [id, changes.status]
+            );
+        }
+
+        const after  = await db.queryOne('SELECT * FROM service_requests WHERE id=$1', [id]);
+        const items  = await db.query('SELECT * FROM service_request_items WHERE request_id=$1 ORDER BY id', [id]);
+        const normalized = normalizeRequest(after, items);
+
+        if (Object.keys(changes).length && after.tg_id) {
+            // Не блокируем ответ админу отправкой уведомления — тот же
+            // приём, что у notifyServiceRequest при создании заявки.
+            notifyServiceRequestStatus(after.tg_id, normalized, changes)
+                .catch(e => console.error('[bot] notifyServiceRequestStatus:', e.message));
+        }
+
+        res.json(normalized);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 /* GET /api/service-requests/:id — своя заявка. tg_id проверяется прямо в
    WHERE (не отдельной проверкой после выборки) — чужая заявка и
    несуществующая заявка неотличимы снаружи (404 в обоих случаях), не
-   раскрывают, существует ли чей-то чужой id. */
+   раскрывают, существует ли чей-то чужой id. Регистрируется ПОСЛЕ
+   /admin и /admin/:id (см. комментарий там) — иначе этот роут перехватил
+   бы "admin" как значение :id. */
 router.get('/:id', requireUser, async (req, res) => {
     const id = +req.params.id;
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid id' });

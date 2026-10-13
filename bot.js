@@ -440,6 +440,77 @@ async function notifyCustomer(tgId, orderId, status, extra) {
     }
 }
 
+/* ─── Notify customer about service-request status/cost/comment change ───
+   Та же устойчивость, что у notifyCustomer выше: сначала пробуем tgId
+   прямо как chat_id, при неудаче — ищем chat_id через user_map (тот же
+   маппинг userId→chatId, заполняемый из входящих сообщений боту, см.
+   processUpdate() выше, и используемый notifyCustomer/notifyStock).
+   Если и так не нашли — молча сдаёмся: ошибка уже залогирована, а
+   клиент в любом случае видит статус/стоимость/комментарий мастера в
+   «Мои заказы» (там заявки на ремонт уже показываются, см. PROGRESS.md,
+   сессия service-requests) независимо от того, дошло ли сообщение. */
+const SERVICE_REQUEST_STATUS_LABELS = {
+    accepted:    'Принята',
+    in_progress: 'В работе',
+    ready:       'Готова к выдаче',
+    issued:      'Выдана',
+};
+
+async function notifyServiceRequestStatus(tgId, request, changes) {
+    if (!TOKEN || !tgId) return;
+
+    const parts = [`🔧 Заявка на ремонт ${request.number}`];
+    if (changes.status) {
+        parts.push(`Статус: ${SERVICE_REQUEST_STATUS_LABELS[changes.status] || changes.status}`);
+        if (changes.status === 'ready') {
+            parts.push(
+                request.deliveryNeeded
+                    ? `🚚 Доставим по адресу: ${request.address || 'уточним с вами'}`
+                    : `🏪 Можно забрать в магазине: ${request.storeLabel}`
+            );
+        }
+    }
+    if (Object.prototype.hasOwnProperty.call(changes, 'cost')) {
+        parts.push(changes.cost == null
+            ? '💰 Стоимость пока не указана'
+            : `💰 Стоимость: ${changes.cost.toLocaleString('ru-RU')} ₽`);
+    }
+    if (Object.prototype.hasOwnProperty.call(changes, 'adminComment')) {
+        parts.push(changes.adminComment
+            ? `💬 Комментарий мастера: ${changes.adminComment}`
+            : '💬 Комментарий мастера удалён');
+    }
+    const text = parts.join('\n');
+
+    const trySend = async (id) => {
+        const result = await sendMessage(+id, text);
+        console.log(`[bot] notifyServiceRequestStatus OK: tg_id=${tgId} chat=${id} request=${request.number}`, result);
+    };
+
+    try {
+        await trySend(tgId);
+    } catch (e) {
+        console.error(`[bot] notifyServiceRequestStatus FAIL first try: tg_id=${tgId}`, e.message);
+        try {
+            const base = process.env.WEBHOOK_URL
+                ? process.env.WEBHOOK_URL.replace('/webhook', '')
+                : 'http://localhost:3000';
+            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            if (r.ok) {
+                const data = await r.json();
+                if (data.chatId && data.chatId !== String(tgId)) {
+                    console.log(`[bot] notifyServiceRequestStatus retry with chatId=${data.chatId}`);
+                    await trySend(data.chatId);
+                    return;
+                }
+            }
+        } catch (e2) {
+            console.error(`[bot] notifyServiceRequestStatus user_map lookup failed:`, e2.message);
+        }
+        console.error(`[bot] notifyServiceRequestStatus FAIL final: tg_id=${tgId} request=${request.number}`, e.message);
+    }
+}
+
 /* ─── Notify: back in stock ─────────────────────────────── */
 async function notifyStock(tgId, productName) {
     if (!TOKEN || !tgId) return;
@@ -513,4 +584,4 @@ function startBot() {
     registerWebhook();
 }
 
-module.exports = { startBot, notifyStore, processUpdate, notifyCustomer, notifyStock, notifyPromo, notifyServiceRequest, SERVICE_REQUEST_MANAGERS };
+module.exports = { startBot, notifyStore, processUpdate, notifyCustomer, notifyStock, notifyPromo, notifyServiceRequest, notifyServiceRequestStatus, SERVICE_REQUEST_MANAGERS };
