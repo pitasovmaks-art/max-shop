@@ -58,8 +58,8 @@ function buildSignedInitData(user, botToken, authDate) {
    до того как ниже подменим require.cache для роута. ──────────────── */
 const realBot = require('../../bot');
 const SERVICE_REQUEST_MANAGERS = realBot.SERVICE_REQUEST_MANAGERS;
-const MAKSIM_ID       = 5149723;
-const ALEXANDER_ID    = 100067838;
+const MAKSIM_ID       = 315827109; // chat_id из CITY_MANAGERS.krd — рабочий для ЭТОГО бота (см. bot.js)
+const ALEXANDER_ID    = 392912448; // chat_id из CITY_MANAGERS.msk
 const KOTLYAROVA_EMPLOYEE_ID = 403249437; // ему заявки на ремонт видеть нельзя
 
 /* ─── Подмена bot.js для самого роута (шпион вместо реальной отправки) ── */
@@ -154,11 +154,11 @@ async function main() {
     }
 
     /* ── Привязка магазин → получатель (на настоящем bot.js) ───────── */
-    check('SERVICE_REQUEST_MANAGERS.krd_selezneva -> Максим (5149723)',
+    check('SERVICE_REQUEST_MANAGERS.krd_selezneva -> Максим (315827109, тот же chat_id, что у CITY_MANAGERS.krd)',
         SERVICE_REQUEST_MANAGERS.krd_selezneva === MAKSIM_ID);
-    check('SERVICE_REQUEST_MANAGERS.krd_kotlyarova -> Максим (5149723), НЕ сотрудник Котлярова',
+    check('SERVICE_REQUEST_MANAGERS.krd_kotlyarova -> Максим (315827109), НЕ сотрудник Котлярова',
         SERVICE_REQUEST_MANAGERS.krd_kotlyarova === MAKSIM_ID);
-    check('SERVICE_REQUEST_MANAGERS.msk_maevka -> Александр (100067838)',
+    check('SERVICE_REQUEST_MANAGERS.msk_maevka -> Александр (392912448, тот же chat_id, что у CITY_MANAGERS.msk)',
         SERVICE_REQUEST_MANAGERS.msk_maevka === ALEXANDER_ID);
     check('ID сотрудника магазина на Котлярова нигде не встречается среди получателей заявок на ремонт',
         !Object.values(SERVICE_REQUEST_MANAGERS).includes(KOTLYAROVA_EMPLOYEE_ID));
