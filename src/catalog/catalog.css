@@ -70,15 +70,14 @@ html.city-unknown #city-screen { display: flex; }
     white-space: nowrap;
     flex-shrink: 0;
 }
-/* Группа действий справа шапки (между городом и корзиной) — кнопка
-   «Ремонт» + корзина рядом, а не раскиданы по justify-content:space-between
-   самой .header (с одной кнопкой между ними зазоры бы гуляли). */
-.header__actions {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    flex-shrink: 0;
-}
+/* Кнопка «Ремонт» — прямой (третий) flex-ребёнок .header, НЕ обёрнута
+   вместе с .header__cart в свою группу: у .header justify-content:
+   space-between, и с ровно 3 детьми свободное место делится на 2 РАВНЫХ
+   зазора (city↔repair и repair↔cart) — это и даёт одинаковое расстояние
+   до города и до корзины без ручных отступов. Раньше кнопка была в общей
+   обёртке с корзиной — тогда весь зазор уходил только между городом и
+   этой парой, а внутри пары было 2px, и визуально «Ремонт» прижимался
+   к корзине вместо центра между кнопками. */
 .header__repair {
     display: flex;
     flex-direction: column;
