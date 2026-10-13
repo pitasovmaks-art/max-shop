@@ -345,7 +345,7 @@ function switchTab(tab) {
     const isOrders     = tab === 'orders';
     const isStores     = tab === 'stores';
     const isBanners    = tab === 'banners';
-    const isUploads    = tab === 'uploads';
+    const isService    = tab === 'service';
     const isExports    = tab === 'exports';
 
     document.getElementById('sectionProducts').classList.toggle('hidden',   !isProducts);
@@ -353,7 +353,7 @@ function switchTab(tab) {
     document.getElementById('sectionOrders').classList.toggle('hidden',     !isOrders);
     document.getElementById('sectionStores').classList.toggle('hidden',     !isStores);
     document.getElementById('sectionBanners').classList.toggle('hidden',    !isBanners);
-    document.getElementById('sectionUploads').classList.toggle('hidden',    !isUploads);
+    document.getElementById('sectionService').classList.toggle('hidden',    !isService);
     document.getElementById('sectionExports').classList.toggle('hidden',    !isExports);
 
     document.getElementById('fabProducts').classList.toggle('hidden',   !isProducts);
@@ -367,14 +367,14 @@ function switchTab(tab) {
     document.getElementById('tabOrders').classList.toggle('active',     isOrders);
     document.getElementById('tabStores').classList.toggle('active',     isStores);
     document.getElementById('tabBanners').classList.toggle('active',    isBanners);
-    document.getElementById('tabUploads').classList.toggle('active',    isUploads);
+    document.getElementById('tabService').classList.toggle('active',    isService);
     document.getElementById('tabExports').classList.toggle('active',    isExports);
 
     if (isCategories) renderCategories();
     if (isOrders)     renderOrders();
     if (isStores)     renderStores();
     if (isBanners)    renderBanners();
-    if (isUploads)    renderFileUploader();
+    if (isService)    renderServiceRequests();
     if (isExports)    renderExports();
 }
 

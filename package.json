@@ -13,7 +13,8 @@
     "test:image-processor": "node server/scripts/test-image-processor.js",
     "test:products-hit": "node server/scripts/test-products-hit.js",
     "test:products-search": "node server/scripts/test-products-search.js",
-    "test:service-requests": "node server/scripts/test-service-requests.js"
+    "test:service-requests": "node server/scripts/test-service-requests.js",
+    "test:service-requests-admin": "node server/scripts/test-service-requests-admin.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",
