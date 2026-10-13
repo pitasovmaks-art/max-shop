@@ -331,7 +331,7 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
                 try {
                     const product = await db.queryOne('SELECT name, sale_notified FROM products WHERE id=$1', [productId]);
                     if (!product || product.sale_notified === 1) return;
-                    const subscribers = await db.query('SELECT tg_id FROM promo_subscribers');
+                    const subscribers = await db.query('SELECT tg_id FROM promo_subscribers WHERE unsubscribed_at IS NULL');
                     if (!subscribers.length) return;
                     const { notifyPromo } = require('../../bot');
                     for (const s of subscribers) {

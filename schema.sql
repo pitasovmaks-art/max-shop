@@ -203,6 +203,14 @@ CREATE TABLE IF NOT EXISTS promo_subscribers (
     tg_id      BIGINT    PRIMARY KEY,
     consent_at TIMESTAMP DEFAULT NOW()
 );
+-- Мягкая отписка (не DELETE) + источник последнего согласия/отзыва —
+-- иначе отписавшийся через "стоп акции" или переключатель в приложении
+-- терял бы саму историю того, что он когда-то подписывался и когда отозвал
+-- согласие. unsubscribed_at IS NULL — подписан (см. GET /api/promo/status
+-- в server/routes/promo.js); у существующих строк оба поля NULL — они
+-- остаются подписанными, как и были до этой миграции.
+ALTER TABLE promo_subscribers ADD COLUMN IF NOT EXISTS unsubscribed_at TIMESTAMP;
+ALTER TABLE promo_subscribers ADD COLUMN IF NOT EXISTS source TEXT; -- checkout | bot | toggle
 
 CREATE TABLE IF NOT EXISTS user_map (
     user_id    BIGINT    PRIMARY KEY,

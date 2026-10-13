@@ -105,6 +105,10 @@ async function createSchema() {
             consent_at TIMESTAMP DEFAULT NOW()
         )
     `);
+    // Мягкая отписка + источник — см. комментарий у этой же миграции в
+    // schema.sql. unsubscribed_at IS NULL => подписан.
+    await pool.query(`ALTER TABLE promo_subscribers ADD COLUMN IF NOT EXISTS unsubscribed_at TIMESTAMP`);
+    await pool.query(`ALTER TABLE promo_subscribers ADD COLUMN IF NOT EXISTS source TEXT`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_krd INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_msk INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_delivery INTEGER NOT NULL DEFAULT 0`);
