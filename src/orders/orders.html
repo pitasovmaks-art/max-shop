@@ -117,6 +117,37 @@
 
         .loading { text-align: center; padding: 60px 24px; font-size: 14px; opacity: .6; }
 
+        /* ─── Переключатель «Акции и скидки» ─────────────────────── */
+        .promo-toggle {
+            margin: 12px 12px 0;
+            background: var(--bg-card);
+            box-shadow: var(--card-shadow);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+        }
+        .promo-toggle__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .promo-toggle__label { display: flex; flex-direction: column; gap: 2px; }
+        .promo-toggle__title { font-size: 14.5px; font-weight: 700; color: var(--text-primary); }
+        .promo-toggle__hint  { font-size: 12px; color: var(--text-secondary); }
+        .promo-toggle__switch { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+        .promo-toggle__switch input {
+            position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; z-index: 1;
+        }
+        .promo-toggle__slider {
+            position: absolute; inset: 0; background: rgba(var(--ink-rgb),.18);
+            border-radius: 999px; transition: background .15s;
+        }
+        .promo-toggle__slider::before {
+            content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+            background: #FFFFFF; border-radius: 50%; transition: transform .15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,.25);
+        }
+        .promo-toggle__switch input:checked + .promo-toggle__slider { background: var(--accent); }
+        .promo-toggle__switch input:checked + .promo-toggle__slider::before { transform: translateX(18px); }
+        .promo-toggle__switch input:disabled + .promo-toggle__slider { opacity: .6; }
+        .promo-toggle__error { font-size: 12px; color: var(--red); margin-top: 8px; }
+        .promo-toggle__bot-hint { font-size: 11.5px; color: var(--text-secondary); margin-top: 8px; }
+
         .bottom-nav {
             position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
             width: 100%; max-width: 480px; height: 64px;
@@ -157,6 +188,29 @@
         <span class="header__title">Мои заказы</span>
         <span class="header__placeholder"></span>
     </header>
+
+    <!-- Переключатель «Акции и скидки» — вне #content, который orders.js
+         перезаписывает целиком через innerHTML при каждой перерисовке
+         списка (иначе эта разметка пропадала бы при обновлении заказов).
+         Скрыт по умолчанию — initPromoToggle() в orders.js показывает его
+         только если есть tgId и статус подписки успешно загрузился. -->
+    <div class="promo-toggle hidden" id="promoToggleWrap">
+        <div class="promo-toggle__row">
+            <div class="promo-toggle__label">
+                <span class="promo-toggle__title">Акции и скидки</span>
+                <!-- Полный текст согласия — из window.PROMO_CONSENT_TEXT
+                     (src/shared/sellerConfig.js), ставит orders.js, не
+                     дублируем здесь. -->
+                <span class="promo-toggle__hint" id="promoToggleHint"></span>
+            </div>
+            <label class="promo-toggle__switch">
+                <input type="checkbox" id="promoToggleInput" onchange="handlePromoToggle(this)">
+                <span class="promo-toggle__slider"></span>
+            </label>
+        </div>
+        <div class="promo-toggle__error hidden" id="promoToggleError">Не удалось сохранить, попробуйте ещё раз</div>
+        <div class="promo-toggle__bot-hint">Отписаться можно и командой боту «стоп»</div>
+    </div>
 
     <div class="content" id="content">
         <div class="loading" id="loading">Загружаем заказы...</div>
@@ -225,6 +279,7 @@
 </div>
 
 <script src="/src/icons.js?v=20260930"></script>
-<script src="orders.js?v=20261017"></script>
+<script src="/src/shared/sellerConfig.js?v=20261023"></script>
+<script src="orders.js?v=20261023"></script>
 </body>
 </html>

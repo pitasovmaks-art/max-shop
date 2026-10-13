@@ -528,9 +528,17 @@ async function submitOrder() {
         document.getElementById('successScreen').classList.remove('hidden');
         localStorage.removeItem('cart');
 
-        // Subscribe to promo if user opted in
-        if (tgId && document.getElementById('agreePromo')?.checked) {
-            authFetch('/api/promo/subscribe', { method: 'POST' }).catch(() => {});
+        // Subscribe to promo if user opted in. Skip if the checkbox is
+        // disabled — that means checkPromoSubscriptionStatus() already
+        // found them subscribed, calling /subscribe again would just be
+        // a redundant request (harmless, but pointless).
+        const promoCheckbox = document.getElementById('agreePromo');
+        if (tgId && promoCheckbox?.checked && !promoCheckbox.disabled) {
+            authFetch('/api/promo/subscribe', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ source: 'checkout', consentTextVersion: window.PROMO_CONSENT_VERSION }),
+            }).catch(() => {});
         }
     } catch (e) {
         console.error('Order error:', e);
@@ -621,10 +629,38 @@ document.addEventListener('DOMContentLoaded', () => {
     checkCart();
     renderSummary();
     loadAndRenderStores();
+    // Текст галочки — из одного места (src/shared/sellerConfig.js), не
+    // хардкодится здесь, чтобы не расходился с переключателем в «Мои
+    // заказы» (src/orders/orders.js).
+    const label = document.getElementById('promoCheckLabel');
+    if (label) label.textContent = '🔔 ' + window.PROMO_CONSENT_TEXT;
     // Hide promo checkbox if user is not in the bot (no tgId)
     const tgId = getTgId();
     if (!tgId) {
         const wrap = document.getElementById('promoCheckWrap');
         if (wrap) wrap.style.display = 'none';
+    } else {
+        checkPromoSubscriptionStatus();
     }
 });
+
+/* Уже подписан на акции (тот же статус читает переключатель в «Мои
+   заказы», см. src/orders/orders.js) — показываем чекбокс отмеченным и
+   неактивным вместо того, чтобы предлагать подписаться повторно. Сбой
+   этого запроса не критичен — просто оставляем чекбокс как раньше
+   (пустым, активным), это не мешает оформить заказ. */
+async function checkPromoSubscriptionStatus() {
+    try {
+        const res = await authFetch('/api/promo/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.subscribed) return;
+        const checkbox = document.getElementById('agreePromo');
+        const wrap = document.getElementById('promoCheckWrap');
+        if (checkbox) { checkbox.checked = true; checkbox.disabled = true; }
+        if (wrap) {
+            const span = wrap.querySelector('span');
+            if (span) span.textContent = '✅ Вы подписаны на рекламные сообщения об акциях и скидках';
+        }
+    } catch {}
+}

@@ -3,6 +3,7 @@
    ───────────────────────────────────────────────────────── */
 const https = require('https');
 const db    = require('./server/db');
+const { SELLER_NAME, SELLER_INN } = require('./server/config');
 
 const API_BASE     = 'platform-api2.max.ru';
 const TOKEN        = process.env.MAX_BOT_TOKEN || '';
@@ -103,6 +104,19 @@ async function handleStart(chatId, userName) {
     await sendMessage(chatId, `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\n✉️ Вы подписаны на уведомления о статусе заказов.`);
 }
 
+/* ─── Отписка от рекламной рассылки: распознаём без учёта регистра и
+   знаков препинания ──────────────────────────────────────────────── */
+function normalizeText(t) {
+    return String(t || '')
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, '') // знаки препинания — вон, буквы/цифры/пробелы — оставляем
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+const UNSUBSCRIBE_PHRASES = new Set([
+    'стоп акции', 'стоп', 'отписаться', 'отпишите меня', 'не хочу акции', 'отписка',
+]);
+
 /* ─── Process one update ────────────────────────────────── */
 async function processUpdate(update) {
     const type = update.update_type;
@@ -168,8 +182,12 @@ async function processUpdate(update) {
             return;
         }
 
-        // Отписка от промо-рассылки
-        if (text.trim().toLowerCase() === 'стоп акции') {
+        // Отписка от рекламной рассылки — несколько вариантов фразы (см.
+        // UNSUBSCRIBE_PHRASES выше), без учёта регистра/знаков препинания.
+        // Отписка срабатывает сразу: fetch дожидаемся (await) ДО ответа
+        // пользователю, а не fire-and-forget — иначе можно было бы
+        // ответить "отписались" раньше, чем запрос реально ушёл.
+        if (UNSUBSCRIBE_PHRASES.has(normalizeText(text))) {
             try {
                 const base = process.env.WEBHOOK_URL
                     ? process.env.WEBHOOK_URL.replace('/webhook', '')
@@ -179,7 +197,7 @@ async function processUpdate(update) {
                     headers: { 'Content-Type': 'application/json' },
                     body:    JSON.stringify({ tgId: userId || chatId }),
                 });
-                await sendMessage(chatId, 'Вы отписались от уведомлений об акциях.');
+                await sendMessage(chatId, 'Вы отписались от рекламных сообщений.');
             } catch (e) {
                 console.error('[bot] promo unsubscribe error:', e.message);
             }
@@ -544,9 +562,12 @@ async function notifyStock(tgId, productName) {
 }
 
 /* ─── Notify: promo sale ────────────────────────────────── */
+// Юридически значимая форма: "Реклама" первой строкой, реквизиты
+// продавца и подсказка про отписку — в конце (см. SELLER_NAME/SELLER_INN
+// из server/config.js, обсуждалось отдельно, не хардкодить второй раз).
 async function notifyPromo(tgId, productName) {
     if (!TOKEN || !tgId) return;
-    const text = `🔥 Акция в Точке Монтажа!\n\nТовар «${productName}» теперь по специальной цене. Успейте заказать!\n\nЧтобы отписаться от акций, напишите боту: стоп акции`;
+    const text = `Реклама\n\n🔥 Акция в Точке Монтажа!\n\nТовар «${productName}» теперь по специальной цене. Успейте заказать!\n\nЧтобы отписаться, напишите: стоп\n\n${SELLER_NAME}, ИНН ${SELLER_INN}`;
     const trySend = async (id) => {
         const result = await sendMessage(+id, text);
         console.log(`[bot] notifyPromo OK: tg_id=${tgId} product=${productName}`, result);
@@ -584,4 +605,11 @@ function startBot() {
     registerWebhook();
 }
 
-module.exports = { startBot, notifyStore, processUpdate, notifyCustomer, notifyStock, notifyPromo, notifyServiceRequest, notifyServiceRequestStatus, SERVICE_REQUEST_MANAGERS };
+module.exports = {
+    startBot, notifyStore, processUpdate, notifyCustomer, notifyStock, notifyPromo,
+    notifyServiceRequest, notifyServiceRequestStatus, SERVICE_REQUEST_MANAGERS,
+    // Экспортированы только для test-promo.js (проверка распознавания фраз
+    // отписки без запуска всего processUpdate/sendMessage) — тем же
+    // способом, каким SERVICE_REQUEST_MANAGERS уже проверяется напрямую.
+    normalizeText, UNSUBSCRIBE_PHRASES,
+};

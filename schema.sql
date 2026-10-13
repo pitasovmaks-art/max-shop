@@ -203,6 +203,34 @@ CREATE TABLE IF NOT EXISTS promo_subscribers (
     tg_id      BIGINT    PRIMARY KEY,
     consent_at TIMESTAMP DEFAULT NOW()
 );
+-- Мягкая отписка (не DELETE) + источник последнего согласия/отзыва —
+-- иначе отписавшийся через "стоп акции" или переключатель в приложении
+-- терял бы саму историю того, что он когда-то подписывался и когда отозвал
+-- согласие. unsubscribed_at IS NULL — подписан (см. GET /api/promo/status
+-- в server/routes/promo.js); у существующих строк оба поля NULL — они
+-- остаются подписанными, как и были до этой миграции.
+ALTER TABLE promo_subscribers ADD COLUMN IF NOT EXISTS unsubscribed_at TIMESTAMP;
+ALTER TABLE promo_subscribers ADD COLUMN IF NOT EXISTS source TEXT; -- checkout | bot | toggle
+-- Версия текста согласия, который человек видел при последнем subscribe
+-- (см. server/config.js / src/shared/sellerConfig.js — PROMO_CONSENT_VERSION).
+-- NULL для строк, созданных до этой колонки, и для отписок от бота (там
+-- нет текста согласия, только команда). Это "текущий снимок", в отличие
+-- от promo_consent_log ниже — полной истории, которая никогда не
+-- перезаписывается.
+ALTER TABLE promo_subscribers ADD COLUMN IF NOT EXISTS consent_text_version TEXT;
+
+-- Журнал каждого действия (подписка/отписка) — отдельно от
+-- promo_subscribers, который хранит только ТЕКУЩЕЕ состояние и
+-- перезаписывается при повторном согласии. Сюда пишется КАЖДЫЙ вызов
+-- subscribe/unsubscribe, без исключений — история никогда не трётся.
+CREATE TABLE IF NOT EXISTS promo_consent_log (
+    id                   SERIAL    PRIMARY KEY,
+    tg_id                BIGINT    NOT NULL,
+    action               TEXT      NOT NULL,              -- subscribe | unsubscribe
+    source               TEXT      NOT NULL,               -- checkout | bot | toggle
+    consent_text_version TEXT,                              -- NULL у unsubscribe (нет текста согласия)
+    created_at           TIMESTAMP DEFAULT NOW()
+);
 
 CREATE TABLE IF NOT EXISTS user_map (
     user_id    BIGINT    PRIMARY KEY,

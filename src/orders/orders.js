@@ -221,6 +221,50 @@ function renderAuthRequired() {
         </div>`;
 }
 
+/* ─── Переключатель «Акции и скидки» ─────────────────────────────────
+   Независим от основной загрузки заказов/заявок ниже — сбой чтения
+   статуса подписки не должен прятать уже загруженный список заказов
+   (поэтому своя функция, свой try/catch, не часть Promise.all в init()). */
+async function initPromoToggle() {
+    const wrap = document.getElementById('promoToggleWrap');
+    const input = document.getElementById('promoToggleInput');
+    const hint = document.getElementById('promoToggleHint');
+    if (!wrap || !input) return;
+    if (hint) hint.textContent = window.PROMO_CONSENT_TEXT || '';
+    try {
+        const res = await authFetch('/api/promo/status');
+        if (!res.ok) throw new Error(String(res.status));
+        const data = await res.json();
+        input.checked = !!data.subscribed;
+        wrap.classList.remove('hidden');
+    } catch {
+        // Статус не загрузился — оставляем переключатель скрытым, а не
+        // показываем его в заведомо неопределённом состоянии.
+    }
+}
+
+async function handlePromoToggle(input) {
+    const wantSubscribed = input.checked;
+    const errorEl = document.getElementById('promoToggleError');
+    if (errorEl) errorEl.classList.add('hidden');
+    input.disabled = true;
+    try {
+        const res = wantSubscribed
+            ? await authFetch('/api/promo/subscribe', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ source: 'toggle', consentTextVersion: window.PROMO_CONSENT_VERSION }),
+              })
+            : await authFetch('/api/promo/unsubscribe-me', { method: 'POST' });
+        if (!res.ok) throw new Error(String(res.status));
+    } catch {
+        input.checked = !wantSubscribed; // откат переключателя к состоянию до клика
+        if (errorEl) errorEl.classList.remove('hidden');
+    } finally {
+        input.disabled = false;
+    }
+}
+
 async function init() {
     const content = document.getElementById('content');
 
@@ -228,6 +272,8 @@ async function init() {
         renderAuthRequired();
         return;
     }
+
+    initPromoToggle();
 
     try {
         const [ordersRes, serviceRes] = await Promise.all([
