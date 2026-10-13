@@ -190,8 +190,10 @@ async function main() {
 
     const USER_A = 111111;
     const USER_B = 222222;
+    const USER_C = 333333;
     const initA = buildSignedInitData({ id: USER_A, first_name: 'A' }, REAL_BOT_TOKEN);
     const initB = buildSignedInitData({ id: USER_B, first_name: 'B' }, REAL_BOT_TOKEN);
+    const initC = buildSignedInitData({ id: USER_C, first_name: 'C' }, REAL_BOT_TOKEN);
 
     async function postPromo(path, body, initData) {
         const r = await fetch(`${base}/api/promo${path}`, {
@@ -222,6 +224,18 @@ async function main() {
         const noVersion = await postPromo('/subscribe', {}, initB);
         check('POST /subscribe без consentTextVersion -> 200 (не обязателен)', noVersion.status === 200);
         check('consent_text_version — NULL, если клиент не передал', subscribers.find(x => x.tg_id === String(USER_B)).consent_text_version === null);
+
+        // Версия не из PROMO_CONSENT_VERSIONS (опечатка/подделанный запрос/
+        // версия, которой никогда не было) — расценивается как отсутствие
+        // версии: заказ/подписка не падает, но "9999" НИКУДА не попадает —
+        // ни в promo_subscribers, ни в журнал.
+        const unknownVersion = await postPromo('/subscribe', { consentTextVersion: '9999' }, initC);
+        check('POST /subscribe с версией не из списка -> 200 (не падает)', unknownVersion.status === 200);
+        check('неизвестная версия НЕ сохранена в promo_subscribers (consent_text_version = NULL, не "9999")',
+            subscribers.find(x => x.tg_id === String(USER_C)).consent_text_version === null);
+        const logC = consentLog.find(e => e.tg_id === String(USER_C));
+        check('неизвестная версия НЕ попала в promo_consent_log (consent_text_version = NULL, не "9999")',
+            !!logC && logC.consent_text_version === null);
 
         const status = await getPromo('/status', initA);
         check('GET /status после подписки -> subscribed:true', status.body.subscribed === true);
@@ -373,17 +387,17 @@ async function main() {
        перезаписывается при повторном действии ─────────────────────── */
     resetDb();
     {
-        await postPromo('/subscribe', { consentTextVersion: '1' }, initA);
+        await postPromo('/subscribe', { source: 'checkout', consentTextVersion: '1' }, initA);
         await postPromo('/unsubscribe-me', {}, initA);
-        await postPromo('/subscribe', { consentTextVersion: '2' }, initA);
+        await postPromo('/subscribe', { source: 'toggle', consentTextVersion: '1' }, initA);
 
         const logA = consentLog.filter(e => e.tg_id === String(USER_A));
         check('3 действия -> 3 отдельные записи в журнале (ничего не перезаписано)', logA.length === 3);
-        check('1-я запись: subscribe, версия 1', logA[0].action === 'subscribe' && logA[0].consent_text_version === '1');
+        check('1-я запись: subscribe, source=checkout', logA[0].action === 'subscribe' && logA[0].source === 'checkout' && logA[0].consent_text_version === '1');
         check('2-я запись: unsubscribe, source=toggle, версия пустая', logA[1].action === 'unsubscribe' && logA[1].source === 'toggle' && logA[1].consent_text_version == null);
-        check('3-я запись: subscribe, версия 2 (новая, не слита со 1-й)', logA[2].action === 'subscribe' && logA[2].consent_text_version === '2');
-        check('promo_subscribers при этом хранит только ТЕКУЩИЙ снимок (версия 2, не всю историю)',
-            subscribers.find(x => x.tg_id === String(USER_A)).consent_text_version === '2');
+        check('3-я запись: subscribe, source=toggle (новая запись, не слита с 1-й)', logA[2].action === 'subscribe' && logA[2].source === 'toggle' && logA[2].consent_text_version === '1');
+        check('promo_subscribers при этом хранит только ТЕКУЩИЙ снимок (source=toggle, не всю историю)',
+            subscribers.find(x => x.tg_id === String(USER_A)).source === 'toggle');
 
         // Отписка от бота того, кто никогда не подписывался — не создаёт
         // запись в журнале (нет смысла логировать "отписку" несуществующей

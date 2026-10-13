@@ -1,23 +1,28 @@
 const router          = require('express').Router();
 const db              = require('../db');
 const { requireUser } = require('../middleware/requireUser');
+const { PROMO_CONSENT_VERSIONS } = require('../config');
 
 const SOURCES = ['checkout', 'bot', 'toggle'];
-const MAX_CONSENT_VERSION_LEN = 50;
 
 /* Версия текста согласия — присылает браузер (он точно знает, какой текст
    показал человеку в момент согласия, см. src/shared/sellerConfig.js), не
    сервер: если взять версию из server/config.js "как есть", при деплое с
    изменённым текстом можно задним числом приписать человеку версию,
    которую он на самом деле не видел (она могла измениться между тем, как
-   отрисовалась страница, и тем, как сервер обработал запрос). Не из
-   списка/мусор/отсутствует -> null, а не ошибка — отсутствие версии не
-   должно ронять саму подписку. */
+   отрисовалась страница, и тем, как сервер обработал запрос).
+
+   Принимаем ТОЛЬКО значение из PROMO_CONSENT_VERSIONS (все версии текста,
+   которые когда-либо реально существовали, см. server/config.js) — любая
+   версия не из этого списка (опечатка, подделанный запрос, версия из
+   будущего/прошлого, которой на самом деле не было) расценивается как
+   отсутствие версии (null), а не ошибка — отсутствие версии не должно
+   ронять саму подписку. */
 function readConsentVersion(body) {
     const v = body?.consentTextVersion;
     if (typeof v !== 'string') return null;
     const trimmed = v.trim();
-    if (!trimmed || trimmed.length > MAX_CONSENT_VERSION_LEN) return null;
+    if (!PROMO_CONSENT_VERSIONS.includes(trimmed)) return null;
     return trimmed;
 }
 
