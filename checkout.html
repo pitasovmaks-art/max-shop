@@ -141,7 +141,7 @@
                 </label>
                 <label class="legal-check" id="promoCheckWrap" style="margin-top:4px">
                     <input type="checkbox" id="agreePromo">
-                    <span>🔔 Хочу получать уведомления об акциях и скидках</span>
+                    <span id="promoCheckLabel"><!-- текст ставит checkout.js из window.PROMO_CONSENT_TEXT (src/shared/sellerConfig.js) — одно место, не дублируем здесь --></span>
                 </label>
             </div>
         </section>
@@ -212,7 +212,8 @@
     </div>
 </div>
 
-<script src="src/cart/checkout.js?v=20261022"></script>
+<script src="src/shared/sellerConfig.js?v=20261023"></script>
+<script src="src/cart/checkout.js?v=20261023"></script>
 <script src="src/cookie.js?v=20260530b"></script>
 </body>
 </html>

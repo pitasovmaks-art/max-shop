@@ -109,6 +109,18 @@ async function createSchema() {
     // schema.sql. unsubscribed_at IS NULL => подписан.
     await pool.query(`ALTER TABLE promo_subscribers ADD COLUMN IF NOT EXISTS unsubscribed_at TIMESTAMP`);
     await pool.query(`ALTER TABLE promo_subscribers ADD COLUMN IF NOT EXISTS source TEXT`);
+    // consent_text_version — см. комментарий у этой же миграции в schema.sql.
+    await pool.query(`ALTER TABLE promo_subscribers ADD COLUMN IF NOT EXISTS consent_text_version TEXT`);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS promo_consent_log (
+            id                   SERIAL    PRIMARY KEY,
+            tg_id                BIGINT    NOT NULL,
+            action               TEXT      NOT NULL,
+            source               TEXT      NOT NULL,
+            consent_text_version TEXT,
+            created_at           TIMESTAMP DEFAULT NOW()
+        )
+    `);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_krd INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_msk INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_delivery INTEGER NOT NULL DEFAULT 0`);

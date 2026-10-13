@@ -228,7 +228,9 @@ function renderAuthRequired() {
 async function initPromoToggle() {
     const wrap = document.getElementById('promoToggleWrap');
     const input = document.getElementById('promoToggleInput');
+    const hint = document.getElementById('promoToggleHint');
     if (!wrap || !input) return;
+    if (hint) hint.textContent = window.PROMO_CONSENT_TEXT || '';
     try {
         const res = await authFetch('/api/promo/status');
         if (!res.ok) throw new Error(String(res.status));
@@ -251,7 +253,7 @@ async function handlePromoToggle(input) {
             ? await authFetch('/api/promo/subscribe', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ source: 'toggle' }),
+                  body: JSON.stringify({ source: 'toggle', consentTextVersion: window.PROMO_CONSENT_VERSION }),
               })
             : await authFetch('/api/promo/unsubscribe-me', { method: 'POST' });
         if (!res.ok) throw new Error(String(res.status));

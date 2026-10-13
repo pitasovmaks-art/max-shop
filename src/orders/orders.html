@@ -198,7 +198,10 @@
         <div class="promo-toggle__row">
             <div class="promo-toggle__label">
                 <span class="promo-toggle__title">Акции и скидки</span>
-                <span class="promo-toggle__hint">Уведомления в Max о скидках на товары</span>
+                <!-- Полный текст согласия — из window.PROMO_CONSENT_TEXT
+                     (src/shared/sellerConfig.js), ставит orders.js, не
+                     дублируем здесь. -->
+                <span class="promo-toggle__hint" id="promoToggleHint"></span>
             </div>
             <label class="promo-toggle__switch">
                 <input type="checkbox" id="promoToggleInput" onchange="handlePromoToggle(this)">
@@ -206,7 +209,7 @@
             </label>
         </div>
         <div class="promo-toggle__error hidden" id="promoToggleError">Не удалось сохранить, попробуйте ещё раз</div>
-        <div class="promo-toggle__bot-hint">Отписаться можно и командой боту «стоп акции»</div>
+        <div class="promo-toggle__bot-hint">Отписаться можно и командой боту «стоп»</div>
     </div>
 
     <div class="content" id="content">
@@ -276,6 +279,7 @@
 </div>
 
 <script src="/src/icons.js?v=20260930"></script>
-<script src="orders.js?v=20261022"></script>
+<script src="/src/shared/sellerConfig.js?v=20261023"></script>
+<script src="orders.js?v=20261023"></script>
 </body>
 </html>

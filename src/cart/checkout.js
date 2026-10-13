@@ -537,7 +537,7 @@ async function submitOrder() {
             authFetch('/api/promo/subscribe', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ source: 'checkout' }),
+                body:    JSON.stringify({ source: 'checkout', consentTextVersion: window.PROMO_CONSENT_VERSION }),
             }).catch(() => {});
         }
     } catch (e) {
@@ -629,6 +629,11 @@ document.addEventListener('DOMContentLoaded', () => {
     checkCart();
     renderSummary();
     loadAndRenderStores();
+    // Текст галочки — из одного места (src/shared/sellerConfig.js), не
+    // хардкодится здесь, чтобы не расходился с переключателем в «Мои
+    // заказы» (src/orders/orders.js).
+    const label = document.getElementById('promoCheckLabel');
+    if (label) label.textContent = '🔔 ' + window.PROMO_CONSENT_TEXT;
     // Hide promo checkbox if user is not in the bot (no tgId)
     const tgId = getTgId();
     if (!tgId) {
@@ -655,7 +660,7 @@ async function checkPromoSubscriptionStatus() {
         if (checkbox) { checkbox.checked = true; checkbox.disabled = true; }
         if (wrap) {
             const span = wrap.querySelector('span');
-            if (span) span.textContent = '✅ Вы подписаны на уведомления об акциях и скидках';
+            if (span) span.textContent = '✅ Вы подписаны на рекламные сообщения об акциях и скидках';
         }
     } catch {}
 }

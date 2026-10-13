@@ -17,6 +17,8 @@ process.env.MAX_BOT_TOKEN = REAL_BOT_TOKEN;
 
 const crypto  = require('crypto');
 const express = require('express');
+const fs      = require('fs');
+const path    = require('path');
 const db      = require('../db');
 const { ADMIN_PASSWORD } = require('../middleware/auth');
 
@@ -37,6 +39,12 @@ function buildSignedInitData(user, botToken, authDate) {
     return encodeURIComponent(sp.toString());
 }
 
+/* ─── Распознавание фраз отписки — проверяем НАСТОЯЩИЙ bot.js (как
+   SERVICE_REQUEST_MANAGERS в test-service-requests.js), до подмены
+   require.cache ниже. ──────────────────────────────────────────── */
+const realBot = require('../../bot');
+const { normalizeText, UNSUBSCRIBE_PHRASES } = realBot;
+
 /* ─── Подмена bot.js: шпион на notifyPromo (рассылка о скидке) ──────── */
 const botPath = require.resolve('../../bot');
 let promoNotifyCalls = [];
@@ -46,14 +54,16 @@ const fakeBot = {
 require.cache[botPath] = { id: botPath, filename: botPath, loaded: true, exports: fakeBot };
 
 /* ─── In-memory «БД» ─────────────────────────────────────────────── */
-let subscribers = [];   // { tg_id, consent_at, unsubscribed_at, source }
+let subscribers = [];   // { tg_id, consent_at, unsubscribed_at, source, consent_text_version }
 let products    = [];   // { id, name, sale_notified }
 let variants    = [];   // { product_id, sale_price, ... }
+let consentLog  = [];   // { tg_id, action, source, consent_text_version, created_at } — append-only
 
 function resetDb() {
     subscribers = [];
     products = [{ id: 1, name: 'Шуруповёрт Deталькин', sale_notified: 0 }];
     variants = [];
+    consentLog = [];
     promoNotifyCalls = [];
 }
 
@@ -89,21 +99,27 @@ db.query = async (sql, params = []) => {
 
 db.execute = async (sql, params = []) => {
     const s = norm(sql);
-    if (s.startsWith('INSERT INTO promo_subscribers (tg_id, source) VALUES ($1,$2) ON CONFLICT (tg_id) DO UPDATE')) {
+    if (s.startsWith('INSERT INTO promo_subscribers (tg_id, source, consent_text_version) VALUES ($1,$2,$3) ON CONFLICT (tg_id) DO UPDATE')) {
         // params[0] — BigInt(req.tgId) в настоящем роуте (pg сам привёл бы
         // его к строке для BIGINT-параметра); здесь сравниваем как строки,
         // чтобы совпадало с тем, как tg_id хранится и сравнивается везде
         // ниже в этом тесте.
         const tgId = String(params[0]);
-        const source = params[1];
+        const [, source, consentTextVersion] = params;
         const existing = subscribers.find(x => x.tg_id === tgId);
         if (existing) {
             existing.unsubscribed_at = null;
             existing.consent_at = isoNow();
             existing.source = source;
+            existing.consent_text_version = consentTextVersion;
         } else {
-            subscribers.push({ tg_id: tgId, consent_at: isoNow(), unsubscribed_at: null, source });
+            subscribers.push({ tg_id: tgId, consent_at: isoNow(), unsubscribed_at: null, source, consent_text_version: consentTextVersion });
         }
+        return 1;
+    }
+    if (s.startsWith('INSERT INTO promo_consent_log (tg_id, action, source, consent_text_version) VALUES ($1,$2,$3,$4)')) {
+        const [tgId, action, source, consentTextVersion] = params;
+        consentLog.push({ tg_id: String(tgId), action, source, consent_text_version: consentTextVersion, created_at: isoNow() });
         return 1;
     }
     if (s.startsWith("UPDATE promo_subscribers SET unsubscribed_at = NOW(), source = 'bot' WHERE tg_id=$1")) {
@@ -195,12 +211,17 @@ async function main() {
     /* ── 1. Подписка (новая) ─────────────────────────────────────────── */
     resetDb();
     {
-        const r = await postPromo('/subscribe', {}, initA);
+        const r = await postPromo('/subscribe', { consentTextVersion: '1' }, initA);
         check('POST /subscribe без source в теле -> 200', r.status === 200);
         const row = subscribers.find(x => x.tg_id === String(USER_A));
         check('создана строка в promo_subscribers', !!row);
         check('source по умолчанию — checkout', row.source === 'checkout');
         check('unsubscribed_at у новой подписки — NULL', row.unsubscribed_at === null);
+        check('consent_text_version сохранён как пришёл от клиента', row.consent_text_version === '1');
+
+        const noVersion = await postPromo('/subscribe', {}, initB);
+        check('POST /subscribe без consentTextVersion -> 200 (не обязателен)', noVersion.status === 200);
+        check('consent_text_version — NULL, если клиент не передал', subscribers.find(x => x.tg_id === String(USER_B)).consent_text_version === null);
 
         const status = await getPromo('/status', initA);
         check('GET /status после подписки -> subscribed:true', status.body.subscribed === true);
@@ -330,6 +351,73 @@ async function main() {
         const elapsed = Date.now() - startedAt;
         check('PUT /variants отвечает быстро (< 200мс), не ждёт паузу рассылки (250мс+)', r.status === 200 && elapsed < 200);
         await wait(400); // дать фоновой рассылке отработать перед следующим тестом/закрытием сервера
+    }
+
+    /* ── 8. Распознавание вариантов отписки боту (нормализация текста) ── */
+    {
+        const shouldMatch = [
+            'стоп акции', 'Стоп Акции', 'СТОП', 'стоп.', 'стоп!!!',
+            'отписаться', 'Отпишите меня', 'не хочу акции', 'отписка',
+            '  стоп  ', 'стоп, акции',
+        ];
+        for (const phrase of shouldMatch) {
+            check(`фраза отписки распознаётся: "${phrase}"`, UNSUBSCRIBE_PHRASES.has(normalizeText(phrase)));
+        }
+        const shouldNotMatch = ['привет', 'стоп акции пожалуйста', 'хочу акции', 'подписаться'];
+        for (const phrase of shouldNotMatch) {
+            check(`фраза НЕ является командой отписки: "${phrase}"`, !UNSUBSCRIBE_PHRASES.has(normalizeText(phrase)));
+        }
+    }
+
+    /* ── 9. Журнал согласий (promo_consent_log) — полная история, не
+       перезаписывается при повторном действии ─────────────────────── */
+    resetDb();
+    {
+        await postPromo('/subscribe', { consentTextVersion: '1' }, initA);
+        await postPromo('/unsubscribe-me', {}, initA);
+        await postPromo('/subscribe', { consentTextVersion: '2' }, initA);
+
+        const logA = consentLog.filter(e => e.tg_id === String(USER_A));
+        check('3 действия -> 3 отдельные записи в журнале (ничего не перезаписано)', logA.length === 3);
+        check('1-я запись: subscribe, версия 1', logA[0].action === 'subscribe' && logA[0].consent_text_version === '1');
+        check('2-я запись: unsubscribe, source=toggle, версия пустая', logA[1].action === 'unsubscribe' && logA[1].source === 'toggle' && logA[1].consent_text_version == null);
+        check('3-я запись: subscribe, версия 2 (новая, не слита со 1-й)', logA[2].action === 'subscribe' && logA[2].consent_text_version === '2');
+        check('promo_subscribers при этом хранит только ТЕКУЩИЙ снимок (версия 2, не всю историю)',
+            subscribers.find(x => x.tg_id === String(USER_A)).consent_text_version === '2');
+
+        // Отписка от бота того, кто никогда не подписывался — не создаёт
+        // запись в журнале (нет смысла логировать "отписку" несуществующей
+        // подписки).
+        const before = consentLog.length;
+        await postPromo('/unsubscribe', { tgId: '000000' }, null);
+        check('отписка несуществующего tg_id не создаёт запись в журнале', consentLog.length === before);
+    }
+
+    /* ── 10. Сервисные уведомления не содержат рекламы и не зависят от
+       promo_subscribers (статическая проверка исходников) ───────────── */
+    {
+        const botSrc = fs.readFileSync(path.join(__dirname, '..', '..', 'bot.js'), 'utf8');
+        const ordersSrc = fs.readFileSync(path.join(__dirname, '..', 'routes', 'orders.js'), 'utf8');
+        const serviceReqSrc = fs.readFileSync(path.join(__dirname, '..', 'routes', 'service-requests.js'), 'utf8');
+
+        check('bot.js вообще не ссылается на promo_subscribers (только server/routes/promo.js и products.js это делают)',
+            !botSrc.includes('promo_subscribers'));
+        check('server/routes/orders.js не читает promo_subscribers', !ordersSrc.includes('promo_subscribers'));
+        check('server/routes/service-requests.js не читает promo_subscribers', !serviceReqSrc.includes('promo_subscribers'));
+
+        function fnBody(src, name) {
+            const m = src.match(new RegExp('async function ' + name + '\\s*\\([^)]*\\)\\s*\\{([\\s\\S]*?)\\n\\}\\n'));
+            return m ? m[1] : null;
+        }
+        const notifyCustomerBody = fnBody(botSrc, 'notifyCustomer');
+        const notifyStockBody = fnBody(botSrc, 'notifyStock');
+        const notifyServiceRequestStatusBody = fnBody(botSrc, 'notifyServiceRequestStatus');
+        check('notifyCustomer() найден в bot.js', !!notifyCustomerBody);
+        check('notifyStock() найден в bot.js', !!notifyStockBody);
+        check('notifyServiceRequestStatus() найден в bot.js', !!notifyServiceRequestStatusBody);
+        check('notifyCustomer() не содержит слово "Реклама"', notifyCustomerBody && !notifyCustomerBody.includes('Реклама'));
+        check('notifyStock() не содержит слово "Реклама"', notifyStockBody && !notifyStockBody.includes('Реклама'));
+        check('notifyServiceRequestStatus() не содержит слово "Реклама"', notifyServiceRequestStatusBody && !notifyServiceRequestStatusBody.includes('Реклама'));
     }
 
     server.close();
