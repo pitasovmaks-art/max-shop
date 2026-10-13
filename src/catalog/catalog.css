@@ -73,27 +73,49 @@ html.city-unknown #city-screen { display: flex; }
 /* Кнопка «Ремонт» — прямой (третий) flex-ребёнок .header, НЕ обёрнута
    вместе с .header__cart в свою группу: у .header justify-content:
    space-between, и с ровно 3 детьми свободное место делится на 2 РАВНЫХ
-   зазора (city↔repair и repair↔cart) — это и даёт одинаковое расстояние
-   до города и до корзины без ручных отступов. Раньше кнопка была в общей
-   обёртке с корзиной — тогда весь зазор уходил только между городом и
-   этой парой, а внутри пары было 2px, и визуально «Ремонт» прижимался
-   к корзине вместо центра между кнопками. */
+   зазора (city↔repair и repair↔cart) — это даёт одинаковое расстояние до
+   города и до корзины НЕЗАВИСИМО от собственной ширины самой кнопки (она
+   у «таблетки» ниже уже не 44px, а по контенту — равенство зазоров всё
+   равно не ломается). Раньше кнопка была в общей обёртке с корзиной —
+   тогда весь зазор уходил только между городом и этой парой, а внутри
+   пары было 2px, и визуально «Ремонт» прижимался к корзине вместо центра
+   между кнопками.
+
+   Раньше кнопка была почти незаметной (цвет текста --text-primary,
+   плоская, 44×44 с мелкой подписью под иконкой) — теперь жёлтая заливка
+   (--accent) с тёмным текстом/иконкой (--accent-ink), как и положено по
+   правилам палитры «Стройплощадка» (--accent — это ТОЛЬКО заливка, текст
+   и иконка на ней — всегда --accent-ink, см. комментарий у --accent в
+   theme.css). Контраст --accent/--accent-ink пересчитан скриптом (WCAG
+   relative luminance) — 7.96:1 в светлой теме, 10.17:1 в тёмной (нажатое
+   состояние --accent-press/--accent-ink — 5.34:1 и 11.80:1) — везде выше
+   порога 4.5:1. */
 .header__repair {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1px;
-    width: 44px; height: 44px;
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    font-size: 9.5px;
-    font-weight: 600;
-    line-height: 1;
+    gap: 5px;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
     transition: background .15s;
     flex-shrink: 0;
 }
-.header__repair:active { background: rgba(var(--ink-rgb),.08); }
+.header__repair:active { background: var(--accent-press); }
+/* Узкие экраны (390px — самая узкая ширина из тех, что заказчик просил
+   проверять, уже даёт запас; 360 и ниже — подпись может начать мешать
+   кнопке города с длинным названием) — прячем только подпись, иконка
+   (22px, см. index.html/catalog.html) остаётся всегда. Кнопка схлопывается
+   обратно к компактному квадрату 44×44, как было до этой правки. */
+@media (max-width: 360px) {
+    .header__repair { width: 44px; padding: 0; }
+    .header__repair span { display: none; }
+}
 .header__cart {
     position: relative;
     width: 42px; height: 42px;
