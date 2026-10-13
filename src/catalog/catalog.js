@@ -922,6 +922,35 @@ function _bannerDebugTapHook() {
     }, { passive: true });
 }
 
+/* ─── Гипотеза про iOS/WebKit в Max: «намёк» движку, что страница сама
+   слушает touch/pointer ────────────────────────────────────────────────
+   Со слов Максима: когда включена bannerDebug (она сама регистрирует
+   document-слушатели touchstart/move/end + pointerdown/move/up/cancel,
+   capture+passive — см. src/catalog/bannerDebug.js), свайп на iPhone
+   работает; когда диагностика выключена — на 2-м из двух баннеров не
+   двигается вообще, ни влево, ни вправо. НЕ подтверждённый факт, а
+   гипотеза: контейнер Max — это WKWebView внутри нативного приложения,
+   у которого могут быть свои распознаватели жестов (например, для
+   закрытия мини-приложения свайпом) — известный в хайбрид-приложениях
+   класс багов, когда такой нативный распознаватель перехватывает касание
+   раньше, чем до него доходит JS, ПОКА на странице не зарегистрирован
+   хотя бы один touch/pointer-слушатель (даже пустой) — тогда движок
+   считает, что страница заинтересована в жесте, и отдаёт его ей.
+   Поэтому — независимо от диагностики, постоянно: пустые пассивные
+   слушатели на document, ничего не делают, не вызывают
+   preventDefault/stopPropagation, саму state machine карусели
+   (_bannerOnPointerDown и т.п.) не трогают.
+   `will-change:transform` у .banner-track (ещё одна частая причина
+   похожих багов) — уже было в catalog.css до этой правки, добавлять не
+   пришлось. */
+function _bannerWebkitTouchHint() {
+    const noop = () => {};
+    ['touchstart', 'touchmove', 'touchend',
+     'pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach((type) => {
+        document.addEventListener(type, noop, { capture: true, passive: true });
+    });
+}
+
 async function initBanner() {
     const track = document.getElementById('bannerTrack');
     const dots  = document.getElementById('bannerDots');
@@ -931,10 +960,17 @@ async function initBanner() {
     // правок разметки, когда контейнер появится, а скрипт ещё нет).
     if (!track || !dots || !window.BannerRender) return;
 
+    _bannerWebkitTouchHint();
+
     _bannerDebugTapHook();
-    if (localStorage.getItem('bannerDebug') === '1') {
+    // '1' — полная диагностика (плашка + лог, как раньше); 'listeners' —
+    // только слушатели (лог в console.log, без плашки на экране);
+    // 'panel' — только плашка с живым статусом #bannerTrack, без лога
+    // событий (см. src/catalog/bannerDebug.js — зачем разделять).
+    const debugMode = localStorage.getItem('bannerDebug');
+    if (debugMode === '1' || debugMode === 'listeners' || debugMode === 'panel') {
         const s = document.createElement('script');
-        s.src = 'src/catalog/bannerDebug.js?v=20261019';
+        s.src = 'src/catalog/bannerDebug.js?v=20261020';
         document.head.appendChild(s);
     }
 
