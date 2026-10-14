@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light dark">
     <title>Точка Монтажа</title>
     <script src="https://st.max.ru/js/max-web-app.js"></script>
-    <script src="/src/shopGuard.js"></script>
+    <script src="/src/shopGuard.js?v=20261026"></script>
     <script src="/src/utils/tgid.js?v=20260530b"></script>
     <script src="/src/utils/authFetch.js?v=20261003"></script>
     <style>
-        @import url('/src/theme.css');
+        @import url('/src/theme.css?v=20261027');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { -webkit-text-size-adjust: 100%; }
         body {
@@ -76,7 +77,7 @@
             position: absolute;
             top: 4px; right: 4px;
             min-width: 17px; height: 17px;
-            background: var(--red);
+            background: var(--red-fill);
             color: #FFFFFF;
             font-size: 10px;
             font-weight: 700;
@@ -192,7 +193,7 @@
         .variant-label {
             font-size: 12px;
             font-weight: 600;
-            color: var(--accent-ink);
+            color: var(--label-text);
             text-transform: uppercase;
             letter-spacing: .4px;
             margin-bottom: 8px;
@@ -242,7 +243,7 @@
         .product-price {
             font-size: 22px;
             font-weight: 700;
-            color: var(--accent-ink);
+            color: var(--accent-text);
             flex-shrink: 0;
             display: flex;
             align-items: baseline;
@@ -251,10 +252,12 @@
         }
         .product-price--service {
             /* не var(--accent) — жёлтый текст на белом почти не читается;
-               var(--accent-ink) тёмный в обеих темах */
+               var(--accent-text) — тёмный в светлой теме, жёлтый в тёмной
+               (не var(--accent-ink): та всегда тёмная, на --bg-card в
+               тёмной теме почти не видна) */
             font-size: 16px;
             font-weight: 600;
-            color: var(--accent-ink);
+            color: var(--accent-text);
         }
         .price-old {
             font-size: 15px;
@@ -342,7 +345,7 @@
             font-size: 10.5px;
             font-weight: 600;
         }
-        .nav-item.active { color: var(--accent-ink); font-weight: 700; }
+        .nav-item.active { color: var(--accent-text); font-weight: 700; }
         .nav-item:active { opacity: .7; }
         .nav-ic {
             position: relative;
@@ -356,7 +359,7 @@
             position: absolute;
             top: -6px; right: -8px;
             min-width: 17px; height: 17px;
-            background: var(--red);
+            background: var(--red-fill);
             color: #FFFFFF;
             font-size: 10px;
             font-weight: 700;

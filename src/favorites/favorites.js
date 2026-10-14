@@ -130,8 +130,8 @@ function renderFavorites(products) {
         const imgIcon  = p.image ? `<img class="product-card__photo" src="${p.image}" alt="${p.name}">` : iconSvg('image', 28);
         const priceStr = unavailable
             ? `<span style="display:flex;flex-direction:column;gap:2px">
-                <span style="color:rgba(28,28,30,0.55);font-size:11px;font-weight:500">Доступен в другом городе</span>
-                <span style="color:rgba(28,28,30,0.4);font-size:10px;font-weight:400">Смените город, чтобы заказать</span>
+                <span style="color:var(--text-secondary);font-size:11px;font-weight:500">Доступен в другом городе</span>
+                <span style="color:var(--text-secondary);font-size:10px;font-weight:400">Смените город, чтобы заказать</span>
                </span>`
             : (price > 0 ? fmt(price) : (p.priceLabel || fmt(p.price || 0)));
         const addBtn   = (!unavailable && p.inStock)

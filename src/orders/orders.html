@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light dark">
     <title>Точка Монтажа — Мои заказы</title>
     <script src="https://st.max.ru/js/max-web-app.js"></script>
-    <script src="/src/shopGuard.js"></script>
+    <script src="/src/shopGuard.js?v=20261026"></script>
     <script src="/src/utils/tgid.js?v=20260530b"></script>
     <script src="/src/utils/authFetch.js?v=20261003"></script>
     <style>
-        @import url('/src/theme.css');
+        @import url('/src/theme.css?v=20261027');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { -webkit-text-size-adjust: 100%; }
         body {
@@ -65,20 +66,20 @@
         }
         .badge-new       { background: rgba(var(--ink-rgb),0.08); color: rgba(var(--ink-rgb),0.55); }
         .badge-in_progress { background: rgba(47,111,191,.2); color: var(--info); }
-        .badge-shipped   { background: rgba(14,124,107,.15);   color: var(--accent-ink); }
+        .badge-shipped   { background: rgba(14,124,107,.15);   color: var(--shipped); }
         .badge-completed { background: rgba(47,143,78,.18);    color: var(--success); }
         .badge-cancelled { background: rgba(192,57,43,.15);    color: var(--red); }
 
         .order-card__items { font-size: 13px; opacity: .75; line-height: 1.5; }
         .order-card__store { font-size: 13px; opacity: .65; }
         .order-card__address { font-size: 13px; color: rgba(var(--ink-rgb),0.55); margin: 4px 0; }
-        .order-card__tracking { font-size: 13px; color: var(--accent-ink); margin: 4px 0; }
-        .order-card__total { font-size: 17px; font-weight: 700; color: var(--accent-ink); }
+        .order-card__tracking { font-size: 13px; color: var(--accent-text); margin: 4px 0; }
+        .order-card__total { font-size: 17px; font-weight: 700; color: var(--accent-text); }
 
         /* ─── Заявки на ремонт (service_requests) в том же списке ──── */
         .order-card__type {
             font-size: 10.5px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase;
-            color: var(--accent-ink); background: rgba(var(--warning-rgb),.18);
+            color: var(--accent-text); background: rgba(var(--warning-rgb),.18);
             padding: 2px 8px; border-radius: 7px; align-self: flex-start;
         }
         .order-card__tools { font-size: 13px; color: var(--text-primary); line-height: 1.5; }
@@ -89,7 +90,7 @@
         .track-btn {
             display: flex; align-items: center; justify-content: center; gap: 8px;
             height: 44px; background: rgba(14,124,107,0.15); border: 1px solid rgba(14,124,107,0.4);
-            border-radius: var(--radius-md); color: var(--accent-ink); font-size: 14px; font-weight: 600;
+            border-radius: var(--radius-md); color: var(--shipped); font-size: 14px; font-weight: 600;
             width: 100%; text-decoration: none;
         }
         .track-btn:active { background: rgba(14,124,107,0.3); }
@@ -161,7 +162,7 @@
             justify-content: center; gap: 3px; height: 100%;
             color: var(--text-secondary); font-size: 10.5px; font-weight: 600;
         }
-        .nav-item.active { color: var(--accent-ink); font-weight: 700; }
+        .nav-item.active { color: var(--accent-text); font-weight: 700; }
         .nav-item:active { opacity: .7; }
         .nav-ic {
             position: relative; width: 30px; height: 30px; border-radius: 9px;
@@ -171,7 +172,7 @@
         .nav-item.active .nav-ic { background: var(--accent); color: var(--accent-ink); }
         .nav-badge {
             position: absolute; top: -6px; right: -8px;
-            min-width: 16px; height: 16px; background: var(--red); color: #FFFFFF;
+            min-width: 16px; height: 16px; background: var(--red-fill); color: #FFFFFF;
             font-size: 9.5px; font-weight: 700; border-radius: 9px; padding: 0 4px;
             display: flex; align-items: center; justify-content: center;
         }
@@ -263,7 +264,7 @@
 .legal-footer { padding: 24px 16px; color: rgba(var(--ink-rgb),0.4); font-size: 11px; text-align: center; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 40px; margin-bottom: 80px; }
 .legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
 .legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
-.legal-footer__links a { color: var(--accent-ink); text-decoration: none; }
+.legal-footer__links a { color: var(--accent-text); text-decoration: none; }
 </style>
 <div class="legal-footer">
     <div class="legal-footer__info">

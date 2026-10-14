@@ -3,10 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light">
     <title>Точка Монтажа — Публичная оферта</title>
     <script src="https://st.max.ru/js/max-web-app.js"></script>
     <style>
-        @import url('/src/theme.css');
+        @import url('/src/theme.css?v=20261027');
+        /* Юридическая страница — ВСЕГДА светлая, независимо от
+           prefers-color-scheme системы/WebView. @import тащит и тёмный
+           @media-блок theme.css, который иначе переопределил бы эти же
+           переменные при системной тёмной теме — поэтому фиксируем их
+           здесь же, безусловно (без media), тем же :root: при равной
+           специфичности выигрывает порядок в исходнике, а это правило
+           идёт ПОСЛЕ импорта, значит побеждает всегда. */
+        :root {
+            color-scheme: light; /* CSS-свойство сильнее <meta name="color-scheme">,
+                                     а theme.css выше задаёт light dark — без этого
+                                     переопределения оно и победило бы */
+            --bg-page:     #EDECE6;
+            --bg-card:     #FFFFFF;
+            --card-rgb:    255,255,255;
+            --ink-rgb:     26,23,18;
+            --text-primary: #1A1712;
+            --accent-text:  #1A1712;
+        }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { -webkit-text-size-adjust: 100%; }
         body {
@@ -18,7 +37,7 @@
             -webkit-tap-highlight-color: transparent;
         }
         button { cursor: pointer; border: none; background: none; font: inherit; }
-        a { color: var(--accent-ink); }
+        a { color: var(--accent-text); }
 
         .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding-bottom: 40px; }
 
@@ -51,7 +70,7 @@
         }
 
         h1 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-        h2 { font-size: 14px; font-weight: 700; color: var(--accent-ink); margin-bottom: 8px; }
+        h2 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
         p { font-size: 14px; line-height: 1.65; color: rgba(var(--ink-rgb),0.8); margin-bottom: 8px; }
         ul { padding-left: 18px; margin-bottom: 8px; }
         ul li { font-size: 14px; line-height: 1.65; color: rgba(var(--ink-rgb),0.8); margin-bottom: 4px; }
@@ -162,7 +181,7 @@
 .legal-footer { padding: 24px 16px; color: rgba(var(--ink-rgb),0.45); font-size: 11px; text-align: center; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 40px; }
 .legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
 .legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
-.legal-footer__links a { color: var(--accent-ink); text-decoration: none; }
+.legal-footer__links a { color: var(--accent-text); text-decoration: none; }
 </style>
 <div class="legal-footer">
     <div class="legal-footer__info">

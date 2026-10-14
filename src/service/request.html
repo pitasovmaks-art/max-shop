@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light dark">
     <title>Точка Монтажа — Заявка на ремонт</title>
     <script src="https://st.max.ru/js/max-web-app.js"></script>
-    <script src="/src/shopGuard.js"></script>
+    <script src="/src/shopGuard.js?v=20261026"></script>
     <script src="/src/utils/tgid.js?v=20260530b"></script>
     <script src="/src/utils/authFetch.js?v=20261003"></script>
     <style>
-        @import url('/src/theme.css');
+        @import url('/src/theme.css?v=20261027');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { -webkit-text-size-adjust: 100%; }
         body {
@@ -51,7 +52,7 @@
         .content { padding: 16px 12px calc(96px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 16px; }
 
         .section__title {
-            font-size: 13px; font-weight: 600; color: var(--accent-ink);
+            font-size: 13px; font-weight: 600; color: var(--label-text);
             text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
         }
         .section__optional { font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: 0; color: rgba(var(--ink-rgb),0.5); }
@@ -59,7 +60,7 @@
 
         .field { margin-bottom: 14px; }
         .field:last-child { margin-bottom: 0; }
-        .field__label { display: block; font-size: 12px; font-weight: 600; color: var(--accent-ink); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+        .field__label { display: block; font-size: 12px; font-weight: 600; color: var(--label-text); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
         .field__input, .field__select, .field__textarea {
             display: block; width: 100%; border: 1.5px solid var(--border); outline: none;
             font-size: 16px; color: var(--text-primary); background: var(--bg-input);
@@ -100,7 +101,7 @@
             width: 100%; height: 46px;
             border: 1.5px dashed var(--border);
             border-radius: var(--radius-sm);
-            color: var(--accent-ink);
+            color: var(--accent-text);
             font-size: 14px; font-weight: 700;
             display: flex; align-items: center; justify-content: center; gap: 6px;
         }
@@ -139,7 +140,7 @@
         /* ─── Согласие (тот же паттерн, что checkout.html .legal-check) ── */
         .legal-check { display: flex; gap: 10px; align-items: flex-start; color: rgba(var(--ink-rgb),0.75); font-size: 13px; cursor: pointer; line-height: 1.5; }
         .legal-check input { margin-top: 3px; flex-shrink: 0; }
-        .legal-check a { color: var(--accent-ink); text-decoration: underline; }
+        .legal-check a { color: var(--accent-text); text-decoration: underline; }
 
         /* ─── Sticky submit footer ──────────────────────────── */
         .submit-footer {

@@ -1,4 +1,4 @@
-@import url('/src/theme.css');
+@import url('/src/theme.css?v=20261027');
 
 /* ─── Cookie banner ─────────────────────────────────────── */
 .cookie-banner {
@@ -38,11 +38,14 @@
 }
 
 .cookie-banner__text a {
-    /* var(--accent-ink), не var(--accent) — accent в этой палитре
-       жёлтый, как цвет текста/ссылки на белом он почти невидим (см.
-       design-preview-colors.html); accent-ink — тёмный в обеих темах,
-       пара именно для текста/иконок на светлой поверхности. */
-    color: var(--accent-ink);
+    /* var(--accent-text), не var(--accent) — accent в этой палитре
+       жёлтый, как цвет текста/ссылки на светлом фоне он почти невидим
+       (см. design-preview-colors.html); не var(--accent-ink) — та
+       всегда тёмная и на --bg-card в тёмной теме почти не видна (см.
+       отчёт по диагностике тёмной темы, сессия 14.10.2026
+       dark-theme-fix). --accent-text: тёмный в светлой теме, жёлтый в
+       тёмной. */
+    color: var(--accent-text);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -103,4 +106,4 @@
     white-space: nowrap;
 }
 .site-footer__link:hover,
-.site-footer__link:active { color: var(--accent-ink); text-decoration-color: currentColor; }
+.site-footer__link:active { color: var(--accent-text); text-decoration-color: currentColor; }

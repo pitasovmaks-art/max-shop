@@ -51,7 +51,7 @@ function renderStoreList() {
     });
 
     if (!filtered.length) {
-        list.innerHTML = '<p style="padding:16px;color:rgba(28,28,30,0.5);font-size:14px">Нет доступных магазинов</p>';
+        list.innerHTML = '<p style="padding:16px;color:var(--text-secondary);font-size:14px">Нет доступных магазинов</p>';
         return;
     }
 

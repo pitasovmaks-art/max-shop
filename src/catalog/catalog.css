@@ -1,4 +1,4 @@
-@import url('/src/theme.css?v=20261016');
+@import url('/src/theme.css?v=20261027');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@600&display=swap');
 
 /* ─── Reset & Base ──────────────────────────────────────── */
@@ -130,7 +130,7 @@ html.city-unknown #city-screen { display: flex; }
     position: absolute;
     top: 2px; right: 2px;
     min-width: 18px; height: 18px;
-    background: var(--red);
+    background: var(--red-fill);
     color: #FFFFFF;
     font-size: 11px;
     font-weight: 700;
@@ -324,7 +324,7 @@ html.city-unknown #city-screen { display: flex; }
     font-size: 18px;
     display: flex; align-items: center; justify-content: center;
 }
-.cat-tile--sale .cat-tile__ic { background: var(--red); }
+.cat-tile--sale .cat-tile__ic { background: var(--red-fill); }
 .cat-tile span:last-child {
     font-size: 11px;
     font-weight: 700;
@@ -374,7 +374,7 @@ html.city-unknown #city-screen { display: flex; }
     color: #fff;
     display: flex; align-items: center; justify-content: center;
 }
-.cat-card--sale .cat-card__ic { background: var(--red); }
+.cat-card--sale .cat-card__ic { background: var(--red-fill); }
 .cat-card__label {
     font-size: 14px;
     font-weight: 700;
@@ -602,7 +602,7 @@ html.city-unknown #city-screen { display: flex; }
     position: absolute;
     top: -4px; right: -4px;
     min-width: 15px; height: 15px;
-    background: var(--red);
+    background: var(--red-fill);
     color: #fff;
     font-size: 9px;
     font-weight: 800;
@@ -832,10 +832,13 @@ html.city-unknown #city-screen { display: flex; }
 }
 .product-card__price--service {
     /* не var(--accent) — жёлтый текст на белом почти не читается (см.
-       design-preview-colors.html); var(--accent-ink) тёмный в обеих темах */
+       design-preview-colors.html); var(--accent-text) — тёмный в светлой
+       теме, жёлтый в тёмной (не var(--accent-ink): та всегда тёмная и
+       на --bg-card в тёмной теме была почти не видна, см. отчёт по
+       диагностике тёмной темы, сессия 14.10.2026 dark-theme-fix) */
     font-size: 12.5px;
     font-weight: 700;
-    color: var(--accent-ink);
+    color: var(--accent-text);
 }
 .price-old {
     font-size: 11px;
@@ -1030,7 +1033,7 @@ html.city-unknown #city-screen { display: flex; }
     font-weight: 600;
     transition: color .15s;
 }
-.nav-item.active { color: var(--accent-ink); font-weight: 700; }
+.nav-item.active { color: var(--accent-text); font-weight: 700; }
 .nav-item:active { opacity: .7; }
 .nav-ic {
     position: relative;
@@ -1044,7 +1047,7 @@ html.city-unknown #city-screen { display: flex; }
     position: absolute;
     top: -6px; right: -8px;
     min-width: 16px; height: 16px;
-    background: var(--red);
+    background: var(--red-fill);
     color: #FFFFFF;
     font-size: 9.5px;
     font-weight: 700;
@@ -1084,4 +1087,4 @@ html.city-unknown #city-screen { display: flex; }
 .legal-footer { padding: 24px 16px; color: rgba(var(--ink-rgb),0.45); font-size: 11px; text-align: center; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 40px; }
 .legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
 .legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
-.legal-footer__links a { color: var(--accent-ink); text-decoration: none; }
+.legal-footer__links a { color: var(--accent-text); text-decoration: none; }
