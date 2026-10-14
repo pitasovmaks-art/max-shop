@@ -21,6 +21,7 @@ const fs      = require('fs');
 const path    = require('path');
 const db      = require('../db');
 const { ADMIN_PASSWORD } = require('../middleware/auth');
+const { SELLER_NAME, SELLER_INN } = require('../config');
 
 function isoNow(offsetMs = 0) { return new Date(Date.now() + offsetMs); }
 
@@ -432,6 +433,28 @@ async function main() {
         check('notifyCustomer() не содержит слово "Реклама"', notifyCustomerBody && !notifyCustomerBody.includes('Реклама'));
         check('notifyStock() не содержит слово "Реклама"', notifyStockBody && !notifyStockBody.includes('Реклама'));
         check('notifyServiceRequestStatus() не содержит слово "Реклама"', notifyServiceRequestStatusBody && !notifyServiceRequestStatusBody.includes('Реклама'));
+
+        /* ── 11. Текст рекламного уведомления notifyPromo() — первая строка,
+           реквизиты и подсказка об отписке на месте (статическая проверка
+           шаблона, без реальной отправки) ──────────────────────────────── */
+        const notifyPromoBody = fnBody(botSrc, 'notifyPromo');
+        check('notifyPromo() найден в bot.js', !!notifyPromoBody);
+        const textMatch = notifyPromoBody && notifyPromoBody.match(/const text = `([\s\S]*?)`;/);
+        const promoTemplate = textMatch ? textMatch[1] : null;
+        check('notifyPromo() шаблон текста найден', !!promoTemplate);
+        const renderedPromo = promoTemplate
+            ? promoTemplate
+                .replace('${productName}', 'Тестовый товар')
+                .replace('${SELLER_NAME}', SELLER_NAME)
+                .replace('${SELLER_INN}', SELLER_INN)
+                .replace(/\\n/g, '\n')
+            : '';
+        check('notifyPromo(): первая строка ровно "Акция в «Точка Монтажа». Реклама"',
+            renderedPromo.startsWith('Акция в «Точка Монтажа». Реклама\n'));
+        check('notifyPromo(): реквизиты продавца присутствуют', renderedPromo.includes(SELLER_NAME) && renderedPromo.includes(SELLER_INN));
+        check('notifyPromo(): подсказка про отписку "стоп" присутствует', renderedPromo.includes('напишите: стоп'));
+        check('notifyPromo(): реквизиты расположены перед подсказкой об отписке',
+            renderedPromo.indexOf(SELLER_NAME) < renderedPromo.indexOf('напишите: стоп'));
     }
 
     server.close();

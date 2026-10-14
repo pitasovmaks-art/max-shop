@@ -562,12 +562,14 @@ async function notifyStock(tgId, productName) {
 }
 
 /* ─── Notify: promo sale ────────────────────────────────── */
-// Юридически значимая форма: "Реклама" первой строкой, реквизиты
-// продавца и подсказка про отписку — в конце (см. SELLER_NAME/SELLER_INN
-// из server/config.js, обсуждалось отдельно, не хардкодить второй раз).
+// Юридически значимая форма: первая строка заканчивается словом "Реклама"
+// (в превью Max видно только первую строку — нужно, чтобы по ней было
+// понятно, что сообщение от нас, а не просто "Реклама" без контекста),
+// дальше реквизиты продавца и подсказка про отписку — в конце (см.
+// SELLER_NAME/SELLER_INN из server/config.js, не хардкодить второй раз).
 async function notifyPromo(tgId, productName) {
     if (!TOKEN || !tgId) return;
-    const text = `Реклама\n\n🔥 Акция в Точке Монтажа!\n\nТовар «${productName}» теперь по специальной цене. Успейте заказать!\n\nЧтобы отписаться, напишите: стоп\n\n${SELLER_NAME}, ИНН ${SELLER_INN}`;
+    const text = `Акция в «Точка Монтажа». Реклама\n\nТовар «${productName}» теперь по специальной цене. Успейте заказать!\n\n${SELLER_NAME}, ИНН ${SELLER_INN}\n\nЧтобы отписаться, напишите: стоп`;
     const trySend = async (id) => {
         const result = await sendMessage(+id, text);
         console.log(`[bot] notifyPromo OK: tg_id=${tgId} product=${productName}`, result);
