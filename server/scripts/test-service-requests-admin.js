@@ -18,6 +18,8 @@ const REAL_BOT_TOKEN = 'real_bot_token_for_test';
 process.env.MAX_BOT_TOKEN = REAL_BOT_TOKEN;
 
 const express = require('express');
+const fs      = require('fs');
+const path    = require('path');
 const db      = require('../db');
 const { ADMIN_PASSWORD } = require('../middleware/auth');
 
@@ -278,6 +280,25 @@ async function main() {
         await putAdmin('/api/service-requests/admin/2', { status: 'ready' });
         check('на статусе ready с доставкой запрос нормализован с deliveryNeeded=true и адресом',
             lastStatusNotify && lastStatusNotify.request.deliveryNeeded === true && lastStatusNotify.request.address === 'Москва, ул. Тестовая, 2');
+    }
+
+    /* ── «Готова»: точный текст уведомления (статическая проверка шаблона
+       в bot.js, без реальной отправки — тот же приём, что test-promo.js
+       использует для notifyPromo) ─────────────────────────────────────── */
+    {
+        const botSrc = fs.readFileSync(path.join(__dirname, '..', '..', 'bot.js'), 'utf8');
+        const m = botSrc.match(/async function notifyServiceRequestStatus\s*\([^)]*\)\s*\{([\s\S]*?)\n\}\n/);
+        const body = m ? m[1] : null;
+        check('notifyServiceRequestStatus() найдена в bot.js', !!body);
+
+        check('уведомление "Готова" НЕ содержит старую фразу "Доставим по адресу"',
+            body && !body.includes('Доставим по адресу'));
+
+        check('уведомление "Готова" С доставкой: предлагает согласовать доставку или забрать в магазине, с адресом storeLabel',
+            body && /Свяжемся с вами, чтобы согласовать доставку, или вы можете забрать инструмент в магазине:\s*\$\{request\.storeLabel\}/.test(body));
+
+        check('уведомление "Готова" БЕЗ доставки: "Инструмент можно забрать в магазине" + адрес магазина из storeLabel',
+            body && /Инструмент можно забрать в магазине:\s*\$\{request\.storeLabel\}/.test(body));
     }
 
     /* ── Разделение разделов: заявки не попадают в /api/orders ───────── */
