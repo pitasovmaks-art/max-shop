@@ -360,9 +360,16 @@ function renderCategoryRail() {
     // On the Catalog tab itself, open the drill-down in place; from Home,
     // navigate to the Catalog tab pre-opened on that category.
     const onCatalogPage = !!document.getElementById('screen-root');
-    const openTile = target => onCatalogPage
-        ? `openCategoryDrilldown(${target})`
-        : `location.href='catalog.html?category=${target}'`;
+    // jsArg/openTile принимают СЫРОЙ id (число для обычной категории,
+    // строка 'sale' для акций) — кавычки для JS-литерала строки
+    // добавляются здесь один раз, а не на стороне вызова (там раньше
+    // вызывали openTile("'sale'") с собственными кавычками внутри, что
+    // на Главной давало невалидный onclick: location.href='...='sale''
+    // — коллизия кавычек, клик по «Акциям» на Главной ничего не делал).
+    const jsArg = id => typeof id === 'number' ? id : `'${id}'`;
+    const openTile = id => onCatalogPage
+        ? `openCategoryDrilldown(${jsArg(id)})`
+        : `location.href='catalog.html?category=${encodeURIComponent(id)}'`;
 
     const hasSale = _products.some(p => isSaleForCity(p, _city));
     // Категории без единого товара не показываем — тапать на них всё
@@ -377,7 +384,7 @@ function renderCategoryRail() {
         // какую-то иконку через фолбэк на DEFAULT_CATEGORY_ICON — тут он
         // сознательно не используется, чтобы не придумывать данных).
         const saleCard = hasSale
-            ? `<button class="cat-card cat-card--sale" onclick="${openTile("'sale'")}">
+            ? `<button class="cat-card cat-card--sale" onclick="${openTile('sale')}">
                 <span class="cat-card__ic">${iconSvg('sale', 18)}</span>
                 <span class="cat-card__label">Акции</span>
             </button>`
@@ -392,7 +399,7 @@ function renderCategoryRail() {
     }
 
     const saleTile = hasSale
-        ? `<button class="cat-tile cat-tile--sale" onclick="${openTile("'sale'")}">
+        ? `<button class="cat-tile cat-tile--sale" onclick="${openTile('sale')}">
             <span class="cat-tile__ic">${iconSvg('sale', 20)}</span>
             <span>Акции</span>
         </button>`
