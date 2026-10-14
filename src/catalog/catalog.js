@@ -203,17 +203,19 @@ function _effectiveVariant(product) {
 
 function selectVariant(productId, variantId) {
     _selectedVariants[productId] = variantId;
-    const card = document.getElementById(`pcard-${productId}`);
-    if (!card) return;
-    card.querySelectorAll('.variant-pill').forEach(pill => {
-        pill.classList.toggle('variant-pill--active', +pill.dataset.vid === variantId);
-    });
     const product = _products.find(p => p.id === productId);
     const variant  = product && product.variants.find(v => v.id === variantId);
-    if (variant) {
-        const priceEl = card.querySelector('.product-card__price');
-        if (priceEl) priceEl.innerHTML = fmtPrice(getEffectivePrice(variant, _city), variant.salePrice || 0);
-    }
+    // Тот же товар может быть отрисован в нескольких лентах одновременно
+    // (см. toggleFav) — обновляем все совпадающие карточки, не только первую.
+    document.querySelectorAll(`#pcard-${productId}`).forEach(card => {
+        card.querySelectorAll('.variant-pill').forEach(pill => {
+            pill.classList.toggle('variant-pill--active', +pill.dataset.vid === variantId);
+        });
+        if (variant) {
+            const priceEl = card.querySelector('.product-card__price');
+            if (priceEl) priceEl.innerHTML = fmtPrice(getEffectivePrice(variant, _city), variant.salePrice || 0);
+        }
+    });
 }
 
 /* ─── Cart (localStorage) ───────────────────────────────────── */
@@ -272,11 +274,13 @@ function addToCart(productId) {
     saveCart(cart);
     showToast('✓ Добавлено в корзину');
 
-    const cardBtn = document.querySelector(`#pcard-${productId} .add-btn`);
-    if (cardBtn) {
+    // querySelector взял бы только первую копию карточки в DOM-порядке —
+    // не обязательно ту, по которой реально тапнули, если товар отрисован
+    // в нескольких лентах одновременно (см. toggleFav).
+    document.querySelectorAll(`#pcard-${productId} .add-btn`).forEach(cardBtn => {
         cardBtn.classList.add('add-btn--added');
         setTimeout(() => cardBtn.classList.remove('add-btn--added'), 500);
-    }
+    });
 }
 
 function getTotalQty() {
@@ -1954,15 +1958,19 @@ async function toggleFav(productId) {
     const wasFav = _favorites.has(productId);
     // Optimistic update
     if (wasFav) { _favorites.delete(productId); } else { _favorites.add(productId); }
-    const btn = document.querySelector(`#pcard-${productId} .fav-btn`);
-    const svg = btn?.querySelector('svg');
+    // Тот же товар может быть отрисован в нескольких лентах одновременно
+    // (Хиты продаж + Популярные/поиск/каталог) — у карточек совпадающий
+    // id "pcard-N", querySelectorAll матчит их все, querySelector взял бы
+    // только первую.
     function applyFavState(active) {
-        if (!btn) return;
-        btn.classList.toggle('fav-btn--active', active);
-        if (svg) {
-            svg.style.fill   = active ? 'var(--red)' : 'none';
-            svg.style.stroke = active ? 'var(--red)' : 'var(--accent-ink)';
-        }
+        document.querySelectorAll(`#pcard-${productId} .fav-btn`).forEach(btn => {
+            btn.classList.toggle('fav-btn--active', active);
+            const svg = btn.querySelector('svg');
+            if (svg) {
+                svg.style.fill   = active ? 'var(--red)' : 'none';
+                svg.style.stroke = active ? 'var(--red)' : 'var(--accent-ink)';
+            }
+        });
     }
     applyFavState(!wasFav);
     authFetch('/api/favorites', {
@@ -1994,14 +2002,16 @@ async function subscribeNotify(productId) {
             body:    JSON.stringify({ productId }),
         });
         _subscriptions.add(productId);
-        const btn = document.querySelector(`#pcard-${productId} .add-btn--notify`);
-        if (btn) {
+        // Та же карточка может быть отрисована несколько раз одновременно
+        // (см. toggleFav) — иначе вторая копия осталась бы кликабельной
+        // «Уведомить» и позволила бы повторно отправить подписку.
+        document.querySelectorAll(`#pcard-${productId} .add-btn--notify`).forEach(btn => {
             btn.classList.replace('add-btn--notify', 'add-btn--subscribed');
             btn.disabled = true;
             btn.innerHTML = _bellSvg(true);
             btn.setAttribute('aria-label', 'Вы подписаны');
             btn.onclick = null;
-        }
+        });
         showToast('🔔 Уведомим когда товар появится');
     } catch { showToast('Ошибка. Попробуйте снова'); }
 }
