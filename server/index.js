@@ -83,7 +83,29 @@ app.use((req, res, next) => {
 app.get('/health',  (req, res) => res.status(200).send('OK'));
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
-app.use(express.static(path.join(__dirname, '..')));
+/* Белый список статики — раньше express.static раздавал ВЕСЬ корень
+   репозитория (server/**, bot.js, PROGRESS.md, package.json, тесты и
+   т.п. были публично доступны любому клиенту без десктопного
+   User-Agent, см. сессию 14.10.2026 fix-static-exposure). Теперь явно
+   отдаются только три каталога с реальными фронтенд-ассетами и шесть
+   корневых HTML-страниц, которые их используют — всё остальное
+   404-ится независимо от User-Agent просто потому, что express.static
+   ниже не знает путей за пределами этого списка.
+   dotfiles:'deny' — явный ответ 403 на скрытые файлы (.env, .git/...)
+   внутри этих трёх каталогов, если такие когда-нибудь появятся,
+   вместо дефолтного express 'ignore' (тихий 404, который легко не
+   заметить при проверке). */
+const STATIC_OPTS = { dotfiles: 'deny' };
+app.use('/src',    express.static(path.join(__dirname, '..', 'src'),    STATIC_OPTS));
+app.use('/public', express.static(path.join(__dirname, '..', 'public'), STATIC_OPTS));
+app.use('/admin',  express.static(path.join(__dirname, '..', 'admin'),  STATIC_OPTS));
+
+const ROOT_HTML_PAGES = ['index', 'catalog', 'cart', 'checkout', 'offer', 'privacy'];
+for (const name of ROOT_HTML_PAGES) {
+    app.get(`/${name}.html`, (req, res) => res.sendFile(path.join(__dirname, '..', `${name}.html`)));
+}
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'index.html')));
+app.get('/robots.txt', (req, res) => res.sendFile(path.join(__dirname, '..', 'robots.txt')));
 
 app.get('/api/config', (req, res) => {
     res.json({
