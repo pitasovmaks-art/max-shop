@@ -192,7 +192,7 @@ async function openSrDetail(id) {
     [
         row('Клиент', `${r.name} · ${r.phone}`),
         row('Магазин', r.storeLabel),
-        row('Доставка', r.deliveryNeeded ? `нужна, адрес: ${r.address || 'не указан'}` : 'не нужна, принесёт сам'),
+        row('Доставка', r.deliveryNeeded ? `нужна, адрес забора: ${r.address || 'не указан'}` : 'не нужна, принесёт сам'),
         row('Комментарий клиента', r.comment),
     ].forEach(el => { if (el) infoEl.appendChild(el); });
 

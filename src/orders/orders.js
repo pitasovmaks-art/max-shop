@@ -80,7 +80,7 @@ function buildServiceRequestCard(r) {
     if (r.deliveryNeeded && r.address) {
         const addr = document.createElement('div');
         addr.className = 'order-card__address';
-        addr.textContent = '🚗 Адрес доставки: ' + r.address;
+        addr.textContent = '🚗 Адрес забора: ' + r.address;
         card.appendChild(addr);
     }
 

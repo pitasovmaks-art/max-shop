@@ -242,14 +242,14 @@
         <section>
             <div class="card">
                 <div class="toggle-row">
-                    <span class="toggle-row__label">Нужна доставка<br><span style="color:var(--text-secondary);font-size:12px">Заберём инструмент и привезём после ремонта</span></span>
+                    <span class="toggle-row__label">Нужна доставка<br><span style="color:var(--text-secondary);font-size:12px">Заберём инструмент по указанному адресу. Как вернуть его после ремонта, согласуем с вами отдельно</span></span>
                     <label class="toggle">
                         <input type="checkbox" id="inputDeliveryNeeded" onchange="handleDeliveryToggle()">
                         <span class="toggle__slider"></span>
                     </label>
                 </div>
                 <div class="field address-field hidden" id="fieldAddress">
-                    <label class="field__label" for="inputAddress">Адрес *</label>
+                    <label class="field__label" for="inputAddress">Адрес забора *</label>
                     <textarea class="field__textarea" id="inputAddress" rows="2" maxlength="300" placeholder="Город, улица, дом, квартира"></textarea>
                     <span class="field__error"></span>
                 </div>
@@ -290,6 +290,6 @@
     </div>
 
 </div>
-<script src="request.js?v=20261017"></script>
+<script src="request.js?v=20261025"></script>
 </body>
 </html>

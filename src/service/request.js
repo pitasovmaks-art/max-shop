@@ -189,7 +189,7 @@ function validateAndCollect() {
 
     const deliveryNeeded = document.getElementById('inputDeliveryNeeded').checked;
     const address = document.getElementById('inputAddress').value.trim();
-    if (deliveryNeeded && !address) { showError('fieldAddress', 'Укажите адрес для доставки'); ok = false; }
+    if (deliveryNeeded && !address) { showError('fieldAddress', 'Укажите адрес забора'); ok = false; }
 
     const comment = document.getElementById('inputComment').value.trim();
     const consent = document.getElementById('agreePolicy').checked;
