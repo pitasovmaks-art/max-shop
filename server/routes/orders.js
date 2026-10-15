@@ -3,6 +3,10 @@ const db                = require('../db');
 const { requireAdmin }  = require('../middleware/auth');
 const { requireUser }   = require('../middleware/requireUser');
 const { notifyStore, notifyCustomer } = require('../../bot');
+const { loadProductsForPricing, resolveOrderItem } = require('../utils/pricing');
+
+const MAX_ITEMS_PER_ORDER = 50;
+const MAX_QTY_PER_ITEM    = 999;
 
 function normalize(o) {
     return {
@@ -25,20 +29,58 @@ function normalize(o) {
 
 /* POST /api/orders — публичный (создание), но tg_id заказа берётся из
    подписанных initData (req.tgId), а не из тела запроса — клиент больше
-   не может подставить чужой id в поле tgId. */
+   не может подставить чужой id в поле tgId.
+
+   items[].price/name и total, присланные клиентом, НЕ сохраняются —
+   раньше сервер доверял им полностью, и прямым запросом (не через сайт)
+   можно было оформить заказ по любой, в том числе нулевой, цене. Вместо
+   этого цена и название каждой позиции пересчитываются по актуальным
+   данным из БД (server/utils/pricing.js — порт той же формулы, что
+   effectiveItemPrice()/_checkCartItem() в src/cart/checkout.js), и именно
+   эти пересчитанные значения идут в БД и в уведомление менеджеру. Для
+   обычного покупателя (прошёл через настоящий чекаут) цена совпадёт 1:1 —
+   он уже проверил её свежими данными перед отправкой. */
 router.post('/', requireUser, async (req, res) => {
     const { name, phone, store, delivery, address, city, comment, items, total } = req.body;
     const tgId = req.tgId;
-    console.log('[orders] новый заказ: name=', name, 'tgId=', tgId, 'city=', city);
     if (!name || !phone || !store || !items || total == null) {
         return res.status(400).json({ error: 'Обязательные поля: name, phone, store, items, total' });
     }
+    if (!Array.isArray(items) || !items.length || items.length > MAX_ITEMS_PER_ORDER) {
+        return res.status(400).json({ error: `В заказе должно быть от 1 до ${MAX_ITEMS_PER_ORDER} позиций` });
+    }
+    for (const it of items) {
+        if (!it || !Number.isInteger(it.id) || it.id <= 0) {
+            return res.status(400).json({ error: 'Некорректная позиция заказа' });
+        }
+        if (!Number.isInteger(it.qty) || it.qty < 1 || it.qty > MAX_QTY_PER_ITEM) {
+            return res.status(400).json({ error: 'Некорректное количество товара' });
+        }
+    }
+
+    const deliveryMethod = delivery || 'pickup';
+
     try {
+        const productsById = await loadProductsForPricing(items.map(it => it.id));
+        const resolved = items.map(it => resolveOrderItem(
+            { id: it.id, variantLabel: typeof it.variantLabel === 'string' ? it.variantLabel.slice(0, 200) : '' },
+            productsById, city, deliveryMethod
+        ));
+        const failed = resolved.filter(r => !r.ok);
+        if (failed.length) {
+            return res.status(400).json({ error: failed.map(f => f.reason).join('\n') });
+        }
+
+        const realItems = resolved.map((r, idx) => ({
+            id: items[idx].id, name: r.name, price: r.price, qty: items[idx].qty,
+        }));
+        const realTotal = realItems.reduce((sum, it) => sum + it.price * it.qty, 0);
+
         const row = await db.queryOne(
             `INSERT INTO orders (name,phone,store,delivery,address,city,tg_id,comment,items,total)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
-            [name, phone, store, delivery || 'pickup', address || null, city || null,
-             tgId, comment || null, JSON.stringify(items), total]
+            [name, phone, store, deliveryMethod, address || null, city || null,
+             tgId, comment || null, JSON.stringify(realItems), realTotal]
         );
         const order = normalize(await db.queryOne('SELECT * FROM orders WHERE id=$1', [row.id]));
         notifyStore(order).catch(e => console.error('[bot] notifyStore:', e.message));

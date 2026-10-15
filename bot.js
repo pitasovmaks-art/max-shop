@@ -11,6 +11,13 @@ const SHOP_URL     = process.env.SHOP_URL || 'https://max-shop-production.up.rai
 const BOT_USERNAME = process.env.BOT_USERNAME || '';
 const WEBHOOK_URL  = process.env.WEBHOOK_URL || '';
 
+/* Внутренние вызовы бота к собственному серверному API (/api/users/map,
+   /api/users/chat, /api/promo/unsubscribe) — те же процесс и хост, но по
+   сети (см. base ниже), не гарантированно localhost. Эти три роута
+   защищены requireInternal (server/middleware/requireInternal.js) и
+   проверяют ровно этот заголовок. */
+const INTERNAL_API_HEADERS = { 'X-Internal-Secret': process.env.INTERNAL_API_SECRET || '' };
+
 /* ─── Admin chat IDs (persisted in Postgres, table bot_admins) ───
    Раньше хранилось в bot_admins.json в корне проекта — на Timeweb App
    Platform файловая система контейнера доступна только на чтение (кроме
@@ -148,7 +155,7 @@ async function processUpdate(update) {
                 : 'http://localhost:3000';
             fetch(`${base}/api/users/map`, {
                 method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: Object.assign({ 'Content-Type': 'application/json' }, INTERNAL_API_HEADERS),
                 body:    JSON.stringify({ userId, chatId }),
             }).catch(e => console.error('[bot] user_map save error:', e.message));
         }
@@ -194,7 +201,7 @@ async function processUpdate(update) {
                     : 'http://localhost:3000';
                 await fetch(`${base}/api/promo/unsubscribe`, {
                     method:  'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, INTERNAL_API_HEADERS),
                     body:    JSON.stringify({ tgId: userId || chatId }),
                 });
                 await sendMessage(chatId, 'Вы отписались от рекламных сообщений.');
@@ -441,7 +448,7 @@ async function notifyCustomer(tgId, orderId, status, extra) {
             const base = process.env.WEBHOOK_URL
                 ? process.env.WEBHOOK_URL.replace('/webhook', '')
                 : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`, { headers: INTERNAL_API_HEADERS });
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -518,7 +525,7 @@ async function notifyServiceRequestStatus(tgId, request, changes) {
             const base = process.env.WEBHOOK_URL
                 ? process.env.WEBHOOK_URL.replace('/webhook', '')
                 : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`, { headers: INTERNAL_API_HEADERS });
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -550,7 +557,7 @@ async function notifyStock(tgId, productName) {
             const base = process.env.WEBHOOK_URL
                 ? process.env.WEBHOOK_URL.replace('/webhook', '')
                 : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`, { headers: INTERNAL_API_HEADERS });
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -587,7 +594,7 @@ async function notifyPromo(tgId, productName) {
             const base = process.env.WEBHOOK_URL
                 ? process.env.WEBHOOK_URL.replace('/webhook', '')
                 : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`, { headers: INTERNAL_API_HEADERS });
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {

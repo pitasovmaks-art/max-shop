@@ -1,5 +1,6 @@
-const router = require('express').Router();
-const https  = require('https');
+const router            = require('express').Router();
+const https             = require('https');
+const { requireAdmin }  = require('../middleware/auth');
 
 const CDEK_CLIENT_ID     = process.env.CDEK_CLIENT_ID     || '';
 const CDEK_CLIENT_SECRET = process.env.CDEK_CLIENT_SECRET || '';
@@ -45,8 +46,11 @@ async function getToken() {
     return _token;
 }
 
-/* POST /api/cdek/token — manual token refresh (для отладки) */
-router.post('/token', async (req, res) => {
+/* POST /api/cdek/token — manual token refresh (для отладки). Не вызывается
+   кодом приложения — /api/cdek/offices сам обновляет токен по необходимости
+   (см. getToken() выше). Оставлен как ручной инструмент, закрыт тем же
+   паролем, что и админка, а не публичен всему интернету. */
+router.post('/token', requireAdmin, async (req, res) => {
     try {
         _token = null; _tokenExpAt = 0;
         const token = await getToken();

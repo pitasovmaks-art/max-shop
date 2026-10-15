@@ -16,6 +16,7 @@ process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'test';
 
 const REAL_BOT_TOKEN = 'real_bot_token_for_test';
 process.env.MAX_BOT_TOKEN = REAL_BOT_TOKEN;
+process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'test-admin-password';
 
 const express = require('express');
 const fs      = require('fs');

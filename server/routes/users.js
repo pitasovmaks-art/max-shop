@@ -1,8 +1,12 @@
-const router = require('express').Router();
-const db     = require('../db');
+const router               = require('express').Router();
+const db                    = require('../db');
+const { requireInternal }  = require('../middleware/requireInternal');
 
-/* POST /api/users/map — save userId→chatId mapping */
-router.post('/map', async (req, res) => {
+/* POST /api/users/map — save userId→chatId mapping. Вызывается только
+   самим bot.js (сервер-к-серверу, X-Internal-Secret) — раньше было
+   публично, любой мог подставить чужому tg_id свой chat_id и перехватывать
+   уведомления о чужом заказе/ремонте. */
+router.post('/map', requireInternal, async (req, res) => {
     const { userId, chatId } = req.body;
     if (!userId || !chatId) return res.status(400).json({ error: 'userId and chatId required' });
     try {
@@ -16,8 +20,10 @@ router.post('/map', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/* GET /api/users/chat?user_id=... — resolve userId to chatId */
-router.get('/chat', async (req, res) => {
+/* GET /api/users/chat?user_id=... — resolve userId to chatId. Тот же
+   X-Internal-Secret — раньше по любому user_id отдавал messenger chat_id
+   без всякой проверки. */
+router.get('/chat', requireInternal, async (req, res) => {
     const { user_id } = req.query;
     if (!user_id) return res.status(400).json({ error: 'user_id required' });
     try {

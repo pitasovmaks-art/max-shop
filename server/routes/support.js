@@ -1,8 +1,15 @@
-const router = require('express').Router();
-const db     = require('../db');
+const router            = require('express').Router();
+const db                 = require('../db');
+const { requireAdmin }   = require('../middleware/auth');
+
+/* Эти два роута сейчас никем не вызываются (bot-support.js пишет/читает
+   support_admins напрямую через БД, без HTTP) — оставлены как ручной
+   инструмент на будущее (см. PROGRESS.md), поэтому не удалены, но закрыты
+   тем же паролем, что и вся остальная админка, а не публичны всему
+   интернету. */
 
 /* POST /api/support/admin-map — upsert userId→chatId */
-router.post('/admin-map', async (req, res) => {
+router.post('/admin-map', requireAdmin, async (req, res) => {
     const { userId, chatId } = req.body;
     if (!userId || !chatId) return res.status(400).json({ error: 'userId and chatId required' });
     try {
@@ -17,7 +24,7 @@ router.post('/admin-map', async (req, res) => {
 });
 
 /* GET /api/support/admins — return all [{user_id, chat_id}] */
-router.get('/admins', async (req, res) => {
+router.get('/admins', requireAdmin, async (req, res) => {
     try {
         const rows = await db.query('SELECT user_id, chat_id FROM support_admins');
         res.json(rows);

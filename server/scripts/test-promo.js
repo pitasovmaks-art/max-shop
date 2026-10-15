@@ -14,6 +14,9 @@ process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'test';
 
 const REAL_BOT_TOKEN = 'real_bot_token_for_test';
 process.env.MAX_BOT_TOKEN = REAL_BOT_TOKEN;
+process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'test-admin-password';
+const TEST_INTERNAL_SECRET = 'test-internal-secret';
+process.env.INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET || TEST_INTERNAL_SECRET;
 
 const crypto  = require('crypto');
 const express = require('express');
@@ -210,6 +213,16 @@ async function main() {
         });
         return { status: r.status, body: await r.json().catch(() => ({})) };
     }
+    // /unsubscribe вызывается ботом, защищён requireInternal (см.
+    // server/middleware/requireInternal.js) — не X-Init-Data.
+    async function postInternal(path, body) {
+        const r = await fetch(`${base}/api/promo${path}`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': TEST_INTERNAL_SECRET },
+            body:    JSON.stringify(body || {}),
+        });
+        return { status: r.status, body: await r.json().catch(() => ({})) };
+    }
 
     /* ── 1. Подписка (новая) ─────────────────────────────────────────── */
     resetDb();
@@ -294,20 +307,25 @@ async function main() {
             && subscribers.find(x => x.tg_id === String(USER_A)).unsubscribed_at === null);
     }
 
-    /* ── 4. Отписка из бота — без requireUser, tgId из тела ──────────── */
+    /* ── 4. Отписка из бота — без requireUser, tgId из тела, но защищена
+       requireInternal (X-Internal-Secret) ───────────────────────────── */
     resetDb();
     {
         await postPromo('/subscribe', {}, initA);
-        const r = await postPromo('/unsubscribe', { tgId: String(USER_A) }, null);
-        check('POST /unsubscribe (бот, без X-Init-Data) -> 200', r.status === 200);
+
+        const noSecret = await postPromo('/unsubscribe', { tgId: String(USER_A) }, null);
+        check('POST /unsubscribe без X-Internal-Secret -> 401 (requireInternal, закрытая дыра)', noSecret.status === 401);
+
+        const r = await postInternal('/unsubscribe', { tgId: String(USER_A) });
+        check('POST /unsubscribe (бот, с X-Internal-Secret, без X-Init-Data) -> 200', r.status === 200);
         const row = subscribers.find(x => x.tg_id === String(USER_A));
         check('отписка мягкая — строка осталась, unsubscribed_at заполнен', !!row && row.unsubscribed_at !== null);
         check('source отмечен как bot', row.source === 'bot');
 
-        const noTgId = await postPromo('/unsubscribe', {}, null);
+        const noTgId = await postInternal('/unsubscribe', {});
         check('POST /unsubscribe без tgId в теле -> 400', noTgId.status === 400);
 
-        const unknown = await postPromo('/unsubscribe', { tgId: '999999999' }, null);
+        const unknown = await postInternal('/unsubscribe', { tgId: '999999999' });
         check('POST /unsubscribe на несуществующий tg_id -> 200, без ошибки (0 затронутых строк)', unknown.status === 200);
     }
 
@@ -404,7 +422,7 @@ async function main() {
         // запись в журнале (нет смысла логировать "отписку" несуществующей
         // подписки).
         const before = consentLog.length;
-        await postPromo('/unsubscribe', { tgId: '000000' }, null);
+        await postInternal('/unsubscribe', { tgId: '000000' });
         check('отписка несуществующего tg_id не создаёт запись в журнале', consentLog.length === before);
     }
 

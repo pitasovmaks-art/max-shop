@@ -1174,6 +1174,13 @@ const DELIVERY_LABELS_ADM = { pickup: 'Самовывоз', city: 'По горо
 let _allOrders    = [];
 let _orderFilter  = { store: '', status: '', delivery: '' };
 
+// Заказ заполняет покупатель (имя/телефон/адрес/комментарий/магазин/
+// названия позиций) — то же правило, что в admin/banners.js для баннеров:
+// экранировать перед вставкой в innerHTML, даже если это "просто текст".
+function _escHtml(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function renderOrderFilters() {
     const el = document.getElementById('orderFilters');
     if (!el) return;
@@ -1183,7 +1190,7 @@ function renderOrderFilters() {
         <div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 4px;">
             <select class="order-filter-sel" onchange="_oFilter('store',this.value)">
                 <option value="">Все магазины</option>
-                ${stores.map(s => `<option value="${s}" ${_orderFilter.store===s?'selected':''}>${s}</option>`).join('')}
+                ${stores.map(s => `<option value="${_escHtml(s)}" ${_orderFilter.store===s?'selected':''}>${_escHtml(s)}</option>`).join('')}
             </select>
             <select class="order-filter-sel" onchange="_oFilter('status',this.value)">
                 <option value="">Все статусы</option>
@@ -1228,7 +1235,7 @@ function renderOrderList() {
         const date    = new Date(o.createdAt).toLocaleString('ru-RU', {
             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
         });
-        const itemsText = o.items.map(i => `${i.name} × ${i.qty}`).join(', ');
+        const itemsText = o.items.map(i => `${_escHtml(i.name)} × ${i.qty}`).join(', ');
         const statusList = ORDER_STATUSES_BY_DELIVERY[o.delivery] || ORDER_STATUSES_BY_DELIVERY.russia;
         const options   = statusList.map(s =>
             `<option value="${s.key}" ${o.status === s.key ? 'selected' : ''}>${s.label}</option>`
@@ -1241,18 +1248,18 @@ function renderOrderList() {
                 <span class="order-status ${st.cls}">${st.label}</span>
             </div>
             <div class="order-card__meta">
-                <span class="order-card__client">${o.name} · ${o.phone}</span>
+                <span class="order-card__client">${_escHtml(o.name)} · ${_escHtml(o.phone)}</span>
                 <span class="order-card__date">${date}</span>
             </div>
-            <div class="order-card__store">&#128205; ${o.store}${dlLabel ? ` <span style="opacity:.6;font-size:12px">(${dlLabel})</span>` : ''}</div>
-            ${o.delivery === 'city'   && o.address ? `<div class="order-card__store">&#128205; Адрес доставки: ${o.address}</div>` : ''}
-            ${o.delivery === 'russia' && o.address ? `<div class="order-card__store">&#128230; Пункт СДЭК: ${o.address}</div>` : ''}
+            <div class="order-card__store">&#128205; ${_escHtml(o.store)}${dlLabel ? ` <span style="opacity:.6;font-size:12px">(${dlLabel})</span>` : ''}</div>
+            ${o.delivery === 'city'   && o.address ? `<div class="order-card__store">&#128205; Адрес доставки: ${_escHtml(o.address)}</div>` : ''}
+            ${o.delivery === 'russia' && o.address ? `<div class="order-card__store">&#128230; Пункт СДЭК: ${_escHtml(o.address)}</div>` : ''}
             <div class="order-card__items">${itemsText}</div>
-            ${o.comment ? `<div class="order-card__comment">&#128172; ${o.comment}</div>` : ''}
+            ${o.comment ? `<div class="order-card__comment">&#128172; ${_escHtml(o.comment)}</div>` : ''}
             ${(o.delivery === 'russia' || o.deliveryType === 'russia' || (o.delivery !== 'pickup' && o.delivery !== 'city')) ? `
             <div class="order-card__tracking">
                 <input class="tracking-input" id="tracking-${o.id}"
-                       value="${o.trackingNumber || ''}" placeholder="Введите трек-номер СДЭК...">
+                       value="${_escHtml(o.trackingNumber || '')}" placeholder="Введите трек-номер СДЭК...">
                 <button class="tracking-btn" onclick="saveTracking(${o.id})">&#128228; Отправить</button>
             </div>` : ''}
             <div class="order-card__footer">

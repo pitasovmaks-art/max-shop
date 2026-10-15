@@ -7,6 +7,13 @@ const compression = require('compression');
 
 const app = express();
 
+/* Timeweb App Platform стоит перед приложением как обратный прокси —
+   без этого req.ip был бы адресом самого балансировщика (один и тот же
+   для всех запросов), а не настоящего клиента. Нужно для rate-limit на
+   /api/auth/login (server/routes/auth.js) — больше в проекте req.ip
+   сейчас нигде не используется. */
+app.set('trust proxy', 1);
+
 app.use(compression());
 
 /* Применяет schema.sql (только CREATE TABLE IF NOT EXISTS — идемпотентно и

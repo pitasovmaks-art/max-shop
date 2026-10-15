@@ -1,6 +1,7 @@
-const router          = require('express').Router();
-const db              = require('../db');
-const { requireUser } = require('../middleware/requireUser');
+const router              = require('express').Router();
+const db                  = require('../db');
+const { requireUser }     = require('../middleware/requireUser');
+const { requireInternal } = require('../middleware/requireInternal');
 const { PROMO_CONSENT_VERSIONS } = require('../config');
 
 const SOURCES = ['checkout', 'bot', 'toggle'];
@@ -74,6 +75,8 @@ router.post('/subscribe', requireUser, async (req, res) => {
    подтверждена самим Max через вебхук бота, а не этим HTTP-эндпоинтом.
    Поэтому этот маршрут НЕЛЬЗЯ отдавать в браузер — любой клиент мог бы
    подставить чужой tgId. Для приложения — отдельный /unsubscribe-me ниже.
+   Защищён requireInternal (X-Internal-Secret) — раньше любой человек из
+   интернета мог отписать произвольный tgId перебором, без этой проверки.
 
    Мягкая отписка (UPDATE, не DELETE) — строка и история остаются, просто
    unsubscribed_at перестаёт быть NULL. Если такого tg_id в таблице вообще
@@ -81,7 +84,7 @@ router.post('/subscribe', requireUser, async (req, res) => {
    создания новой строки И без записи в promo_consent_log (нет смысла
    логировать отписку того, кто никогда не был подписан — команда "стоп"
    от случайного человека не несёт юридического смысла). */
-router.post('/unsubscribe', async (req, res) => {
+router.post('/unsubscribe', requireInternal, async (req, res) => {
     const { tgId } = req.body;
     if (!tgId) return res.status(400).json({ error: 'tgId required' });
     try {

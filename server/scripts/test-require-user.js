@@ -26,6 +26,9 @@ const REAL_BOT_TOKEN  = 'real_bot_token_for_test';
 const WRONG_BOT_TOKEN = 'attacker_guessed_wrong_token';
 process.env.MAX_BOT_TOKEN = REAL_BOT_TOKEN;
 
+const TEST_INTERNAL_SECRET = 'test-internal-secret';
+process.env.INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET || TEST_INTERNAL_SECRET;
+
 const crypto  = require('crypto');
 const express = require('express');
 
@@ -154,18 +157,23 @@ async function main() {
         check(`${method} ${path}: без X-Init-Data -> 401 (не доходит до БД)`, r.status === 401);
     }
 
-    // Намеренно НЕ заданная уязвимость: /api/promo/unsubscribe вызывается
-    // сервер-к-серверу из bot.js (см. его комментарий в promo.js), поэтому
-    // requireUser на нём нет — проверяем, что он по-прежнему отвечает без
-    // X-Init-Data (это ожидаемо, не регрессия).
+    // /api/promo/unsubscribe вызывается сервер-к-серверу из bot.js (см. его
+    // комментарий в promo.js) — requireUser на нём нет и не нужен, но
+    // раньше это означало, что роут публичен вообще без проверки. Теперь
+    // он защищён requireInternal (X-Internal-Secret, см.
+    // server/middleware/requireInternal.js). Этот файл не мокает БД (весь
+    // его смысл — что requireUser отвечает 401 до db.query), поэтому здесь
+    // проверяем только негативный случай (без секрета, до каких-либо
+    // попыток дойти до БД); позитивный сценарий с верным секретом
+    // проверяется в test-promo.js, где БД уже замокана.
     {
         const r = await fetch(`${base}/api/promo/unsubscribe`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tgId: VICTIM_ID }),
         });
-        check('POST /api/promo/unsubscribe: сервер-к-серверу, без requireUser (ожидаемо) — не 401 от requireUser',
-            r.status !== 401);
+        check('POST /api/promo/unsubscribe: без X-Internal-Secret -> 401 (requireInternal, закрытая дыра)',
+            r.status === 401);
     }
 
     server.close();

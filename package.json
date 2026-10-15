@@ -15,7 +15,8 @@
     "test:products-search": "node server/scripts/test-products-search.js",
     "test:service-requests": "node server/scripts/test-service-requests.js",
     "test:service-requests-admin": "node server/scripts/test-service-requests-admin.js",
-    "test:promo": "node server/scripts/test-promo.js"
+    "test:promo": "node server/scripts/test-promo.js",
+    "test:orders": "node server/scripts/test-orders.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",
