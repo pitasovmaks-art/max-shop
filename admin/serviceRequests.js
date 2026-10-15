@@ -13,6 +13,7 @@
 
 let _srRequests    = [];
 let _srFilter      = { status: '', store: '' };
+const SR_NO_STORE_FILTER = '__none__';
 let _srSearch      = '';
 let _srDetailId    = null;
 
@@ -74,9 +75,13 @@ function renderSrFilters() {
     allOpt.value = '';
     storeSel.appendChild(allOpt);
     stores.forEach(([code, label]) => {
-        const opt = srText('option', label || code);
-        opt.value = code;
-        if (_srFilter.store === code) opt.selected = true;
+        // code=null (заявки без магазина, см. удаление выбора магазина в
+        // форме) не может иметь value='' — это уже значение «Все
+        // магазины» у allOpt выше, иначе выбор неотличим от «все».
+        const value = code || SR_NO_STORE_FILTER;
+        const opt = srText('option', label || code || 'Без магазина (новые заявки)');
+        opt.value = value;
+        if (_srFilter.store === value) opt.selected = true;
         storeSel.appendChild(opt);
     });
     storeSel.addEventListener('change', () => srSetFilter('store', storeSel.value));
@@ -103,7 +108,11 @@ function renderSrList() {
 
     let rows = _srRequests;
     if (_srFilter.status) rows = rows.filter(r => r.status === _srFilter.status);
-    if (_srFilter.store)  rows = rows.filter(r => r.store === _srFilter.store);
+    if (_srFilter.store) {
+        rows = _srFilter.store === SR_NO_STORE_FILTER
+            ? rows.filter(r => !r.store)
+            : rows.filter(r => r.store === _srFilter.store);
+    }
     if (_srSearch) {
         const q = _srSearch.toLowerCase();
         const qDigits = _srSearch.replace(/\D/g, '');

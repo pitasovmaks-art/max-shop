@@ -179,7 +179,6 @@ async function main() {
         return Object.assign({
             name: 'Иван Иванов',
             phone: '+7 (900) 123-45-67',
-            store: 'krd_selezneva',
             items: [{ toolName: 'Пистолет Toua NTC57', problem: 'не поджигает' }],
             deliveryNeeded: false,
             consent: true,
@@ -212,9 +211,6 @@ async function main() {
         const badPhone = await post(validBody({ phone: '12345' }), initA);
         check('некорректный телефон -> 400', badPhone.status === 400);
 
-        const badStore = await post(validBody({ store: 'spb_nevsky' }), initA);
-        check('недопустимый код магазина -> 400', badStore.status === 400);
-
         const noConsent = await post(validBody({ consent: false }), initA);
         check('без согласия на обработку ПДн -> 400', noConsent.status === 400);
 
@@ -244,12 +240,14 @@ async function main() {
     /* ── Успешное создание: форма ответа, что реально сохранилось ──── */
     resetDb();
     {
-        const r = await post(validBody({ store: 'krd_kotlyarova', comment: 'Позвоните после 18:00' }), initA);
+        const r = await post(validBody({ comment: 'Позвоните после 18:00' }), initA);
         check('создание заявки -> 201', r.status === 201);
         check('ответ содержит id', typeof r.body.id === 'number');
         check('ответ содержит номер вида «Р-<id>»', r.body.number === `Р-${r.body.id}`);
         check('tg_id в БД берётся из подписанных initData, не из тела запроса',
             serviceRequests[serviceRequests.length - 1].tg_id === String(USER_A));
+        check('выбора магазина в форме нет — store сохраняется как NULL',
+            serviceRequests[serviceRequests.length - 1].store === null);
         check('инструмент сохранён в service_request_items',
             serviceRequestItems.some(i => i.request_id === r.body.id && i.tool_name === 'Пистолет Toua NTC57'));
     }
@@ -318,7 +316,7 @@ async function main() {
     {
         notifyShouldThrow = true;
         lastNotifyCall = null;
-        const r = await post(validBody({ store: 'msk_maevka' }), initA);
+        const r = await post(validBody(), initA);
         check('заявка сохраняется (201), даже если notifyServiceRequest бросает ошибку', r.status === 201);
         await new Promise(resolve => setTimeout(resolve, 20)); // дать катчу отработать
         check('notifyServiceRequest всё равно был вызван (ошибка — только в сторону лога)', lastNotifyCall !== null);
@@ -330,12 +328,11 @@ async function main() {
     {
         lastNotifyCall = null;
         const r = await post(validBody({
-            store: 'msk_maevka',
             items: [{ toolName: 'Шуруповёрт', problem: 'не крутит' }, { toolName: 'Степлер' }],
         }), initA);
         await new Promise(resolve => setTimeout(resolve, 20));
-        check('notifyServiceRequest вызван с тем же store, что в заявке',
-            lastNotifyCall && lastNotifyCall.store === 'msk_maevka');
+        check('notifyServiceRequest вызван без store (выбор магазина убран из формы) — реальный bot.js шлёт обоим менеджерам',
+            lastNotifyCall && !lastNotifyCall.store);
         check('notifyServiceRequest вызван с номером заявки',
             lastNotifyCall && lastNotifyCall.number === `Р-${r.body.id}`);
         check('notifyServiceRequest получил оба инструмента',

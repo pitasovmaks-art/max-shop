@@ -166,8 +166,6 @@ function validateAndCollect() {
     const phone = document.getElementById('inputPhone').value;
     if (!phone || getDigits(phone).length < 11) { showError('fieldPhone', 'Введите полный номер телефона'); ok = false; }
 
-    const store = document.getElementById('inputStore').value;
-
     const rows = Array.from(document.querySelectorAll('#toolsList .tool-row'));
     const items = [];
     rows.forEach(row => {
@@ -196,7 +194,7 @@ function validateAndCollect() {
     if (!consent) ok = false;
 
     if (!ok) return null;
-    return { name, phone, store, items, deliveryNeeded, address: deliveryNeeded ? address : undefined, comment: comment || undefined, consent };
+    return { name, phone, items, deliveryNeeded, address: deliveryNeeded ? address : undefined, comment: comment || undefined, consent };
 }
 
 /* ─── Submit ──────────────────────────────────────────────── */

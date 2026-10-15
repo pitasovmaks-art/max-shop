@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS service_requests (
     tg_id           TEXT    NOT NULL,   -- MAX user id (как у orders.tg_id), из requireUser
     name            TEXT    NOT NULL,
     phone           TEXT    NOT NULL,
-    store           TEXT    NOT NULL,   -- код магазина, см. SERVICE_STORES в server/routes/service-requests.js
+    store           TEXT,               -- устарело: раньше код магазина, выбор убран (см. миграцию ниже) — NULL у новых заявок
     delivery_needed INTEGER NOT NULL DEFAULT 0,
     address         TEXT,               -- обязателен, если delivery_needed=1 (проверяется в роуте)
     comment         TEXT,
@@ -144,6 +144,12 @@ CREATE TABLE IF NOT EXISTS service_requests (
     created_at      TEXT    NOT NULL DEFAULT TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
     updated_at      TEXT    NOT NULL DEFAULT TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
 );
+
+-- Миграция: выбор магазина в форме заявки убран — у уже созданной в проде
+-- таблицы store мог остаться NOT NULL (CREATE TABLE IF NOT EXISTS его не
+-- трогает). Идемпотентно — повторный запуск на уже нетребуемой колонке не
+-- ошибка.
+ALTER TABLE service_requests ALTER COLUMN store DROP NOT NULL;
 
 -- Номер для показа («Р-123») не хранится отдельным столбцом — это просто
 -- 'Р-' + id, вычисляется при чтении (см. normalize() в роуте); отдельная

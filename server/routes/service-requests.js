@@ -4,11 +4,13 @@ const { requireUser }  = require('../middleware/requireUser');
 const { requireAdmin } = require('../middleware/auth');
 const { notifyServiceRequest, notifyServiceRequestStatus } = require('../../bot');
 
-/* ─── Магазины, куда можно сдать инструмент на ремонт ───────────────────
-   Единственное место, где перечислены допустимые коды (валидация ниже) и
-   их подписи (ответ API/уведомление). Коды из того же набора использует
-   bot.js (SERVICE_REQUEST_MANAGERS) для маршрутизации уведомления
-   менеджеру — при добавлении магазина обновить оба места. */
+/* ─── Магазины — только для подписи старых заявок ────────────────────────
+   Выбор магазина в форме заявки убран (клиент больше не указывает, куда
+   сдать инструмент — заявки без привязки идут обоим менеджерам, см.
+   notifyServiceRequest в bot.js). Эти коды и подписи оставлены только
+   чтобы у уже существующих в БД заявок со старым полем store отображалась
+   подпись в админке (normalizeRequest/storeLabel ниже) — новые заявки
+   store не содержат вовсе (NULL). */
 const SERVICE_STORES = {
     krd_selezneva:  'Краснодар — ул. Селезнева, 4/10',
     krd_kotlyarova: 'Краснодар — ул. Котлярова, 21',
@@ -46,8 +48,8 @@ function normalizeRequest(row, items) {
         number:         'Р-' + row.id,
         name:           row.name,
         phone:          row.phone,
-        store:          row.store,
-        storeLabel:     SERVICE_STORES[row.store] || row.store,
+        store:          row.store || undefined,
+        storeLabel:     row.store ? (SERVICE_STORES[row.store] || row.store) : undefined,
         deliveryNeeded: row.delivery_needed === 1,
         address:        row.address      || undefined,
         comment:        row.comment      || undefined,
@@ -85,7 +87,6 @@ async function loadItems(requestIds) {
 function validateRequestBody(body) {
     const name    = typeof body.name  === 'string' ? body.name.trim()  : '';
     const phone   = typeof body.phone === 'string' ? body.phone.trim() : '';
-    const store   = body.store;
     const comment = typeof body.comment === 'string' ? body.comment.trim() : '';
     const deliveryNeeded = body.deliveryNeeded === true;
     const address = typeof body.address === 'string' ? body.address.trim() : '';
@@ -97,9 +98,6 @@ function validateRequestBody(body) {
     }
     if (!isValidPhone(phone)) {
         return { error: 'Укажите корректный номер телефона' };
-    }
-    if (!Object.prototype.hasOwnProperty.call(SERVICE_STORES, store)) {
-        return { error: 'Выберите магазин из списка' };
     }
     if (!consent) {
         return { error: 'Нужно согласие на обработку персональных данных' };
@@ -128,7 +126,7 @@ function validateRequestBody(body) {
 
     return {
         data: {
-            name, phone, store,
+            name, phone,
             deliveryNeeded,
             address: deliveryNeeded ? address : null,
             comment: comment || null,
@@ -157,7 +155,7 @@ router.post('/', requireUser, async (req, res) => {
         const row = await db.queryOne(
             `INSERT INTO service_requests (tg_id, name, phone, store, delivery_needed, address, comment)
              VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-            [req.tgId, data.name, data.phone, data.store, data.deliveryNeeded ? 1 : 0, data.address, data.comment]
+            [req.tgId, data.name, data.phone, null, data.deliveryNeeded ? 1 : 0, data.address, data.comment]
         );
         const requestId = row.id;
 

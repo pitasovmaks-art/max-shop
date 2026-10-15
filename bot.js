@@ -384,7 +384,6 @@ async function notifyServiceRequest(request) {
         `🔧 Новая заявка на ремонт ${request.number}!`,
         `👤 Клиент: ${request.name}`,
         `📞 Телефон: ${request.phone}`,
-        `🏪 Магазин: ${request.storeLabel || request.store}`,
         `🛠 Инструменты:\n${toolLines.join('\n')}`,
         request.deliveryNeeded
             ? `🚚 Нужна доставка, адрес забора: ${request.address || 'не указан'}`
@@ -481,13 +480,16 @@ async function notifyServiceRequestStatus(tgId, request, changes) {
     if (changes.status) {
         parts.push(`Статус: ${SERVICE_REQUEST_STATUS_LABELS[changes.status] || changes.status}`);
         if (changes.status === 'ready') {
-            // Отдельного адреса обратной доставки нет (клиент его не знает
+            // Выбора магазина в форме заявки больше нет (клиент его не
+            // указывает), поэтому конкретный адрес сюда не подставляем —
+            // свяжемся и договоримся, где забрать инструмент. Отдельного
+            // адреса обратной доставки тоже нет (клиент его не знает
             // заранее) — при доставке договариваемся отдельно, а не шлём
             // назад тот же адрес забора.
             parts.push(
                 request.deliveryNeeded
-                    ? `🚚 Свяжемся с вами, чтобы согласовать доставку, или вы можете забрать инструмент в магазине: ${request.storeLabel}`
-                    : `🏪 Инструмент можно забрать в магазине: ${request.storeLabel}`
+                    ? `🚚 Свяжемся с вами, чтобы согласовать доставку, или забрать инструмент самостоятельно`
+                    : `🏪 Свяжемся с вами, чтобы договориться, где забрать инструмент`
             );
         }
     }
