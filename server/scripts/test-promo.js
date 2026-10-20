@@ -15,6 +15,11 @@ process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'test';
 const REAL_BOT_TOKEN = 'real_bot_token_for_test';
 process.env.MAX_BOT_TOKEN = REAL_BOT_TOKEN;
 process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'test-admin-password';
+// /api/promo/unsubscribe теперь требует requireInternal (аудит
+// безопасности, находка J) — тот же секрет, что INTERNAL_API_SECRET в
+// bot.js/internalFetch.
+const INTERNAL_SECRET = 'test-internal-secret';
+process.env.INTERNAL_API_SECRET = INTERNAL_SECRET;
 
 const crypto  = require('crypto');
 const express = require('express');
@@ -197,10 +202,14 @@ async function main() {
     const initB = buildSignedInitData({ id: USER_B, first_name: 'B' }, REAL_BOT_TOKEN);
     const initC = buildSignedInitData({ id: USER_C, first_name: 'C' }, REAL_BOT_TOKEN);
 
-    async function postPromo(path, body, initData) {
+    async function postPromo(path, body, initData, extraHeaders) {
         const r = await fetch(`${base}/api/promo${path}`, {
             method:  'POST',
-            headers: Object.assign({ 'Content-Type': 'application/json' }, initData ? { 'X-Init-Data': initData } : {}),
+            headers: Object.assign(
+                { 'Content-Type': 'application/json' },
+                initData ? { 'X-Init-Data': initData } : {},
+                extraHeaders || {}
+            ),
             body:    JSON.stringify(body || {}),
         });
         return { status: r.status, body: await r.json().catch(() => ({})) };
@@ -295,20 +304,28 @@ async function main() {
             && subscribers.find(x => x.tg_id === String(USER_A)).unsubscribed_at === null);
     }
 
-    /* ── 4. Отписка из бота — без requireUser, tgId из тела ──────────── */
+    /* ── 4. Отписка из бота — без requireUser, но с X-Internal-Secret ─── */
     resetDb();
     {
         await postPromo('/subscribe', {}, initA);
-        const r = await postPromo('/unsubscribe', { tgId: String(USER_A) }, null);
-        check('POST /unsubscribe (бот, без X-Init-Data) -> 200', r.status === 200);
+
+        const noSecret = await postPromo('/unsubscribe', { tgId: String(USER_A) }, null);
+        check('POST /unsubscribe без X-Internal-Secret -> 403', noSecret.status === 403);
+        check('без секрета подписка A не тронута', subscribers.find(x => x.tg_id === String(USER_A)).unsubscribed_at === null);
+
+        const wrongSecret = await postPromo('/unsubscribe', { tgId: String(USER_A) }, null, { 'X-Internal-Secret': 'wrong-secret' });
+        check('POST /unsubscribe с неверным X-Internal-Secret -> 403', wrongSecret.status === 403);
+
+        const r = await postPromo('/unsubscribe', { tgId: String(USER_A) }, null, { 'X-Internal-Secret': INTERNAL_SECRET });
+        check('POST /unsubscribe (бот, с верным X-Internal-Secret) -> 200', r.status === 200);
         const row = subscribers.find(x => x.tg_id === String(USER_A));
         check('отписка мягкая — строка осталась, unsubscribed_at заполнен', !!row && row.unsubscribed_at !== null);
         check('source отмечен как bot', row.source === 'bot');
 
-        const noTgId = await postPromo('/unsubscribe', {}, null);
+        const noTgId = await postPromo('/unsubscribe', {}, null, { 'X-Internal-Secret': INTERNAL_SECRET });
         check('POST /unsubscribe без tgId в теле -> 400', noTgId.status === 400);
 
-        const unknown = await postPromo('/unsubscribe', { tgId: '999999999' }, null);
+        const unknown = await postPromo('/unsubscribe', { tgId: '999999999' }, null, { 'X-Internal-Secret': INTERNAL_SECRET });
         check('POST /unsubscribe на несуществующий tg_id -> 200, без ошибки (0 затронутых строк)', unknown.status === 200);
     }
 
@@ -405,7 +422,7 @@ async function main() {
         // запись в журнале (нет смысла логировать "отписку" несуществующей
         // подписки).
         const before = consentLog.length;
-        await postPromo('/unsubscribe', { tgId: '000000' }, null);
+        await postPromo('/unsubscribe', { tgId: '000000' }, null, { 'X-Internal-Secret': INTERNAL_SECRET });
         check('отписка несуществующего tg_id не создаёт запись в журнале', consentLog.length === before);
     }
 

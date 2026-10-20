@@ -1,6 +1,7 @@
 const router          = require('express').Router();
 const db              = require('../db');
 const { requireUser } = require('../middleware/requireUser');
+const { requireInternal } = require('../middleware/auth');
 const { PROMO_CONSENT_VERSIONS } = require('../config');
 
 const SOURCES = ['checkout', 'bot', 'toggle'];
@@ -75,13 +76,19 @@ router.post('/subscribe', requireUser, async (req, res) => {
    Поэтому этот маршрут НЕЛЬЗЯ отдавать в браузер — любой клиент мог бы
    подставить чужой tgId. Для приложения — отдельный /unsubscribe-me ниже.
 
+   requireInternal (аудит безопасности, находка J): раньше без requireUser
+   означало ВООБЩЕ без проверки — любой из интернета мог отписать любой
+   tgId, подобрав его. Теперь требуется тот же X-Internal-Secret, что и
+   у остальных внутренних маршрутов (server/middleware/auth.js) — его
+   проставляет internalFetch() в bot.js.
+
    Мягкая отписка (UPDATE, не DELETE) — строка и история остаются, просто
    unsubscribed_at перестаёт быть NULL. Если такого tg_id в таблице вообще
    нет (никогда не подписывался) — 0 затронутых строк, без ошибки, без
    создания новой строки И без записи в promo_consent_log (нет смысла
    логировать отписку того, кто никогда не был подписан — команда "стоп"
    от случайного человека не несёт юридического смысла). */
-router.post('/unsubscribe', async (req, res) => {
+router.post('/unsubscribe', requireInternal, async (req, res) => {
     const { tgId } = req.body;
     if (!tgId) return res.status(400).json({ error: 'tgId required' });
     try {

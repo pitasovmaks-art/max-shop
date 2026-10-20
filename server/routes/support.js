@@ -1,8 +1,15 @@
 const router = require('express').Router();
 const db     = require('../db');
+const { requireInternal } = require('../middleware/auth');
 
-/* POST /api/support/admin-map — upsert userId→chatId */
-router.post('/admin-map', async (req, res) => {
+/* POST /api/support/admin-map — upsert userId→chatId. requireInternal —
+   аудит безопасности, находка D: раньше кто угодно мог зарегистрировать
+   себя как "менеджера поддержки" и получать пересланные сообщения
+   клиентов (bot-support.js форвардит их всем chat_id из support_admins).
+   На практике сейчас не вызывается самим bot-support.js (он пишет в БД
+   напрямую, см. dbSaveAdminMap), но маршрут всё равно публичный и
+   рабочий — защищаем его тем же способом, что и остальные внутренние. */
+router.post('/admin-map', requireInternal, async (req, res) => {
     const { userId, chatId } = req.body;
     if (!userId || !chatId) return res.status(400).json({ error: 'userId and chatId required' });
     try {
@@ -17,7 +24,7 @@ router.post('/admin-map', async (req, res) => {
 });
 
 /* GET /api/support/admins — return all [{user_id, chat_id}] */
-router.get('/admins', async (req, res) => {
+router.get('/admins', requireInternal, async (req, res) => {
     try {
         const rows = await db.query('SELECT user_id, chat_id FROM support_admins');
         res.json(rows);
@@ -25,7 +32,7 @@ router.get('/admins', async (req, res) => {
 });
 
 /* POST /api/support/known — mark client chat_id as known */
-router.post('/known', async (req, res) => {
+router.post('/known', requireInternal, async (req, res) => {
     const { chatId } = req.body;
     if (!chatId) return res.status(400).json({ error: 'chatId required' });
     try {

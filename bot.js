@@ -10,6 +10,28 @@ const TOKEN        = process.env.MAX_BOT_TOKEN || '';
 const SHOP_URL     = process.env.SHOP_URL || 'https://max-shop-production.up.railway.app';
 const BOT_USERNAME = process.env.BOT_USERNAME || '';
 const WEBHOOK_URL  = process.env.WEBHOOK_URL || '';
+const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET || '';
+
+/* ─── Вызовы собственного HTTP API (сервер-к-серверу, тот же процесс) ──
+   Аудит безопасности (находка D, ~/security-audit.md): /api/users/map,
+   /api/users/chat и /api/promo/unsubscribe раньше принимали запросы без
+   какой-либо проверки, что вызов пришёл именно от бота, а не от любого
+   клиента из интернета. Теперь сервер требует заголовок
+   X-Internal-Secret (requireInternal, server/middleware/auth.js) —
+   INTERNAL_API_SECRET общий для бота (здесь) и сервера (в одном
+   процессе, process.env читается один раз на старте). Без него эти три
+   маршрута отвечают 403 на любой запрос, включая от самого бота — ЕСЛИ
+   INTERNAL_API_SECRET не задан в Timeweb, уведомления по user_map/
+   отписка через бота перестанут работать (см. отчёт о фиксах). */
+function internalBaseUrl() {
+    return WEBHOOK_URL ? WEBHOOK_URL.replace('/webhook', '') : 'http://localhost:3000';
+}
+function internalFetch(path, opts = {}) {
+    return fetch(`${internalBaseUrl()}${path}`, {
+        ...opts,
+        headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': INTERNAL_API_SECRET, ...(opts.headers || {}) },
+    });
+}
 
 /* ─── Admin chat IDs ─────────────────────────────────────────────────
    ДВА источника, оба не пополняются автоматически (аудит безопасности,
@@ -139,13 +161,9 @@ async function processUpdate(update) {
 
         // Сохраняем маппинг userId → chatId
         if (userId && chatId && userId !== chatId) {
-            const base = process.env.WEBHOOK_URL
-                ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                : 'http://localhost:3000';
-            fetch(`${base}/api/users/map`, {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ userId, chatId }),
+            internalFetch('/api/users/map', {
+                method: 'POST',
+                body:   JSON.stringify({ userId, chatId }),
             }).catch(e => console.error('[bot] user_map save error:', e.message));
         }
 
@@ -185,13 +203,9 @@ async function processUpdate(update) {
         // ответить "отписались" раньше, чем запрос реально ушёл.
         if (UNSUBSCRIBE_PHRASES.has(normalizeText(text))) {
             try {
-                const base = process.env.WEBHOOK_URL
-                    ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                    : 'http://localhost:3000';
-                await fetch(`${base}/api/promo/unsubscribe`, {
-                    method:  'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body:    JSON.stringify({ tgId: userId || chatId }),
+                await internalFetch('/api/promo/unsubscribe', {
+                    method: 'POST',
+                    body:   JSON.stringify({ tgId: userId || chatId }),
                 });
                 await sendMessage(chatId, 'Вы отписались от рекламных сообщений.');
             } catch (e) {
@@ -435,10 +449,7 @@ async function notifyCustomer(tgId, orderId, status, extra) {
         console.error(`[bot] notifyCustomer FAIL first try: tg_id=${tgId}`, e.message);
         // Пробуем найти chat_id через user_map
         try {
-            const base = process.env.WEBHOOK_URL
-                ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -509,10 +520,7 @@ async function notifyServiceRequestStatus(tgId, request, changes) {
     } catch (e) {
         console.error(`[bot] notifyServiceRequestStatus FAIL first try: tg_id=${tgId}`, e.message);
         try {
-            const base = process.env.WEBHOOK_URL
-                ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -541,10 +549,7 @@ async function notifyStock(tgId, productName) {
     } catch (e) {
         console.error(`[bot] notifyStock FAIL first try: tg_id=${tgId}`, e.message);
         try {
-            const base = process.env.WEBHOOK_URL
-                ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -578,10 +583,7 @@ async function notifyPromo(tgId, productName) {
     } catch (e) {
         console.error(`[bot] notifyPromo FAIL first try: tg_id=${tgId}`, e.message);
         try {
-            const base = process.env.WEBHOOK_URL
-                ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`);
+            const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {

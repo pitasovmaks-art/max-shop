@@ -159,18 +159,21 @@ async function main() {
         check(`${method} ${path}: без X-Init-Data -> 401 (не доходит до БД)`, r.status === 401);
     }
 
-    // Намеренно НЕ заданная уязвимость: /api/promo/unsubscribe вызывается
-    // сервер-к-серверу из bot.js (см. его комментарий в promo.js), поэтому
-    // requireUser на нём нет — проверяем, что он по-прежнему отвечает без
-    // X-Init-Data (это ожидаемо, не регрессия).
+    // /api/promo/unsubscribe вызывается сервер-к-серверу из bot.js (см. его
+    // комментарий в promo.js), поэтому requireUser на нём нет — ОТСУТСТВИЕ
+    // X-Init-Data тут и не должно давать 401 от requireUser. Но с аудита
+    // безопасности (находка J) маршрут защищён отдельно — requireInternal
+    // (server/middleware/auth.js), требующим X-Internal-Secret; без него
+    // теперь 403, а не "что угодно кроме 401" (раньше, до фикса J, здесь
+    // был бы 200 — см. test-promo.js на полную проверку этого фикса).
     {
         const r = await fetch(`${base}/api/promo/unsubscribe`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tgId: VICTIM_ID }),
         });
-        check('POST /api/promo/unsubscribe: сервер-к-серверу, без requireUser (ожидаемо) — не 401 от requireUser',
-            r.status !== 401);
+        check('POST /api/promo/unsubscribe без X-Init-Data и без X-Internal-Secret -> 403 (не 401 от requireUser, не 200)',
+            r.status === 403);
     }
 
     server.close();
