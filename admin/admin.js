@@ -1222,13 +1222,21 @@ function renderOrderList() {
         return;
     }
 
+    // o.name/phone/store/delivery/address/comment/items[].name — свободный
+    // текст от покупателя (server/routes/orders.js не валидирует их
+    // содержимое, только присутствие) — КАЖДУЮ такую вставку в innerHTML
+    // пропускаем через escHtml() (аудит безопасности, находка B;
+    // src/shared/escHtml.js, подключён в admin/index.html перед этим
+    // файлом). trackingNumber — поле самого админа, но тоже экранируем:
+    // оно попадает внутрь HTML-атрибута value="…", портить который
+    // отдельное правило не нужно.
     el.innerHTML = orders.map(o => {
         const st      = ORDER_STATUSES[o.status] || { label: o.status, cls: '' };
-        const dlLabel = DELIVERY_LABELS_ADM[o.delivery] || o.delivery || '';
+        const dlLabel = escHtml(DELIVERY_LABELS_ADM[o.delivery] || o.delivery || '');
         const date    = new Date(o.createdAt).toLocaleString('ru-RU', {
             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
         });
-        const itemsText = o.items.map(i => `${i.name} × ${i.qty}`).join(', ');
+        const itemsText = o.items.map(i => `${escHtml(i.name)} × ${Number(i.qty) || 0}`).join(', ');
         const statusList = ORDER_STATUSES_BY_DELIVERY[o.delivery] || ORDER_STATUSES_BY_DELIVERY.russia;
         const options   = statusList.map(s =>
             `<option value="${s.key}" ${o.status === s.key ? 'selected' : ''}>${s.label}</option>`
@@ -1241,18 +1249,18 @@ function renderOrderList() {
                 <span class="order-status ${st.cls}">${st.label}</span>
             </div>
             <div class="order-card__meta">
-                <span class="order-card__client">${o.name} · ${o.phone}</span>
+                <span class="order-card__client">${escHtml(o.name)} · ${escHtml(o.phone)}</span>
                 <span class="order-card__date">${date}</span>
             </div>
-            <div class="order-card__store">&#128205; ${o.store}${dlLabel ? ` <span style="opacity:.6;font-size:12px">(${dlLabel})</span>` : ''}</div>
-            ${o.delivery === 'city'   && o.address ? `<div class="order-card__store">&#128205; Адрес доставки: ${o.address}</div>` : ''}
-            ${o.delivery === 'russia' && o.address ? `<div class="order-card__store">&#128230; Пункт СДЭК: ${o.address}</div>` : ''}
+            <div class="order-card__store">&#128205; ${escHtml(o.store)}${dlLabel ? ` <span style="opacity:.6;font-size:12px">(${dlLabel})</span>` : ''}</div>
+            ${o.delivery === 'city'   && o.address ? `<div class="order-card__store">&#128205; Адрес доставки: ${escHtml(o.address)}</div>` : ''}
+            ${o.delivery === 'russia' && o.address ? `<div class="order-card__store">&#128230; Пункт СДЭК: ${escHtml(o.address)}</div>` : ''}
             <div class="order-card__items">${itemsText}</div>
-            ${o.comment ? `<div class="order-card__comment">&#128172; ${o.comment}</div>` : ''}
+            ${o.comment ? `<div class="order-card__comment">&#128172; ${escHtml(o.comment)}</div>` : ''}
             ${(o.delivery === 'russia' || o.deliveryType === 'russia' || (o.delivery !== 'pickup' && o.delivery !== 'city')) ? `
             <div class="order-card__tracking">
                 <input class="tracking-input" id="tracking-${o.id}"
-                       value="${o.trackingNumber || ''}" placeholder="Введите трек-номер СДЭК...">
+                       value="${escHtml(o.trackingNumber || '')}" placeholder="Введите трек-номер СДЭК...">
                 <button class="tracking-btn" onclick="saveTracking(${o.id})">&#128228; Отправить</button>
             </div>` : ''}
             <div class="order-card__footer">

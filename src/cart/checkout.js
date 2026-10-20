@@ -149,13 +149,8 @@ function applyDelivery(method) {
     renderSummary();
 }
 
-function escHtml(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
+/* escHtml() — общая версия в src/shared/escHtml.js, подключена
+   отдельным <script> в checkout.html перед этим файлом. */
 
 /* ─── Cart ──────────────────────────────────────────────── */
 function getCart() {
