@@ -25,6 +25,11 @@ process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'test';
 const REAL_BOT_TOKEN  = 'real_bot_token_for_test';
 const WRONG_BOT_TOKEN = 'attacker_guessed_wrong_token';
 process.env.MAX_BOT_TOKEN = REAL_BOT_TOKEN;
+// orders.js импортирует requireAdmin из server/middleware/auth.js, который
+// теперь бросает исключение при require(), если ADMIN_PASSWORD не задан
+// (аудит безопасности, находка C) — этому тесту requireAdmin не нужен,
+// но без ADMIN_PASSWORD сам require('../routes/orders') ниже упадёт.
+process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'test-admin-password';
 
 const crypto  = require('crypto');
 const express = require('express');

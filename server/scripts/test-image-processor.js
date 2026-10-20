@@ -37,6 +37,7 @@ const path   = require('path');
 const crypto = require('crypto');
 const sharp  = require('sharp');
 const express = require('express');
+const { issueAdminToken } = require('../middleware/auth');
 
 const { processImage, QUALITY_STEPS } = require('../utils/imageProcessor');
 
@@ -158,7 +159,7 @@ async function main() {
     const server = app.listen(0);
     const port = server.address().port;
     const base = `http://127.0.0.1:${port}`;
-    const AUTH = { Authorization: `Bearer ${process.env.ADMIN_PASSWORD}` };
+    const AUTH = { Authorization: `Bearer ${issueAdminToken()}` };
 
     console.log('\n--- Мусорный файл с типом image/jpeg ---');
     {

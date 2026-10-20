@@ -4,8 +4,9 @@
    db.query/queryOne/execute — маленькая in-memory реализация, bot.js —
    подмена через require.cache (ДО require('../routes/service-requests'),
    которую делает сам роут один раз при загрузке модуля), requireAdmin —
-   настоящий (server/middleware/auth.js), просто передаём верный пароль
-   в Authorization: Bearer.
+   настоящий (server/middleware/auth.js): получаем настоящий токен через
+   issueAdminToken() (то же, что делает POST /api/auth/login после
+   успешного пароля) и передаём его в Authorization: Bearer.
 
    Запуск: node server/scripts/test-service-requests-admin.js
 */
@@ -16,12 +17,13 @@ process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'test';
 
 const REAL_BOT_TOKEN = 'real_bot_token_for_test';
 process.env.MAX_BOT_TOKEN = REAL_BOT_TOKEN;
+process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'test-admin-password';
 
 const express = require('express');
 const fs      = require('fs');
 const path    = require('path');
 const db      = require('../db');
-const { ADMIN_PASSWORD } = require('../middleware/auth');
+const { issueAdminToken } = require('../middleware/auth');
 
 function isoNow(offsetMs = 0) {
     return new Date(Date.now() + offsetMs).toISOString().replace(/\.\d+Z$/, 'Z');
@@ -152,7 +154,7 @@ async function main() {
     const port = server.address().port;
     const base = `http://127.0.0.1:${port}`;
 
-    const adminHeaders = { Authorization: `Bearer ${ADMIN_PASSWORD}` };
+    const adminHeaders = { Authorization: `Bearer ${issueAdminToken()}` };
     const wrongHeaders  = { Authorization: 'Bearer wrong-password' };
 
     async function getAdmin(path, headers = adminHeaders) {

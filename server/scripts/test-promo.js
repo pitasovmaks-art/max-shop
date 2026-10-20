@@ -14,13 +14,14 @@ process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'test';
 
 const REAL_BOT_TOKEN = 'real_bot_token_for_test';
 process.env.MAX_BOT_TOKEN = REAL_BOT_TOKEN;
+process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'test-admin-password';
 
 const crypto  = require('crypto');
 const express = require('express');
 const fs      = require('fs');
 const path    = require('path');
 const db      = require('../db');
-const { ADMIN_PASSWORD } = require('../middleware/auth');
+const { issueAdminToken } = require('../middleware/auth');
 const { SELLER_NAME, SELLER_INN } = require('../config');
 
 function isoNow(offsetMs = 0) { return new Date(Date.now() + offsetMs); }
@@ -336,7 +337,7 @@ async function main() {
 
         const r = await fetch(`${base}/api/products/1/variants`, {
             method:  'PUT',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ADMIN_PASSWORD}` },
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${issueAdminToken()}` },
             body: JSON.stringify([
                 { label: 'Стандарт', price: 1000, salePrice: 800, sortOrder: 0, isDefault: true },
             ]),
@@ -358,7 +359,7 @@ async function main() {
         const startedAt = Date.now();
         const r = await fetch(`${base}/api/products/1/variants`, {
             method:  'PUT',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ADMIN_PASSWORD}` },
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${issueAdminToken()}` },
             body: JSON.stringify([
                 { label: 'Стандарт', price: 1000, salePrice: 800, sortOrder: 0, isDefault: true },
             ]),
