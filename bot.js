@@ -11,23 +11,25 @@ const SHOP_URL     = process.env.SHOP_URL || 'https://max-shop-production.up.rai
 const BOT_USERNAME = process.env.BOT_USERNAME || '';
 const WEBHOOK_URL  = process.env.WEBHOOK_URL || '';
 
-/* ─── Admin chat IDs (persisted in Postgres, table bot_admins) ───
-   Раньше хранилось в bot_admins.json в корне проекта — на Timeweb App
-   Platform файловая система контейнера доступна только на чтение (кроме
-   временных директорий), запись давала EACCES. */
+/* ─── Admin chat IDs ─────────────────────────────────────────────────
+   ДВА источника, оба не пополняются автоматически (аудит безопасности,
+   находка A: раньше addAdmin(chatId) вызывался из handleStart() на
+   КАЖДЫЙ /start — то есть любой написавший боту получал право на
+   /reply и другие админ-команды; это и давало возможность слать
+   поддельные сообщения от имени поддержки произвольному chat_id):
+   1) BOT_ADMIN_IDS в env, через запятую — тот же паттерн, что ADMIN_IDS
+      в server/routes/subscription.js.
+   2) Таблица bot_admins в Postgres — строки в неё больше НЕ добавляются
+      кодом; пополняется только вручную (прямой INSERT в БД). Старые
+      строки, накопленные до этого фикса, не удалены этой правкой. */
+const BOT_ADMIN_IDS = new Set(
+    (process.env.BOT_ADMIN_IDS || '').split(',').map(s => s.trim()).filter(Boolean).map(Number)
+);
+
 async function loadAdmins() {
     const rows = await db.query('SELECT chat_id FROM bot_admins');
-    return rows.map(r => Number(r.chat_id));
-}
-
-async function addAdmin(chatId) {
-    const changed = await db.execute(
-        'INSERT INTO bot_admins (chat_id) VALUES ($1) ON CONFLICT (chat_id) DO NOTHING',
-        [chatId]
-    );
-    if (changed > 0) {
-        console.log(`[bot] Новый администратор: chat_id=${chatId}`);
-    }
+    const fromTable = rows.map(r => Number(r.chat_id));
+    return [...new Set([...fromTable, ...BOT_ADMIN_IDS])];
 }
 
 /* ─── HTTP helper ───────────────────────────────────────── */
@@ -94,12 +96,6 @@ function sendMessage(chatId, text, buttons = null) {
 
 /* ─── /start handler ────────────────────────────────────── */
 async function handleStart(chatId, userName) {
-    try {
-        await addAdmin(chatId);
-    } catch (e) {
-        console.error('[bot] addAdmin error:', e.message);
-    }
-
     console.log('[bot] handleStart: chatId=', chatId);
     await sendMessage(chatId, `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\n✉️ Вы подписаны на уведомления о статусе заказов.`);
 }
@@ -617,4 +613,7 @@ module.exports = {
     // отписки без запуска всего processUpdate/sendMessage) — тем же
     // способом, каким SERVICE_REQUEST_MANAGERS уже проверяется напрямую.
     normalizeText, UNSUBSCRIBE_PHRASES,
+    // Экспортирован только для test-bot-admins.js — проверка, что список
+    // админов берётся из BOT_ADMIN_IDS/bot_admins и не пополняется сам.
+    loadAdmins,
 };
