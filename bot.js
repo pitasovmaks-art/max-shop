@@ -159,11 +159,19 @@ async function processUpdate(update) {
         if (!chatId) return;
         if (msg?.sender?.is_bot) return;
 
-        // Сохраняем маппинг userId → chatId
+        // Сохраняем маппинг userId → chatId. fetch() не бросает на 4xx/5xx
+        // (отличие от сетевой ошибки, которую ловит .catch ниже) — без
+        // явной проверки r.ok ответ 403 (например, из-за неверного/
+        // не заданного INTERNAL_API_SECRET) прошёл бы незаметно: запись
+        // в user_map тихо не сохранится, и ни тут, ни на сервере
+        // (requireInternal теперь логирует сам) не появится ни строки
+        // в логе, кроме как по этой явной проверке.
         if (userId && chatId && userId !== chatId) {
             internalFetch('/api/users/map', {
                 method: 'POST',
                 body:   JSON.stringify({ userId, chatId }),
+            }).then(r => {
+                if (!r.ok) console.error(`[bot] user_map save: сервер ответил ${r.status} (проверьте INTERNAL_API_SECRET)`);
             }).catch(e => console.error('[bot] user_map save error:', e.message));
         }
 
@@ -203,13 +211,28 @@ async function processUpdate(update) {
         // ответить "отписались" раньше, чем запрос реально ушёл.
         if (UNSUBSCRIBE_PHRASES.has(normalizeText(text))) {
             try {
-                await internalFetch('/api/promo/unsubscribe', {
+                const r = await internalFetch('/api/promo/unsubscribe', {
                     method: 'POST',
                     body:   JSON.stringify({ tgId: userId || chatId }),
                 });
+                // fetch() не бросает на 4xx/5xx — без явной проверки r.ok
+                // бот подтвердил бы отписку пользователю, даже если
+                // сервер её не выполнил (например, 403 из-за неверного/
+                // не заданного INTERNAL_API_SECRET).
+                if (!r.ok) throw new Error(`сервер ответил ${r.status} (проверьте INTERNAL_API_SECRET)`);
                 await sendMessage(chatId, 'Вы отписались от рекламных сообщений.');
             } catch (e) {
                 console.error('[bot] promo unsubscribe error:', e.message);
+                // Раньше при ошибке пользователь не получал вообще никакого
+                // ответа — молчание легко спутать и с "уже отписан", и с
+                // зависшим ботом. Понятное сообщение + отдельный try —
+                // если даже это сообщение не уйдёт, не роняем обработку
+                // обновления целиком.
+                try {
+                    await sendMessage(chatId, 'Не получилось обработать отписку, попробуйте немного позже.');
+                } catch (e2) {
+                    console.error('[bot] promo unsubscribe: не удалось отправить сообщение об ошибке:', e2.message);
+                }
             }
             return;
         }
@@ -450,6 +473,10 @@ async function notifyCustomer(tgId, orderId, status, extra) {
         // Пробуем найти chat_id через user_map
         try {
             const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
+            // 403 отдельно от "просто нет такого маппинга" (!r.ok при
+            // 404) — иначе проблему с INTERNAL_API_SECRET видно только
+            // как неотличимое "не нашли chat_id" в общем FAIL-логе ниже.
+            if (r.status === 403) console.error('[bot] users/chat lookup: сервер ответил 403 (проверьте INTERNAL_API_SECRET)');
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -521,6 +548,10 @@ async function notifyServiceRequestStatus(tgId, request, changes) {
         console.error(`[bot] notifyServiceRequestStatus FAIL first try: tg_id=${tgId}`, e.message);
         try {
             const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
+            // 403 отдельно от "просто нет такого маппинга" (!r.ok при
+            // 404) — иначе проблему с INTERNAL_API_SECRET видно только
+            // как неотличимое "не нашли chat_id" в общем FAIL-логе ниже.
+            if (r.status === 403) console.error('[bot] users/chat lookup: сервер ответил 403 (проверьте INTERNAL_API_SECRET)');
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -550,6 +581,10 @@ async function notifyStock(tgId, productName) {
         console.error(`[bot] notifyStock FAIL first try: tg_id=${tgId}`, e.message);
         try {
             const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
+            // 403 отдельно от "просто нет такого маппинга" (!r.ok при
+            // 404) — иначе проблему с INTERNAL_API_SECRET видно только
+            // как неотличимое "не нашли chat_id" в общем FAIL-логе ниже.
+            if (r.status === 403) console.error('[bot] users/chat lookup: сервер ответил 403 (проверьте INTERNAL_API_SECRET)');
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -584,6 +619,10 @@ async function notifyPromo(tgId, productName) {
         console.error(`[bot] notifyPromo FAIL first try: tg_id=${tgId}`, e.message);
         try {
             const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
+            // 403 отдельно от "просто нет такого маппинга" (!r.ok при
+            // 404) — иначе проблему с INTERNAL_API_SECRET видно только
+            // как неотличимое "не нашли chat_id" в общем FAIL-логе ниже.
+            if (r.status === 403) console.error('[bot] users/chat lookup: сервер ответил 403 (проверьте INTERNAL_API_SECRET)');
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {

@@ -103,7 +103,15 @@ const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET || '';
 
 function requireInternal(req, res, next) {
     const provided = req.headers['x-internal-secret'] || '';
-    if (!INTERNAL_API_SECRET || !timingSafeEqualStr(provided, INTERNAL_API_SECRET)) {
+    if (!INTERNAL_API_SECRET) {
+        // Отдельная причина в логе — иначе отличить "секрет не задан"
+        // от "секрет неверный" можно только гадая; ни то, ни другое
+        // значение секрета в лог не попадает.
+        console.warn(`[requireInternal] ${req.method} ${req.path}: отклонён, INTERNAL_API_SECRET не задан в env — все внутренние маршруты временно недоступны (ip=${req.ip})`);
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+    if (!timingSafeEqualStr(provided, INTERNAL_API_SECRET)) {
+        console.warn(`[requireInternal] ${req.method} ${req.path}: отклонён, X-Internal-Secret неверный или отсутствует (ip=${req.ip})`);
         return res.status(403).json({ error: 'Forbidden' });
     }
     next();
