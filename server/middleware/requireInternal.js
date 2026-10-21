@@ -16,11 +16,20 @@ const crypto = require('crypto');
 function requireInternal(req, res, next) {
     const secret = process.env.INTERNAL_API_SECRET || '';
     const header = req.headers['x-internal-secret'] || '';
-    if (!secret) return res.status(401).json({ error: 'Unauthorized' });
+    if (!secret) {
+        // Отдельная причина в логе — иначе отличить "секрет не задан" от
+        // "секрет неверный" можно только гадая; ни то, ни другое значение
+        // секрета в лог не попадает. Код ответа (401) — тот же, что
+        // проверяет bot.js (internalFetch) при логировании своей стороны,
+        // см. его комментарии — иначе логи бота врали бы при реальном 401.
+        console.warn(`[requireInternal] ${req.method} ${req.path}: отклонён, INTERNAL_API_SECRET не задан в env — все внутренние маршруты временно недоступны (ip=${req.ip})`);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
 
     const secretHash = crypto.createHash('sha256').update(secret).digest();
     const headerHash = crypto.createHash('sha256').update(String(header)).digest();
     if (!crypto.timingSafeEqual(secretHash, headerHash)) {
+        console.warn(`[requireInternal] ${req.method} ${req.path}: отклонён, X-Internal-Secret неверный или отсутствует (ip=${req.ip})`);
         return res.status(401).json({ error: 'Unauthorized' });
     }
     next();

@@ -156,12 +156,18 @@ function renderOrders(orders, serviceRequests) {
     attachReorderHandlers(content);
 }
 
+// o.store/address/trackingNumber/items[].name — server/routes/orders.js
+// не валидирует их содержимое (только присутствие полей), поэтому в
+// заказ можно отправить произвольный текст в этих полях (не только
+// name/phone/comment, которых здесь даже нет) — КАЖДУЮ такую вставку в
+// innerHTML пропускаем через escHtml() (аудит безопасности, находка K;
+// src/shared/escHtml.js, подключён в orders.html перед этим файлом).
 function orderCardHtml(o) {
         const st   = STATUS_CONFIG[o.status] || { label: o.status, cls: 'badge-new' };
         const date = new Date(o.createdAt).toLocaleString('ru-RU', {
             day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
         });
-        const itemsText  = o.items.map(i => `${i.name} × ${i.qty}`).join(', ');
+        const itemsText  = o.items.map(i => `${escHtml(i.name)} × ${Number(i.qty) || 0}`).join(', ');
         const itemsData  = encodeURIComponent(JSON.stringify(o.items));
         const trackBtn   = o.trackingNumber
             ? `<a class="track-btn" href="https://www.cdek.ru/ru/tracking?order_id=${encodeURIComponent(o.trackingNumber)}" target="_blank">
@@ -177,10 +183,10 @@ function orderCardHtml(o) {
             </div>
             <div class="order-card__date">${date}</div>
             <div class="order-card__items">${itemsText}</div>
-            <div class="order-card__store">📍 ${o.store}</div>
-            ${o.delivery === 'russia' && o.address ? `<div class="order-card__address">📦 Пункт СДЭК: ${o.address}</div>` : ''}
-            ${o.delivery === 'city'   && o.address ? `<div class="order-card__address">🚗 Адрес доставки: ${o.address}</div>` : ''}
-            ${o.trackingNumber ? `<div class="order-card__tracking">🔖 Трек-номер: ${o.trackingNumber}</div>` : ''}
+            <div class="order-card__store">📍 ${escHtml(o.store)}</div>
+            ${o.delivery === 'russia' && o.address ? `<div class="order-card__address">📦 Пункт СДЭК: ${escHtml(o.address)}</div>` : ''}
+            ${o.delivery === 'city'   && o.address ? `<div class="order-card__address">🚗 Адрес доставки: ${escHtml(o.address)}</div>` : ''}
+            ${o.trackingNumber ? `<div class="order-card__tracking">🔖 Трек-номер: ${escHtml(o.trackingNumber)}</div>` : ''}
             ${trackBtn}
             <div class="order-card__total">${fmt(o.total)}</div>
             <button class="reorder-btn" data-items="${itemsData}">🔄 Заказать снова</button>

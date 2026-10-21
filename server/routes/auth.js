@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { ADMIN_PASSWORD, safeEqual }         = require('../middleware/auth');
+const { issueAdminToken, verifyAdminPassword } = require('../middleware/auth');
 const { verifyInitData }                    = require('../utils/initData');
 const { checkChannelMembership, ADMIN_IDS } = require('./subscription');
 
@@ -41,8 +41,12 @@ router.post('/login', (req, res) => {
     }
 
     const { password } = req.body || {};
-    if (ADMIN_PASSWORD && typeof password === 'string' && safeEqual(password, ADMIN_PASSWORD)) {
-        res.json({ ok: true, token: ADMIN_PASSWORD });
+    // Токен — случайное значение от issueAdminToken() (server/middleware/
+    // auth.js), не сам пароль: requireAdmin сравнивает Bearer-токен с
+    // реестром выданных токенов (TTL 12ч, отзывается перезапуском
+    // процесса), а не с ADMIN_PASSWORD напрямую.
+    if (verifyAdminPassword(password)) {
+        res.json({ ok: true, token: issueAdminToken() });
     } else {
         recordFailedLogin(ip);
         res.status(401).json({ ok: false, error: 'Неверный пароль' });

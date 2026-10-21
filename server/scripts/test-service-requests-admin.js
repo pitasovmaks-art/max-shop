@@ -22,7 +22,7 @@ const express = require('express');
 const fs      = require('fs');
 const path    = require('path');
 const db      = require('../db');
-const { ADMIN_PASSWORD } = require('../middleware/auth');
+const { issueAdminToken } = require('../middleware/auth');
 
 function isoNow(offsetMs = 0) {
     return new Date(Date.now() + offsetMs).toISOString().replace(/\.\d+Z$/, 'Z');
@@ -153,7 +153,7 @@ async function main() {
     const port = server.address().port;
     const base = `http://127.0.0.1:${port}`;
 
-    const adminHeaders = { Authorization: `Bearer ${ADMIN_PASSWORD}` };
+    const adminHeaders = { Authorization: `Bearer ${issueAdminToken()}` };
     const wrongHeaders  = { Authorization: 'Bearer wrong-password' };
 
     async function getAdmin(path, headers = adminHeaders) {

@@ -11,30 +11,53 @@ const SHOP_URL     = process.env.SHOP_URL || 'https://max-shop-production.up.rai
 const BOT_USERNAME = process.env.BOT_USERNAME || '';
 const WEBHOOK_URL  = process.env.WEBHOOK_URL || '';
 
-/* Внутренние вызовы бота к собственному серверному API (/api/users/map,
-   /api/users/chat, /api/promo/unsubscribe) — те же процесс и хост, но по
-   сети (см. base ниже), не гарантированно localhost. Эти три роута
-   защищены requireInternal (server/middleware/requireInternal.js) и
-   проверяют ровно этот заголовок. */
-const INTERNAL_API_HEADERS = { 'X-Internal-Secret': process.env.INTERNAL_API_SECRET || '' };
+/* ─── Внутренние вызовы бота к собственному серверному API ────────────
+   /api/users/map, /api/users/chat, /api/promo/unsubscribe — те же
+   процесс и хост, но по сети (см. internalBaseUrl() ниже), не
+   гарантированно localhost. Защищены requireInternal
+   (server/middleware/requireInternal.js) — заголовок X-Internal-Secret,
+   сравнение через SHA-256 + timingSafeEqual. Если INTERNAL_API_SECRET
+   не задан или не совпадает — 401 на все запросы без исключений,
+   включая от самого бота; уведомления через user_map и отписка через
+   бота перестанут работать, пока секрет не будет задан одинаково и
+   здесь, и на сервере (один и тот же process.env, один процесс). */
+const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET || '';
 
-/* ─── Admin chat IDs (persisted in Postgres, table bot_admins) ───
-   Раньше хранилось в bot_admins.json в корне проекта — на Timeweb App
-   Platform файловая система контейнера доступна только на чтение (кроме
-   временных директорий), запись давала EACCES. */
-async function loadAdmins() {
-    const rows = await db.query('SELECT chat_id FROM bot_admins');
-    return rows.map(r => Number(r.chat_id));
+function internalBaseUrl() {
+    return WEBHOOK_URL ? WEBHOOK_URL.replace('/webhook', '') : 'http://localhost:3000';
+}
+function internalFetch(path, opts = {}) {
+    return fetch(`${internalBaseUrl()}${path}`, {
+        ...opts,
+        headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': INTERNAL_API_SECRET, ...(opts.headers || {}) },
+    });
 }
 
-async function addAdmin(chatId) {
-    const changed = await db.execute(
-        'INSERT INTO bot_admins (chat_id) VALUES ($1) ON CONFLICT (chat_id) DO NOTHING',
-        [chatId]
-    );
-    if (changed > 0) {
-        console.log(`[bot] Новый администратор: chat_id=${chatId}`);
-    }
+/* ─── Админы бота ────────────────────────────────────────────────────
+   ДВА источника, оба не пополняются автоматически (аудит безопасности,
+   находка A: раньше addAdmin(chatId) вызывался из handleStart() на
+   КАЖДЫЙ /start — то есть любой написавший боту получал право на
+   /reply и другие админ-команды; это и давало возможность слать
+   поддельные сообщения от имени поддержки произвольному chat_id):
+   1) BOT_ADMIN_IDS в env, через запятую — тот же паттерн, что ADMIN_IDS
+      в server/routes/subscription.js.
+   2) Таблица bot_admins в Postgres (столбец называется chat_id по
+      историческим причинам, менять схему ради переименования не стали)
+      — строки в неё больше НЕ добавляются кодом; пополняется только
+      вручную (прямой INSERT в БД). Старые строки, накопленные до этого
+      фикса, не удалены этой правкой.
+
+   И BOT_ADMIN_IDS, и значения в bot_admins сравниваются с
+   msg.sender.user_id (см. /reply и форвард ниже) — узнать свой
+   user_id можно командой /myid боту. */
+const BOT_ADMIN_IDS = new Set(
+    (process.env.BOT_ADMIN_IDS || '').split(',').map(s => s.trim()).filter(Boolean).map(Number)
+);
+
+async function loadAdmins() {
+    const rows = await db.query('SELECT chat_id FROM bot_admins');
+    const fromTable = rows.map(r => Number(r.chat_id));
+    return [...new Set([...fromTable, ...BOT_ADMIN_IDS])];
 }
 
 /* ─── HTTP helper ───────────────────────────────────────── */
@@ -101,12 +124,6 @@ function sendMessage(chatId, text, buttons = null) {
 
 /* ─── /start handler ────────────────────────────────────── */
 async function handleStart(chatId, userName) {
-    try {
-        await addAdmin(chatId);
-    } catch (e) {
-        console.error('[bot] addAdmin error:', e.message);
-    }
-
     console.log('[bot] handleStart: chatId=', chatId);
     await sendMessage(chatId, `👋 Добро пожаловать в *Точку Монтажа*!\n\nЗдесь вы можете заказать монтажные пистолеты, аккумуляторный инструмент и расходники.\n\n✉️ Вы подписаны на уведомления о статусе заказов.`);
 }
@@ -148,15 +165,19 @@ async function processUpdate(update) {
         if (!chatId) return;
         if (msg?.sender?.is_bot) return;
 
-        // Сохраняем маппинг userId → chatId
+        // Сохраняем маппинг userId → chatId. fetch() не бросает на 4xx/5xx
+        // (отличие от сетевой ошибки, которую ловит .catch ниже) — без
+        // явной проверки r.ok ответ 401 (например, из-за неверного/
+        // не заданного INTERNAL_API_SECRET) прошёл бы незаметно: запись
+        // в user_map тихо не сохранится, и ни тут, ни на сервере
+        // (requireInternal логирует сам) не появится ни строки в логе,
+        // кроме как по этой явной проверке.
         if (userId && chatId && userId !== chatId) {
-            const base = process.env.WEBHOOK_URL
-                ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                : 'http://localhost:3000';
-            fetch(`${base}/api/users/map`, {
-                method:  'POST',
-                headers: Object.assign({ 'Content-Type': 'application/json' }, INTERNAL_API_HEADERS),
-                body:    JSON.stringify({ userId, chatId }),
+            internalFetch('/api/users/map', {
+                method: 'POST',
+                body:   JSON.stringify({ userId, chatId }),
+            }).then(r => {
+                if (!r.ok) console.error(`[bot] user_map save: сервер ответил ${r.status} (проверьте INTERNAL_API_SECRET)`);
             }).catch(e => console.error('[bot] user_map save error:', e.message));
         }
 
@@ -166,17 +187,26 @@ async function processUpdate(update) {
             return;
         }
 
-        // /myid — ответить своим chat_id
+        // /myid — ответить и user_id, и chat_id: BOT_ADMIN_IDS/bot_admins
+        // (проверка прав админа ниже) сравниваются с user_id, не chat_id —
+        // чтобы не перепутать, какое именно число указывать в настройке,
+        // показываем оба с подписями.
         if (text.trim().toLowerCase() === '/myid') {
-            await sendMessage(chatId, `Ваш ID: ${chatId}`);
-            console.log('[BOT] /myid запрошен, chatId:', chatId);
+            await sendMessage(chatId, `Ваш user_id: ${userId}\nВаш chat_id: ${chatId}`);
+            console.log('[BOT] /myid запрошен, userId:', userId, 'chatId:', chatId);
             return;
         }
 
-        // /reply ID текст — отправить ответ пользователю (только для админов)
+        // /reply ID текст — отправить ответ пользователю (только для админов).
+        // Проверка — по msg.sender.user_id (кто прислал сообщение), а не
+        // по chatId (msg.recipient.chat_id — куда пришло сообщение, это
+        // другое значение и не всегда совпадает с user_id отправителя).
+        // chatId отдельно продолжает использоваться там, где нужен именно
+        // адрес ДЛЯ ОТПРАВКИ (sendMessage(chatId, ...) ниже и в
+        // forward-блоке) — это другая задача, не проверка прав.
         if (text.startsWith('/reply ')) {
             const admins = await loadAdmins();
-            if (!admins.includes(chatId)) return;
+            if (!admins.includes(userId)) return;
             const parts      = text.split(' ');
             const targetId   = Number(parts[1]);
             const replyText  = parts.slice(2).join(' ');
@@ -196,17 +226,28 @@ async function processUpdate(update) {
         // ответить "отписались" раньше, чем запрос реально ушёл.
         if (UNSUBSCRIBE_PHRASES.has(normalizeText(text))) {
             try {
-                const base = process.env.WEBHOOK_URL
-                    ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                    : 'http://localhost:3000';
-                await fetch(`${base}/api/promo/unsubscribe`, {
-                    method:  'POST',
-                    headers: Object.assign({ 'Content-Type': 'application/json' }, INTERNAL_API_HEADERS),
-                    body:    JSON.stringify({ tgId: userId || chatId }),
+                const r = await internalFetch('/api/promo/unsubscribe', {
+                    method: 'POST',
+                    body:   JSON.stringify({ tgId: userId || chatId }),
                 });
+                // fetch() не бросает на 4xx/5xx — без явной проверки r.ok
+                // бот подтвердил бы отписку пользователю, даже если
+                // сервер её не выполнил (например, 401 из-за неверного/
+                // не заданного INTERNAL_API_SECRET).
+                if (!r.ok) throw new Error(`сервер ответил ${r.status} (проверьте INTERNAL_API_SECRET)`);
                 await sendMessage(chatId, 'Вы отписались от рекламных сообщений.');
             } catch (e) {
                 console.error('[bot] promo unsubscribe error:', e.message);
+                // Раньше при ошибке пользователь не получал вообще никакого
+                // ответа — молчание легко спутать и с "уже отписан", и с
+                // зависшим ботом. Понятное сообщение + отдельный try —
+                // если даже это сообщение не уйдёт, не роняем обработку
+                // обновления целиком.
+                try {
+                    await sendMessage(chatId, 'Не получилось обработать отписку, попробуйте немного позже.');
+                } catch (e2) {
+                    console.error('[bot] promo unsubscribe: не удалось отправить сообщение об ошибке:', e2.message);
+                }
             }
             return;
         }
@@ -218,12 +259,18 @@ async function processUpdate(update) {
             console.error('[bot] fallback reply error:', e.message);
         }
 
-        // Пересылаем сообщение админам если отправитель не администратор
+        // Пересылаем сообщение админам если отправитель не администратор.
+        // Проверка — по user_id отправителя (см. комментарий у /reply
+        // выше), не по chatId. adminId из этого же списка используется
+        // как цель sendMessage() напрямую — тот же приём, что у tg_id в
+        // notifyCustomer()/notifyStock() и т.п. (прямая отправка по
+        // user_id работает для личных чатов с ботом; de-факто chat_id
+        // совпадает с user_id для 1:1 переписки с ботом в этом проекте).
         const admins = await loadAdmins();
-        const isAdmin = admins.includes(chatId);
+        const isAdmin = admins.includes(userId);
         if (!isAdmin) {
             for (const adminId of admins) {
-                if (adminId === chatId) continue;
+                if (adminId === userId) continue;
                 await sendMessage(
                     adminId,
                     `📩 *Обращение в поддержку*\nОт: ${senderName} (ID: ${chatId})\nСообщение: ${text}\n\nОтветить: /reply ${chatId} ваш текст`
@@ -445,10 +492,11 @@ async function notifyCustomer(tgId, orderId, status, extra) {
         console.error(`[bot] notifyCustomer FAIL first try: tg_id=${tgId}`, e.message);
         // Пробуем найти chat_id через user_map
         try {
-            const base = process.env.WEBHOOK_URL
-                ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`, { headers: INTERNAL_API_HEADERS });
+            const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
+            // 401 отдельно от "просто нет такого маппинга" (!r.ok при
+            // 404) — иначе проблему с INTERNAL_API_SECRET видно только
+            // как неотличимое "не нашли chat_id" в общем FAIL-логе ниже.
+            if (r.status === 401) console.error('[bot] users/chat lookup: сервер ответил 401 (проверьте INTERNAL_API_SECRET)');
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -522,10 +570,11 @@ async function notifyServiceRequestStatus(tgId, request, changes) {
     } catch (e) {
         console.error(`[bot] notifyServiceRequestStatus FAIL first try: tg_id=${tgId}`, e.message);
         try {
-            const base = process.env.WEBHOOK_URL
-                ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`, { headers: INTERNAL_API_HEADERS });
+            const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
+            // 401 отдельно от "просто нет такого маппинга" (!r.ok при
+            // 404) — иначе проблему с INTERNAL_API_SECRET видно только
+            // как неотличимое "не нашли chat_id" в общем FAIL-логе ниже.
+            if (r.status === 401) console.error('[bot] users/chat lookup: сервер ответил 401 (проверьте INTERNAL_API_SECRET)');
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -554,10 +603,11 @@ async function notifyStock(tgId, productName) {
     } catch (e) {
         console.error(`[bot] notifyStock FAIL first try: tg_id=${tgId}`, e.message);
         try {
-            const base = process.env.WEBHOOK_URL
-                ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`, { headers: INTERNAL_API_HEADERS });
+            const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
+            // 401 отдельно от "просто нет такого маппинга" (!r.ok при
+            // 404) — иначе проблему с INTERNAL_API_SECRET видно только
+            // как неотличимое "не нашли chat_id" в общем FAIL-логе ниже.
+            if (r.status === 401) console.error('[bot] users/chat lookup: сервер ответил 401 (проверьте INTERNAL_API_SECRET)');
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -591,10 +641,11 @@ async function notifyPromo(tgId, productName) {
     } catch (e) {
         console.error(`[bot] notifyPromo FAIL first try: tg_id=${tgId}`, e.message);
         try {
-            const base = process.env.WEBHOOK_URL
-                ? process.env.WEBHOOK_URL.replace('/webhook', '')
-                : 'http://localhost:3000';
-            const r = await fetch(`${base}/api/users/chat?user_id=${tgId}`, { headers: INTERNAL_API_HEADERS });
+            const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
+            // 401 отдельно от "просто нет такого маппинга" (!r.ok при
+            // 404) — иначе проблему с INTERNAL_API_SECRET видно только
+            // как неотличимое "не нашли chat_id" в общем FAIL-логе ниже.
+            if (r.status === 401) console.error('[bot] users/chat lookup: сервер ответил 401 (проверьте INTERNAL_API_SECRET)');
             if (r.ok) {
                 const data = await r.json();
                 if (data.chatId && data.chatId !== String(tgId)) {
@@ -626,4 +677,7 @@ module.exports = {
     // отписки без запуска всего processUpdate/sendMessage) — тем же
     // способом, каким SERVICE_REQUEST_MANAGERS уже проверяется напрямую.
     normalizeText, UNSUBSCRIBE_PHRASES,
+    // Экспортирован только для test-bot-admins.js — проверка, что список
+    // админов берётся из BOT_ADMIN_IDS/bot_admins и не пополняется сам.
+    loadAdmins,
 };
