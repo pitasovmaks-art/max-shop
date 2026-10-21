@@ -1177,9 +1177,10 @@ let _orderFilter  = { store: '', status: '', delivery: '' };
 // Заказ заполняет покупатель (имя/телефон/адрес/комментарий/магазин/
 // названия позиций) — то же правило, что в admin/banners.js для баннеров:
 // экранировать перед вставкой в innerHTML, даже если это "просто текст".
-function _escHtml(s) {
-    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+// escHtml() — общая версия в src/shared/escHtml.js (подключена отдельным
+// <script> в admin/index.html перед этим файлом); _escHtml — алиас,
+// чтобы не переименовывать все вызовы ниже.
+const _escHtml = escHtml;
 
 function renderOrderFilters() {
     const el = document.getElementById('orderFilters');
@@ -1235,7 +1236,7 @@ function renderOrderList() {
         const date    = new Date(o.createdAt).toLocaleString('ru-RU', {
             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
         });
-        const itemsText = o.items.map(i => `${_escHtml(i.name)} × ${i.qty}`).join(', ');
+        const itemsText = o.items.map(i => `${_escHtml(i.name)} × ${Number(i.qty) || 0}`).join(', ');
         const statusList = ORDER_STATUSES_BY_DELIVERY[o.delivery] || ORDER_STATUSES_BY_DELIVERY.russia;
         const options   = statusList.map(s =>
             `<option value="${s.key}" ${o.status === s.key ? 'selected' : ''}>${s.label}</option>`
