@@ -33,7 +33,7 @@ function internalFetch(path, opts = {}) {
     });
 }
 
-/* ─── Admin chat IDs ─────────────────────────────────────────────────
+/* ─── Админы бота ────────────────────────────────────────────────────
    ДВА источника, оба не пополняются автоматически (аудит безопасности,
    находка A: раньше addAdmin(chatId) вызывался из handleStart() на
    КАЖДЫЙ /start — то есть любой написавший боту получал право на
@@ -41,9 +41,15 @@ function internalFetch(path, opts = {}) {
    поддельные сообщения от имени поддержки произвольному chat_id):
    1) BOT_ADMIN_IDS в env, через запятую — тот же паттерн, что ADMIN_IDS
       в server/routes/subscription.js.
-   2) Таблица bot_admins в Postgres — строки в неё больше НЕ добавляются
-      кодом; пополняется только вручную (прямой INSERT в БД). Старые
-      строки, накопленные до этого фикса, не удалены этой правкой. */
+   2) Таблица bot_admins в Postgres (столбец называется chat_id по
+      историческим причинам, менять схему ради переименования не стали)
+      — строки в неё больше НЕ добавляются кодом; пополняется только
+      вручную (прямой INSERT в БД). Старые строки, накопленные до этого
+      фикса, не удалены этой правкой.
+
+   И BOT_ADMIN_IDS, и значения в bot_admins сравниваются с
+   msg.sender.user_id (см. /reply и форвард ниже) — узнать свой
+   user_id можно командой /myid боту. */
 const BOT_ADMIN_IDS = new Set(
     (process.env.BOT_ADMIN_IDS || '').split(',').map(s => s.trim()).filter(Boolean).map(Number)
 );
@@ -181,17 +187,26 @@ async function processUpdate(update) {
             return;
         }
 
-        // /myid — ответить своим chat_id
+        // /myid — ответить и user_id, и chat_id: BOT_ADMIN_IDS/bot_admins
+        // (проверка прав админа ниже) сравниваются с user_id, не chat_id —
+        // чтобы не перепутать, какое именно число указывать в настройке,
+        // показываем оба с подписями.
         if (text.trim().toLowerCase() === '/myid') {
-            await sendMessage(chatId, `Ваш ID: ${chatId}`);
-            console.log('[BOT] /myid запрошен, chatId:', chatId);
+            await sendMessage(chatId, `Ваш user_id: ${userId}\nВаш chat_id: ${chatId}`);
+            console.log('[BOT] /myid запрошен, userId:', userId, 'chatId:', chatId);
             return;
         }
 
-        // /reply ID текст — отправить ответ пользователю (только для админов)
+        // /reply ID текст — отправить ответ пользователю (только для админов).
+        // Проверка — по msg.sender.user_id (кто прислал сообщение), а не
+        // по chatId (msg.recipient.chat_id — куда пришло сообщение, это
+        // другое значение и не всегда совпадает с user_id отправителя).
+        // chatId отдельно продолжает использоваться там, где нужен именно
+        // адрес ДЛЯ ОТПРАВКИ (sendMessage(chatId, ...) ниже и в
+        // forward-блоке) — это другая задача, не проверка прав.
         if (text.startsWith('/reply ')) {
             const admins = await loadAdmins();
-            if (!admins.includes(chatId)) return;
+            if (!admins.includes(userId)) return;
             const parts      = text.split(' ');
             const targetId   = Number(parts[1]);
             const replyText  = parts.slice(2).join(' ');
@@ -244,12 +259,18 @@ async function processUpdate(update) {
             console.error('[bot] fallback reply error:', e.message);
         }
 
-        // Пересылаем сообщение админам если отправитель не администратор
+        // Пересылаем сообщение админам если отправитель не администратор.
+        // Проверка — по user_id отправителя (см. комментарий у /reply
+        // выше), не по chatId. adminId из этого же списка используется
+        // как цель sendMessage() напрямую — тот же приём, что у tg_id в
+        // notifyCustomer()/notifyStock() и т.п. (прямая отправка по
+        // user_id работает для личных чатов с ботом; de-факто chat_id
+        // совпадает с user_id для 1:1 переписки с ботом в этом проекте).
         const admins = await loadAdmins();
-        const isAdmin = admins.includes(chatId);
+        const isAdmin = admins.includes(userId);
         if (!isAdmin) {
             for (const adminId of admins) {
-                if (adminId === chatId) continue;
+                if (adminId === userId) continue;
                 await sendMessage(
                     adminId,
                     `📩 *Обращение в поддержку*\nОт: ${senderName} (ID: ${chatId})\nСообщение: ${text}\n\nОтветить: /reply ${chatId} ваш текст`

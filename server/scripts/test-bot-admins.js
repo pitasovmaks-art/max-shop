@@ -166,6 +166,66 @@ async function main() {
             sentMessages.some(m => m.chatId === '12345'));
     }
 
+    /* ── 6. Проверка прав — именно по sender.user_id, не по recipient.chat_id ──
+       Раньше (до этой правки) проверка шла по chatId
+       (recipient.chat_id ?? sender.user_id), что в теории позволяло бы
+       подделать recipient.chat_id под чужой/админский, не будучи этим
+       отправителем. Ниже user_id и chat_id у сообщения РАЗНЫЕ —
+       результат должен зависеть только от user_id. ──────────────────── */
+    {
+        // user_id НЕ админ (111), chat_id ПОДМЕНЁН под админский (555) —
+        // /reply не должен сработать, если проверка по chatId всё ещё
+        // где-то осталась.
+        sentMessages.length = 0;
+        await bot.processUpdate({
+            update_type: 'message_created',
+            message: {
+                sender:    { user_id: 111, name: 'Не админ с чужим chat_id' },
+                recipient: { chat_id: 555 }, // подменённый chat_id админа
+                body:      { text: '/reply 12345 Попытка через подменённый chat_id' },
+            },
+        });
+        await flush();
+        check('/reply: user_id (111) не админ, несмотря на chat_id=555 (админский) -> не сработал',
+            !sentMessages.some(m => m.chatId === '12345'));
+    }
+    {
+        // user_id — админ (555), chat_id — ПРОИЗВОЛЬНЫЙ, не совпадающий
+        // с админским (4242) — /reply ДОЛЖЕН сработать, раз проверка по
+        // user_id, а не по chatId.
+        sentMessages.length = 0;
+        await bot.processUpdate({
+            update_type: 'message_created',
+            message: {
+                sender:    { user_id: 555, name: 'Админ из другого чата' },
+                recipient: { chat_id: 4242 }, // НЕ входит в admins
+                body:      { text: '/reply 12345 Ответ через нестандартный chat_id' },
+            },
+        });
+        await flush();
+        check('/reply: user_id (555) админ, несмотря на chat_id=4242 (не админский) -> сработал',
+            sentMessages.some(m => m.chatId === '12345'));
+    }
+
+    /* ── 7. /myid отвечает и user_id, и chat_id отдельно ─────────────── */
+    {
+        sentMessages.length = 0;
+        await bot.processUpdate({
+            update_type: 'message_created',
+            message: {
+                sender:    { user_id: 4001, name: 'Любопытный' },
+                recipient: { chat_id: 4002 }, // намеренно другое значение
+                body:      { text: '/myid' },
+            },
+        });
+        await flush();
+        const reply = sentMessages.find(m => m.chatId === '4002');
+        check('/myid: ответ содержит user_id', !!reply && reply.text.includes('4001'));
+        check('/myid: ответ содержит chat_id', !!reply && reply.text.includes('4002'));
+        check('/myid: user_id и chat_id подписаны разными метками (не перепутать)',
+            !!reply && /user_id/i.test(reply.text) && /chat_id/i.test(reply.text));
+    }
+
     console.log(failures === 0
         ? '\nВсе проверки прошли.'
         : `\n${failures} проверок провалено.`);
