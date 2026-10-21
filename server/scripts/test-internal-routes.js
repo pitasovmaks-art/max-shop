@@ -1,11 +1,16 @@
 /* Проверка фикса аудита безопасности, находка D (~/security-audit.md):
-   /api/users/map, /api/users/chat, /api/support/admin-map,
-   /api/support/admins, /api/support/known раньше принимали запросы без
+   /api/users/map и /api/users/chat раньше принимали запросы без
    какой-либо проверки, что вызов пришёл от самого бота, а не от любого
    клиента из интернета — например, GET /api/users/chat?user_id=...
-   отдавало chat_id ЛЮБОГО пользователя кому угодно. Теперь все пять
+   отдавало chat_id ЛЮБОГО пользователя кому угодно. Теперь оба
    защищены requireInternal (server/middleware/auth.js) — заголовок
    X-Internal-Secret, сравнение timing-safe с INTERNAL_API_SECRET.
+
+   /api/support/admin-map, /api/support/admins, /api/support/known были
+   защищены тем же способом, но удалены целиком — grep по всему
+   репозиторию не нашёл ни одного вызывающего места (bot-support.js
+   пишет в support_admins/support_known прямо в БД, не через HTTP) —
+   их тесты отсюда убраны вместе с самими роутами.
 
    Без реального Postgres — db.query/execute подменены на in-memory
    заглушки, та же архитектура, что в остальных test-*.js этого проекта.
@@ -32,9 +37,6 @@ db.execute = async (sql, params = []) => {
         if (row) row.chat_id = chatId; else userMapRows.push({ user_id: userId, chat_id: chatId });
         return 1;
     }
-    if (sql.includes('INSERT INTO support_admins') || sql.includes('INSERT INTO support_known')) {
-        return 1;
-    }
     throw new Error('test-internal-routes: неизвестный execute: ' + sql);
 };
 db.queryOne = async (sql, params = []) => {
@@ -44,13 +46,8 @@ db.queryOne = async (sql, params = []) => {
     }
     throw new Error('test-internal-routes: неизвестный queryOne: ' + sql);
 };
-db.query = async (sql) => {
-    if (sql.includes('SELECT user_id, chat_id FROM support_admins')) return [];
-    throw new Error('test-internal-routes: неизвестный query: ' + sql);
-};
 
-const usersRouter   = require('../routes/users');
-const supportRouter = require('../routes/support');
+const usersRouter = require('../routes/users');
 
 async function main() {
     let failures = 0;
@@ -62,7 +59,6 @@ async function main() {
     const app = express();
     app.use(express.json());
     app.use('/api/users', usersRouter);
-    app.use('/api/support', supportRouter);
     const server = app.listen(0);
     const port = server.address().port;
     const base = `http://127.0.0.1:${port}`;
@@ -70,9 +66,6 @@ async function main() {
     const routes = [
         ['POST', '/api/users/map',          { userId: 999, chatId: 9999 }],
         ['GET',  '/api/users/chat?user_id=42', null],
-        ['POST', '/api/support/admin-map',  { userId: 1, chatId: 1 }],
-        ['GET',  '/api/support/admins',     null],
-        ['POST', '/api/support/known',      { chatId: 1 }],
     ];
 
     for (const [method, path, body] of routes) {

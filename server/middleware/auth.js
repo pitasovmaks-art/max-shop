@@ -85,11 +85,15 @@ function requireAdmin(req, res, next) {
 
 /* ─── Внутренние маршруты (сервер-к-серверу, бот <-> этот же процесс) ──
    Аудит безопасности (находка D, ~/security-audit.md): /api/users/map,
-   /api/users/chat, /api/support/admin-map, /api/support/admins,
-   /api/support/known и /api/promo/unsubscribe раньше были доступны без
+   /api/users/chat и /api/promo/unsubscribe раньше были доступны без
    какой-либо проверки, что запрос пришёл от самого бота, а не от любого
    клиента из интернета — например, /api/users/chat?user_id=... отдавало
-   chat_id ЛЮБОГО пользователя кому угодно.
+   chat_id ЛЮБОГО пользователя кому угодно. (/api/support/admin-map,
+   /api/support/admins, /api/support/known были защищены тем же
+   способом, но оказались вообще не вызываемыми нигде в коде —
+   bot-support.js пишет в support_admins/support_known прямо в БД, не
+   через HTTP — и удалены целиком, см. server/routes/support.js в
+   истории git.)
 
    INTERNAL_API_SECRET читается ОДИН РАЗ при загрузке модуля (не внутри
    requireInternal) — намеренно: процесс не падает при старте, если
