@@ -10,18 +10,33 @@ const { checkChannelMembership, ADMIN_IDS } = require('./subscription');
 const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true';
 
 /* ─── Ограничение попыток входа (аудит безопасности, находка C) ───────
-   Два счётчика в окне LOGIN_WINDOW_MS: отдельный на IP (LOGIN_MAX_PER_IP)
-   и общий на все IP сразу (LOGIN_MAX_TOTAL) — второй нужен, чтобы подбор
-   пароля с множества IP одновременно тоже был ограничен, а не только
-   с одного адреса. Считаем ЛЮБОЙ вызов /login (не только неудачный) —
-   проще и не оставляет лазейки через "удачные" попытки. В памяти
-   процесса — для одного Node-процесса этого приложения достаточно. */
-const LOGIN_WINDOW_MS  = 15 * 60 * 1000;
-const LOGIN_MAX_PER_IP = 5;
-const LOGIN_MAX_TOTAL  = 30;
+   ЖЁСТКИЙ лимит — только на IP (LOGIN_MAX_PER_IP, 429 при превышении).
+   Раньше здесь был ВТОРОЙ, тоже жёсткий, общий счётчик на все IP сразу
+   (LOGIN_MAX_TOTAL) — при req.ip, определяемом НЕПРАВИЛЬНО (см. ниже),
+   он фактически совпадал с лимитом на IP и ничего не менял; а при
+   req.ip, определяемом правильно, он всё равно мог заблокировать вход
+   самому админу, если много попыток пришло с разных настоящих IP
+   (распределённый подбор) — именно та ситуация, которую легитимный
+   админ не контролирует и от которой не должен страдать.
+
+   Теперь общий счётчик (LOGIN_ALERT_TOTAL) — МЯГКИЙ: сам по себе никого
+   не блокирует, только пишет предупреждение в лог (видно в Timeweb) —
+   это сигнал "похоже на распределённый подбор", а не блокировка входа.
+
+   ВАЖНО: req.ip должен быть реальным IP клиента, а не адресом прокси
+   Timeweb — иначе лимит на IP сам по себе бесполезен (все клиенты
+   делят один IP, посторонний блокирует вход всем 5 запросами). См.
+   TRUST_PROXY_HOPS в server/index.js — без него этот риск остаётся.
+
+   Считаем ЛЮБОЙ вызов /login (не только неудачный) — проще и не
+   оставляет лазейки через "удачные" попытки. В памяти процесса — для
+   одного Node-процесса этого приложения достаточно. */
+const LOGIN_WINDOW_MS    = 15 * 60 * 1000;
+const LOGIN_MAX_PER_IP   = 5;
+const LOGIN_ALERT_TOTAL  = 30;
 
 const loginAttemptsByIp = new Map(); // ip -> timestamps[]
-let loginAttemptsTotal  = [];        // timestamps[]
+let loginAttemptsTotal  = [];        // timestamps[] — только для алерта, не для блокировки
 
 function pruneOld(arr, now) {
     while (arr.length && now - arr[0] > LOGIN_WINDOW_MS) arr.shift();
@@ -29,11 +44,10 @@ function pruneOld(arr, now) {
 
 function isLoginRateLimited(ip) {
     const now = Date.now();
-    pruneOld(loginAttemptsTotal, now);
     const ipAttempts = loginAttemptsByIp.get(ip) || [];
     pruneOld(ipAttempts, now);
     loginAttemptsByIp.set(ip, ipAttempts);
-    return ipAttempts.length >= LOGIN_MAX_PER_IP || loginAttemptsTotal.length >= LOGIN_MAX_TOTAL;
+    return ipAttempts.length >= LOGIN_MAX_PER_IP;
 }
 
 function recordLoginAttempt(ip) {
@@ -41,7 +55,12 @@ function recordLoginAttempt(ip) {
     const ipAttempts = loginAttemptsByIp.get(ip) || [];
     ipAttempts.push(now);
     loginAttemptsByIp.set(ip, ipAttempts);
+
+    pruneOld(loginAttemptsTotal, now);
     loginAttemptsTotal.push(now);
+    if (loginAttemptsTotal.length === LOGIN_ALERT_TOTAL) {
+        console.warn(`[auth] ${LOGIN_ALERT_TOTAL}+ попыток входа в админку за 15 минут суммарно по всем IP — похоже на распределённый подбор пароля (не блокирует вход, только лог)`);
+    }
 }
 
 /* Токен теперь — случайное значение, выданное issueAdminToken()

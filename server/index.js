@@ -7,6 +7,26 @@ const compression = require('compression');
 
 const app = express();
 
+/* По умолчанию ВЫКЛЮЧЕНО (0) — Express не доверяет X-Forwarded-For, и
+   req.ip — это адрес прямого TCP-соединения. Если перед приложением
+   стоит прокси/балансировщик Timeweb, это значит, что req.ip у ВСЕХ
+   клиентов одинаковый (адрес самого прокси) — важно для rate-limit
+   логина (server/routes/auth.js): посторонний мог бы заблокировать
+   вход администратору 5 запросами, если все "IP" на самом деле один.
+
+   ПЕРЕД включением — проверить вручную (НЕ угадывать): временно
+   залогировать req.ip и req.headers['x-forwarded-for'] на /health, см.
+   блок чуть ниже, открыть его с двух разных настоящих адресов
+   (например, из дома и с телефона в мобильной сети) и посчитать,
+   сколько адресов в X-Forwarded-For и совпадает ли req.ip с ожидаемым
+   публичным IP. TRUST_PROXY_HOPS — количество доверенных прокси МЕЖДУ
+   клиентом и этим процессом (обычно 1 для одного балансировщика
+   Timeweb). Задать БОЛЬШЕ реального числа прокси опасно: тогда клиент
+   может подделать X-Forwarded-For и притвориться любым IP, обойдя
+   лимит входа. */
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS || 0);
+if (trustProxyHops > 0) app.set('trust proxy', trustProxyHops);
+
 app.use(compression());
 
 /* Применяет schema.sql (только CREATE TABLE IF NOT EXISTS — идемпотентно и
@@ -80,7 +100,19 @@ app.use((req, res, next) => {
     next();
 });
 
-app.get('/health',  (req, res) => res.status(200).send('OK'));
+/* ВРЕМЕННЫЙ лог для проверки TRUST_PROXY_HOPS на реальном деплое
+   Timeweb (см. комментарий у app.set('trust proxy', ...) выше) — только
+   в консоль, ничего не пишет в БД. Открыть /health с двух разных
+   настоящих адресов (например, из дома и с телефона в мобильной сети)
+   и посмотреть в логах Timeweb, сколько адресов в X-Forwarded-For и
+   совпадает ли итоговый req.ip с ожидаемым публичным IP клиента — по
+   этому и выбирается правильное число для TRUST_PROXY_HOPS.
+   УДАЛИТЬ этот блок после того, как TRUST_PROXY_HOPS подобран и
+   проверен (не оставлять постоянным логированием IP на каждый /health). */
+app.get('/health',  (req, res) => {
+    console.log(`[health] req.ip=${req.ip} x-forwarded-for=${req.headers['x-forwarded-for'] || '(нет)'} remoteAddress=${req.socket?.remoteAddress}`);
+    res.status(200).send('OK');
+});
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
 /* Белый список статики — раньше express.static раздавал ВЕСЬ корень
