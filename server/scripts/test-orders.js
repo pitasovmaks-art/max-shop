@@ -20,6 +20,10 @@ process.env.DB_HOST     = process.env.DB_HOST     || 'localhost';
 process.env.DB_NAME     = process.env.DB_NAME     || 'test';
 process.env.DB_USER     = process.env.DB_USER     || 'test';
 process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'test';
+// orders.js импортирует requireAdmin из server/middleware/auth.js, который
+// теперь бросает исключение при require(), если ADMIN_PASSWORD не задан
+// (аудит безопасности, находка C).
+process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'test-admin-password';
 
 const REAL_BOT_TOKEN = 'real_bot_token_for_test';
 process.env.MAX_BOT_TOKEN = REAL_BOT_TOKEN;

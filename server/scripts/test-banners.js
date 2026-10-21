@@ -29,6 +29,7 @@ process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'test-admin-password'
 
 const express = require('express');
 const db      = require('../db');
+const { issueAdminToken } = require('../middleware/auth');
 
 /* ─── In-memory замена БД для banners.js ───────────────────────────
    Поддерживает ровно те формы запросов, которые реально выпускает
@@ -147,7 +148,7 @@ async function main() {
     const port = server.address().port;
     const base = `http://127.0.0.1:${port}`;
 
-    const AUTH = { Authorization: `Bearer ${process.env.ADMIN_PASSWORD}` };
+    const AUTH = { Authorization: `Bearer ${issueAdminToken()}` };
     const WRONG_AUTH = { Authorization: 'Bearer not-the-password' };
 
     /* ── (а) публичный GET: только активные + в периоде + порядок ──── */
