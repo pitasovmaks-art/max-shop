@@ -11,8 +11,21 @@ const app = express();
    без этого req.ip был бы адресом самого балансировщика (один и тот же
    для всех запросов), а не настоящего клиента. Нужно для rate-limit на
    /api/auth/login (server/routes/auth.js) — больше в проекте req.ip
-   сейчас нигде не используется. */
-app.set('trust proxy', 1);
+   сейчас нигде не используется.
+
+   TRUST_PROXY_HOPS — число доверенных прокси МЕЖДУ клиентом и этим
+   процессом. По умолчанию 1 — так уже было захардкожено (не менять
+   поведение на проде без проверки), но вынесено в env, чтобы можно
+   было подтвердить/исправить без правки кода. ПЕРЕД тем, как считать
+   это число окончательным — проверить вручную: временно залогировать
+   req.ip и req.headers['x-forwarded-for'] на /health (см. блок чуть
+   ниже), открыть его с двух разных настоящих адресов (например, из
+   дома и с телефона в мобильной сети) и посчитать, сколько адресов в
+   X-Forwarded-For и совпадает ли итоговый req.ip с ожидаемым публичным
+   IP клиента. Задать БОЛЬШЕ реального числа прокси опасно: клиент
+   сможет подделать X-Forwarded-For и обойти лимит входа. */
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 1);
+if (trustProxyHops > 0) app.set('trust proxy', trustProxyHops);
 
 app.use(compression());
 
@@ -87,7 +100,18 @@ app.use((req, res, next) => {
     next();
 });
 
-app.get('/health',  (req, res) => res.status(200).send('OK'));
+/* ВРЕМЕННЫЙ лог для проверки TRUST_PROXY_HOPS на реальном деплое
+   Timeweb (см. комментарий у app.set('trust proxy', ...) выше) — только
+   в консоль, ничего не пишет в БД. Открыть /health с двух разных
+   настоящих адресов и посмотреть в логах Timeweb, сколько адресов в
+   X-Forwarded-For и совпадает ли итоговый req.ip с ожидаемым публичным
+   IP клиента — по этому и подтверждается/правится TRUST_PROXY_HOPS.
+   УДАЛИТЬ этот блок после проверки (не оставлять постоянным
+   логированием IP на каждый /health). */
+app.get('/health',  (req, res) => {
+    console.log(`[health] req.ip=${req.ip} x-forwarded-for=${req.headers['x-forwarded-for'] || '(нет)'} remoteAddress=${req.socket?.remoteAddress}`);
+    res.status(200).send('OK');
+});
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
 /* Белый список статики — раньше express.static раздавал ВЕСЬ корень
