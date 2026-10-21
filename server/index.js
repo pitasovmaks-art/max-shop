@@ -147,7 +147,6 @@ app.use('/api/service-requests', require('./routes/service-requests'));
 app.use('/api/stores',        require('./routes/stores'));
 app.use('/api/cdek',          require('./routes/cdek'));
 app.use('/api/users',         require('./routes/users'));
-app.use('/api/support',       require('./routes/support'));
 app.use('/api/favorites',     require('./routes/favorites'));
 app.use('/api/stock-notify', require('./routes/stock-notify'));
 app.use('/api/promo',             require('./routes/promo'));
