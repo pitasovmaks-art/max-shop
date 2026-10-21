@@ -16,7 +16,11 @@
     "test:service-requests": "node server/scripts/test-service-requests.js",
     "test:service-requests-admin": "node server/scripts/test-service-requests-admin.js",
     "test:promo": "node server/scripts/test-promo.js",
-    "test:orders": "node server/scripts/test-orders.js"
+    "test:orders": "node server/scripts/test-orders.js",
+    "test:bot-admins": "node server/scripts/test-bot-admins.js",
+    "test:xss-escaping": "node server/scripts/test-xss-escaping.js",
+    "test:internal-routes": "node server/scripts/test-internal-routes.js",
+    "test:pricing-match": "node server/scripts/test-pricing-match.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",
