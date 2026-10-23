@@ -30,8 +30,8 @@ function recordFailedLogin(ip) {
 
 // /api/auth/verify вызывается на каждой загрузке каждой страницы (см. её
 // комментарий ниже и src/shopGuard.js) — лог UA на каждый запрос засоряет
-// продакшен-логи. Включается явно через AUTH_DEBUG=true при отладке
-// проблем с определением MAX-клиента по User-Agent.
+// продакшен-логи, UA больше не влияет на допуск (см. комментарий ниже),
+// это чисто диагностика. Включается явно через AUTH_DEBUG=true.
 const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true';
 
 router.post('/login', (req, res) => {
@@ -56,6 +56,17 @@ router.post('/login', (req, res) => {
 /* POST /api/auth/verify — проверяет подпись initData Max Mini Apps и подписку на канал.
    Без cookie/сессии: вызывается заново при каждой загрузке каждой страницы.
 
+   Раньше здесь был отказ по User-Agent (/MAX\// — считалось, что так
+   отсекается браузер по прямой ссылке). Убрано (находка 23.10.2026):
+   UA легко подделать — это не защита, а шум, и он отсекал настоящих
+   пользователей Max на Android (UA Android-приложения Max не содержит
+   "MAX/" — пример из прода: "...Realme RMX3771... Chrome/155.0.8059.43
+   Mobile Safari/537.36"). Единственный реальный барьер — подпись
+   initData (verifyInitData ниже): у браузера по прямой ссылке initData
+   просто нет и взять её неоткуда (не публикуется на странице), подпись
+   не подделать без MAX_BOT_TOKEN. UA всё ещё логируется (под AUTH_DEBUG)
+   — просто не используется для допуска/отказа.
+
    Логируем КАЖДЫЙ отказ (reason + user_id, если он уже известен на этот
    момент) — без initData и прочих данных запроса. Раньше при ошибке
    checkChannelMembership() не было ни лога, ни try/catch — она сама
@@ -65,15 +76,7 @@ router.post('/login', (req, res) => {
    бы просто обрыв соединения без единой причины в логах. */
 router.post('/verify', async (req, res) => {
     const ua = req.headers['user-agent'] || '';
-
-    /* Подтверждено реальным UA Max-клиента: "...Mobile/15E148 MAX/26.17.3" */
-    const isMax = /MAX\//.test(ua);
-    if (AUTH_DEBUG) console.log(`[auth/verify] UA=${isMax ? 'MAX' : 'NOT_MAX'} "${ua}"`);
-
-    if (!isMax) {
-        console.warn(`[auth/verify] отказ: not_max ua="${ua}"`);
-        return res.status(403).json({ ok: false, reason: 'not_max' });
-    }
+    if (AUTH_DEBUG) console.log(`[auth/verify] UA="${ua}"`);
 
     const { initData } = req.body || {};
     const result = verifyInitData(initData, process.env.MAX_BOT_TOKEN || '');
