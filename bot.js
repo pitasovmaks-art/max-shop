@@ -2,7 +2,6 @@
    Max Messenger Bot — Точка Монтажа
    ───────────────────────────────────────────────────────── */
 const https = require('https');
-const db    = require('./server/db');
 const { SELLER_NAME, SELLER_INN } = require('./server/config');
 
 const API_BASE     = 'platform-api2.max.ru';
@@ -34,30 +33,30 @@ function internalFetch(path, opts = {}) {
 }
 
 /* ─── Админы бота ────────────────────────────────────────────────────
-   ДВА источника, оба не пополняются автоматически (аудит безопасности,
-   находка A: раньше addAdmin(chatId) вызывался из handleStart() на
-   КАЖДЫЙ /start — то есть любой написавший боту получал право на
-   /reply и другие админ-команды; это и давало возможность слать
-   поддельные сообщения от имени поддержки произвольному chat_id):
-   1) BOT_ADMIN_IDS в env, через запятую — тот же паттерн, что ADMIN_IDS
-      в server/routes/subscription.js.
-   2) Таблица bot_admins в Postgres (столбец называется chat_id по
-      историческим причинам, менять схему ради переименования не стали)
-      — строки в неё больше НЕ добавляются кодом; пополняется только
-      вручную (прямой INSERT в БД). Старые строки, накопленные до этого
-      фикса, не удалены этой правкой.
+   ЕДИНСТВЕННЫЙ источник — BOT_ADMIN_IDS в env, через запятую (тот же
+   паттерн, что ADMIN_IDS в server/routes/subscription.js). Сравнивается
+   с msg.sender.user_id (см. /reply и форвард ниже) — узнать свой
+   user_id можно командой /myid боту.
 
-   И BOT_ADMIN_IDS, и значения в bot_admins сравниваются с
-   msg.sender.user_id (см. /reply и форвард ниже) — узнать свой
-   user_id можно командой /myid боту. */
+   Таблица bot_admins в Postgres больше НЕ читается и не пополняется
+   кодом вовсе (аудит безопасности, находка A: раньше addAdmin(chatId)
+   вызывался из handleStart() на КАЖДЫЙ /start — то есть любой
+   написавший боту получал право на /reply и другие админ-команды; это
+   и давало возможность слать поддельные сообщения от имени поддержки
+   произвольному chat_id). Саму таблицу не удаляли — решение заказчика
+   оставить её как есть, читать из неё список админов больше нельзя:
+   столбец называется chat_id, а сравнение теперь идёт по user_id, и
+   доверять старым строкам неясного происхождения не стоит. */
 const BOT_ADMIN_IDS = new Set(
     (process.env.BOT_ADMIN_IDS || '').split(',').map(s => s.trim()).filter(Boolean).map(Number)
 );
 
+if (BOT_ADMIN_IDS.size === 0) {
+    console.warn('[bot] BOT_ADMIN_IDS не задана — у бота не будет ни одного админа: /reply и форвард обращений в поддержку не будут работать ни у кого.');
+}
+
 async function loadAdmins() {
-    const rows = await db.query('SELECT chat_id FROM bot_admins');
-    const fromTable = rows.map(r => Number(r.chat_id));
-    return [...new Set([...fromTable, ...BOT_ADMIN_IDS])];
+    return [...BOT_ADMIN_IDS];
 }
 
 /* ─── HTTP helper ───────────────────────────────────────── */
@@ -187,9 +186,9 @@ async function processUpdate(update) {
             return;
         }
 
-        // /myid — ответить и user_id, и chat_id: BOT_ADMIN_IDS/bot_admins
-        // (проверка прав админа ниже) сравниваются с user_id, не chat_id —
-        // чтобы не перепутать, какое именно число указывать в настройке,
+        // /myid — ответить и user_id, и chat_id: BOT_ADMIN_IDS (проверка
+        // прав админа ниже) сравнивается с user_id, не chat_id — чтобы
+        // не перепутать, какое именно число указывать в настройке,
         // показываем оба с подписями.
         if (text.trim().toLowerCase() === '/myid') {
             await sendMessage(chatId, `Ваш user_id: ${userId}\nВаш chat_id: ${chatId}`);
@@ -678,6 +677,6 @@ module.exports = {
     // способом, каким SERVICE_REQUEST_MANAGERS уже проверяется напрямую.
     normalizeText, UNSUBSCRIBE_PHRASES,
     // Экспортирован только для test-bot-admins.js — проверка, что список
-    // админов берётся из BOT_ADMIN_IDS/bot_admins и не пополняется сам.
+    // админов берётся из BOT_ADMIN_IDS и ничем больше не пополняется.
     loadAdmins,
 };
