@@ -54,7 +54,15 @@ router.post('/login', (req, res) => {
 });
 
 /* POST /api/auth/verify — проверяет подпись initData Max Mini Apps и подписку на канал.
-   Без cookie/сессии: вызывается заново при каждой загрузке каждой страницы. */
+   Без cookie/сессии: вызывается заново при каждой загрузке каждой страницы.
+
+   Логируем КАЖДЫЙ отказ (reason + user_id, если он уже известен на этот
+   момент) — без initData и прочих данных запроса. Раньше при ошибке
+   checkChannelMembership() не было ни лога, ни try/catch — она сама
+   спроектирована fail-open (всегда resolve, никогда throw), но без
+   защиты здесь неожиданный throw завис бы необработанным rejection'ом
+   в async-хендлере Express 4 (ответ так и не ушёл бы), и клиент увидел
+   бы просто обрыв соединения без единой причины в логах. */
 router.post('/verify', async (req, res) => {
     const ua = req.headers['user-agent'] || '';
 
@@ -63,6 +71,7 @@ router.post('/verify', async (req, res) => {
     if (AUTH_DEBUG) console.log(`[auth/verify] UA=${isMax ? 'MAX' : 'NOT_MAX'} "${ua}"`);
 
     if (!isMax) {
+        console.warn(`[auth/verify] отказ: not_max ua="${ua}"`);
         return res.status(403).json({ ok: false, reason: 'not_max' });
     }
 
@@ -70,13 +79,22 @@ router.post('/verify', async (req, res) => {
     const result = verifyInitData(initData, process.env.MAX_BOT_TOKEN || '');
 
     if (!result || !result.user?.id) {
+        console.warn('[auth/verify] отказ: invalid_signature');
         return res.status(401).json({ ok: false, reason: 'invalid_signature' });
     }
 
     const userId = result.user.id;
-    const subscribed = ADMIN_IDS.has(Number(userId)) || await checkChannelMembership(userId);
+
+    let subscribed;
+    try {
+        subscribed = ADMIN_IDS.has(Number(userId)) || await checkChannelMembership(userId);
+    } catch (e) {
+        console.error(`[auth/verify] отказ: verify_error user_id=${userId} — ${e.message}`);
+        return res.status(502).json({ ok: false, reason: 'verify_error' });
+    }
 
     if (!subscribed) {
+        console.warn(`[auth/verify] отказ: not_subscribed user_id=${userId}`);
         return res.json({ ok: false, reason: 'not_subscribed' });
     }
 
