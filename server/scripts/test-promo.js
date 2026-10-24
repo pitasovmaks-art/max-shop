@@ -95,6 +95,12 @@ db.query = async (sql, params = []) => {
     if (s.startsWith('SELECT * FROM product_variants WHERE product_id=$1 ORDER BY sort_order, id')) {
         return variants.filter(v => v.product_id === params[0]);
     }
+    // usd-pricing: роут читает текущие варианты ДО удаления (чтобы не
+    // затирать is_usd/usd_* у старого клиента без поля isUsd в теле) —
+    // тот же запрос, но без ORDER BY.
+    if (s.startsWith('SELECT * FROM product_variants WHERE product_id=$1')) {
+        return variants.filter(v => v.product_id === params[0]);
+    }
     if (s.startsWith('SELECT tg_id FROM promo_subscribers WHERE unsubscribed_at IS NULL')) {
         return subscribers.filter(x => !x.unsubscribed_at).map(x => ({ tg_id: x.tg_id }));
     }

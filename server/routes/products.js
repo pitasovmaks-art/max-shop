@@ -443,27 +443,55 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
         );
         const hadSale = !!hadSaleRow;
 
+        // Защита от старого (не знающего про $) admin.js: он не присылает
+        // поле isUsd вообще (ни true, ни false), а при чтении товара видит
+        // в priceKrdPickup/priceMskPickup/salePrice уже КОНВЕРТИРОВАННОЕ в ₽
+        // значение $-варианта (applyUsdToVariantRow) — если сохранить его
+        // как обычную рублёвую цену, $-вариант незаметно превратится в
+        // рублёвый с "замороженным" по текущему курсу значением. Поэтому
+        // для строк без isUsd в теле запроса — если по (label,isKrd) уже
+        // существует $-вариант, его is_usd/usd_*-поля и рублёвые колонки
+        // (у $-варианта они всегда 0, см. _collectVariants в admin.js)
+        // берём из БД как есть, игнорируя то, что прислал старый клиент.
+        const existingRows = await db.query('SELECT * FROM product_variants WHERE product_id=$1', [productId]);
+        const existingByKey = new Map();
+        existingRows.forEach(r => existingByKey.set(`${r.label}|${r.is_krd}`, r));
+
         await db.inTransaction(async (client) => {
             await client.query('DELETE FROM product_variants WHERE product_id=$1', [productId]);
             for (let i = 0; i < variants.length; i++) {
                 const v = variants[i];
+                const label = String(v.label).trim();
+                const isKrd = v.isKrd ? 1 : 0;
+                const existing = existingByKey.get(`${label}|${isKrd}`);
+                const oldClientRow = v.isUsd === undefined && existing && Number(existing.is_usd) === 1;
+
+                const isUsd                  = oldClientRow ? 1 : (v.isUsd ? 1 : 0);
+                const usdPriceKrdPickupCents  = oldClientRow ? existing.usd_price_krd_pickup       : Math.round((v.usdPriceKrdPickup || 0) * 100);
+                const usdPriceMskPickupCents  = oldClientRow ? existing.usd_price_msk_pickup       : Math.round((v.usdPriceMskPickup || 0) * 100);
+                const usdSalePriceCents       = oldClientRow ? existing.usd_sale_price             : Math.round((v.usdSalePrice       || 0) * 100);
+                const usdDeliverySurchargeRub = oldClientRow ? existing.usd_delivery_surcharge_rub : (v.usdDeliverySurchargeRub || 0);
+                // $-вариант всегда хранит рублёвые колонки нулями — не даём
+                // старому клиенту записать туда конвертированное по курсу
+                // число, которое он по ошибке принял за обычную рублёвую цену.
+                const priceKrdPickup   = oldClientRow ? 0 : (v.priceKrdPickup   || 0);
+                const priceMskPickup   = oldClientRow ? 0 : (v.priceMskPickup   || 0);
+                const priceMskDelivery = oldClientRow ? 0 : (v.priceMskDelivery || 0);
+                const salePrice         = oldClientRow ? 0 : (v.salePrice        || 0);
+
                 await client.query(
                     `INSERT INTO product_variants
                      (product_id,label,price,price_krd,price_msk,price_delivery,
                       price_krd_pickup,price_msk_pickup,price_msk_delivery,is_krd,is_default,sort_order,sale_price,
                       is_usd,usd_price_krd_pickup,usd_price_msk_pickup,usd_sale_price,usd_delivery_surcharge_rub)
                      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
-                    [productId, String(v.label).trim(),
+                    [productId, label,
                      v.price || 0, v.priceKrd || 0, v.priceMsk || 0, v.priceDelivery || 0,
-                     v.priceKrdPickup || 0, v.priceMskPickup || 0, v.priceMskDelivery || 0,
-                     v.isKrd ? 1 : 0, v.isDefault ? 1 : 0, v.sortOrder ?? i, v.salePrice || 0,
+                     priceKrdPickup, priceMskPickup, priceMskDelivery,
+                     isKrd, v.isDefault ? 1 : 0, v.sortOrder ?? i, salePrice,
                      // usd-pricing: с админки приходят доллары (как и везде
                      // в форме — целые единицы валюты), в БД храним центами.
-                     v.isUsd ? 1 : 0,
-                     Math.round((v.usdPriceKrdPickup || 0) * 100),
-                     Math.round((v.usdPriceMskPickup || 0) * 100),
-                     Math.round((v.usdSalePrice       || 0) * 100),
-                     v.usdDeliverySurchargeRub || 0]
+                     isUsd, usdPriceKrdPickupCents, usdPriceMskPickupCents, usdSalePriceCents, usdDeliverySurchargeRub]
                 );
             }
         });
