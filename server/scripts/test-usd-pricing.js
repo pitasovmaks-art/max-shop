@@ -482,6 +482,41 @@ async function main() {
         check('изменение цены в большую сторону тоже уведомляется', notifyPriceChangeCalls.length === 1 && notifyPriceChangeCalls[0].changes[0].newPrice > notifyPriceChangeCalls[0].changes[0].oldPrice);
     }
 
+    /* ═══ 12. Курс ещё не задан (пустая usd_rate_history) ═════════════ */
+    resetDb();
+    {
+        const p = addProduct({ name: 'USD-товар без курса', in_stock: 1 });
+        addVariant({ product_id: p.id, label: '', is_krd: 1, is_default: 1, is_usd: 1, usd_price_krd_pickup: 1000 });
+
+        const list = await get('/api/products');
+        const apiProduct = list.body.find(x => x.id === p.id);
+        check('курс не задан: GET /api/products отдаёт 0₽ (не оформляется по 0, клиент должен это скрыть/заблокировать)',
+            apiProduct.variants[0].priceKrdPickup === 0);
+
+        const orderRes = await post('/api/orders', {
+            name: 'Т', phone: '+7', store: 'Краснодар', delivery: 'pickup', city: 'krd',
+            items: [{ id: p.id, variantLabel: '', price: 1, qty: 1 }], total: 1,
+        }, { 'X-Init-Data': initA });
+        check('курс не задан: POST /api/orders -> 400 (заказ отклонён, не создан по цене 0)',
+            orderRes.status === 400 && orders.length === 0);
+        check('причина отказа понятная ("цена не определена")', /цена/i.test(orderRes.body.error));
+
+        const syncRes = await post('/api/cart-sync',
+            { items: [{ productId: p.id, variantLabel: '', qty: 1 }], city: 'krd' },
+            { 'X-Init-Data': initA }
+        );
+        check('курс не задан: синхронизация корзины не создаёт строку (нечем ценить)',
+            syncRes.status === 200 && cartSync.length === 0);
+
+        // ── первая установка курса (prev_rate нет) — без уведомлений ──
+        const first = await usdPrice.setRate(900000);
+        check('первая установка курса: prevRate === null', first.prevRate === null);
+        const { notifyCartPriceChanges } = require('../routes/usd-rate');
+        await notifyCartPriceChanges();
+        check('первая установка курса: уведомления не отправлены (cart_sync был пуст — нечего сравнивать)',
+            notifyPriceChangeCalls.length === 0);
+    }
+
     server.close();
     console.log(failures === 0
         ? '\n✅ Все проверки прошли'

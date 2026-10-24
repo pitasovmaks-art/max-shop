@@ -253,6 +253,12 @@ function addToCart(productId) {
 
     const city    = _city || localStorage.getItem('city');
     const variant = _effectiveVariant(product);
+    // usd-pricing: у товара есть варианты, но ни один не продаётся в этом
+    // городе (курс $ не задан -> все price=0) — не добавлять по цене 0.
+    if (product.variants && product.variants.length && !variant) {
+        showToast('Товар недоступен в выбранном городе');
+        return;
+    }
     const label   = variant?.label ?? '';
 
     // Strict match by label only — no fallback to a different label's variant
@@ -1875,6 +1881,12 @@ function productCardHTML(p) {
 
         const cityVars  = _cityVariants(p.variants || []);
         const activeVar = _effectiveVariant(p);
+        // usd-pricing: если у товара есть варианты, но ни один не продаётся
+        // в этом городе (курс $ ещё не задан -> price=0 у всех $-вариантов,
+        // либо для товара в принципе нет варианта на этот город) — нельзя
+        // падать на цену товара "как есть": у variant-товара своей базовой
+        // цены может не быть, и это превращается в "0 ₽" + активную кнопку.
+        const unavailableHere = !!(p.variants && p.variants.length && !activeVar);
         const displayPrice = displayPriceFor(p);
         const displaySale  = activeVar?.salePrice || 0;
 
@@ -1913,7 +1925,9 @@ function productCardHTML(p) {
         }
 
         let btn;
-        if (p.inStock) {
+        if (unavailableHere) {
+            btn = `<button class="add-btn add-btn--disabled" disabled>Нет в наличии</button>`;
+        } else if (p.inStock) {
             btn = `<button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})" aria-label="В корзину">${CART_SVG}В корзину</button>`;
         } else if (tgId) {
             const subscribed = _subscriptions.has(p.id);
@@ -1932,7 +1946,7 @@ function productCardHTML(p) {
                 <div class="product-card__name">${p.name}</div>
                 ${variantPills}
                 <div class="product-card__footer">
-                    <span class="product-card__price">${fmtPrice(displayPrice, displaySale)}</span>
+                    <span class="product-card__price">${unavailableHere ? '—' : fmtPrice(displayPrice, displaySale)}</span>
                     ${btn}
                 </div>
             </div>
