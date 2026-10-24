@@ -173,29 +173,9 @@ function plural(n, one, few, many) {
     return `${n} ${many}`;
 }
 
-/* ─── Effective price for current city (shared with cart.js) ── */
-function effectiveItemPrice(item, city, deliveryMethod) {
-    if (deliveryMethod === 'russia') {
-        const delivery = item.priceMskDelivery || item.priceDelivery || 0;
-        if (!delivery) return null;
-        const sale   = item.salePriceMsk || 0;
-        const pickup = item.priceMskPickup || item.priceMsk || 0;
-        if (sale > 0 && pickup > 0) {
-            const surcharge  = delivery - pickup;           // delivery markup
-            const saleDelivery = sale + (surcharge > 0 ? surcharge : 0);
-            return Math.min(saleDelivery, delivery);        // never more than base delivery
-        }
-        return delivery;
-    }
-    if (city === 'krd') {
-        const base = item.priceKrdPickup || item.priceKrd || 0;
-        const sale = item.salePriceKrd || 0;
-        return base ? (sale > 0 ? sale : base) : null;
-    }
-    const base = item.priceMskPickup || item.priceMsk || 0;
-    const sale = item.salePriceMsk || 0;
-    return base ? (sale > 0 ? sale : base) : null;
-}
+/* effectiveItemPrice()/resolveFreshCartItem() — общие с cart.js,
+   src/shared/cartPricing.js (подключён отдельным <script> в
+   checkout.html перед этим файлом, см. fix-cart-prices-city). */
 
 /* ─── Render order summary ──────────────────────────────── */
 function itemPrice(item) {
@@ -361,46 +341,7 @@ function showPriceCheckWarn(oldTotal, newTotal) {
 }
 
 function _checkCartItem(item, freshProducts) {
-    const city = localStorage.getItem('city');
-    const p = freshProducts.find(pr => pr.id === item.id);
-    if (!p) return { ok: false, price: 0, reason: `«${item.name}» больше не существует` };
-    if (!p.inStock && !p.isService) return { ok: false, price: 0, reason: `«${item.name}» нет в наличии` };
-
-    // Build a synthetic cart-item from fresh API data so effectiveItemPrice can be
-    // used as the single source of truth — same logic as cart.js render.
-    const label  = item.variantLabel ?? '';
-    const isKrd  = city === 'krd';
-    const hasVariants = (p.variants || []).length > 0;
-
-    let freshItem;
-    if (hasVariants) {
-        const krdVar = p.variants.find(v => v.isKrd  && v.label === label) || null;
-        const mskVar = p.variants.find(v => !v.isKrd && v.label === label) || null;
-
-        if (isKrd && !krdVar) return { ok: false, price: 0, reason: `«${item.name}» недоступен в выбранном городе` };
-        if (!isKrd && _deliveryMethod !== 'russia' && !mskVar) return { ok: false, price: 0, reason: `«${item.name}» недоступен в выбранном городе` };
-
-        freshItem = {
-            priceKrdPickup:   krdVar?.priceKrdPickup   || 0,
-            priceMskPickup:   mskVar?.priceMskPickup   || 0,
-            priceMskDelivery: mskVar?.priceMskDelivery || 0,
-            priceDelivery:    mskVar?.priceMskDelivery || 0,
-            salePriceKrd:     krdVar?.salePrice        || 0,
-            salePriceMsk:     mskVar?.salePrice        || 0,
-        };
-    } else {
-        freshItem = {
-            priceKrdPickup:   p.priceKrdPickup  || p.priceKrd  || p.price || 0,
-            priceMskPickup:   p.priceMskPickup  || p.priceMsk  || p.price || 0,
-            priceMskDelivery: p.priceMskDelivery|| p.priceDelivery || 0,
-            priceDelivery:    p.priceMskDelivery|| p.priceDelivery || 0,
-            salePriceKrd: 0, salePriceMsk: 0,
-        };
-    }
-
-    const price = effectiveItemPrice(freshItem, city, _deliveryMethod);
-    if (!price || price <= 0) return { ok: false, price: 0, reason: `Цена «${item.name}» не определена` };
-    return { ok: true, price };
+    return resolveFreshCartItem(item, freshProducts, localStorage.getItem('city'), _deliveryMethod);
 }
 
 async function submitOrder() {

@@ -59,28 +59,61 @@ function plural(n, one, few, many) {
     return `${n} ${many}`;
 }
 
-/* ─── Effective price for current city ─────────────────── */
-function effectiveItemPrice(item, city, deliveryMethod) {
-    if (deliveryMethod === 'russia') {
-        const delivery = item.priceMskDelivery || item.priceDelivery || 0;
-        if (!delivery) return null;
-        const sale   = item.salePriceMsk || 0;
-        const pickup = item.priceMskPickup || item.priceMsk || 0;
-        if (sale > 0 && pickup > 0) {
-            const surcharge    = delivery - pickup;
-            const saleDelivery = sale + (surcharge > 0 ? surcharge : 0);
-            return Math.min(saleDelivery, delivery);
+/* effectiveItemPrice()/resolveFreshCartItem() — общие с checkout.js,
+   src/shared/cartPricing.js (подключён отдельным <script> в cart.html
+   перед этим файлом, см. fix-cart-prices-city). */
+
+/* ─── Refresh prices from server ────────────────────────────
+   Раньше корзина показывала только то, что было сохранено при
+   добавлении товара — если цена/скидка/курс $ поменялись после этого,
+   покупатель узнавал об этом только на чекауте (409) или вообще не
+   узнавал, если так и не доходил до отправки заказа. Теперь при каждом
+   открытии страницы корзины (и при возврате на вкладку) цены
+   пересобираются по свежим данным той же логикой, что уже использует
+   чекаут (resolveFreshCartItem, src/shared/cartPricing.js).
+
+   _priceChangeNotices — НЕ persisted (живёт в памяти вкладки): "до
+   следующего открытия корзины" означает "до следующей полной загрузки
+   этой страницы" — переключение вкладок (visibilitychange) её не
+   сбрасывает, а свежая загрузка cart.html — сбрасывает автоматически,
+   т.к. это обычная переменная модуля. */
+let _priceChangeNotices = {}; // { [item.key]: { oldPrice } }
+
+async function refreshCartPrices() {
+    const cart = getCart();
+    if (!cart.length) return;
+
+    let fresh;
+    try {
+        fresh = await fetch('/api/products').then(r => r.json());
+    } catch {
+        // Сеть/сервер недоступны — оставляем старые цены как есть,
+        // оформление всё равно проверит их заново (409 при расхождении).
+        return;
+    }
+
+    const city = localStorage.getItem('city') || 'msk';
+    const updated = cart.map(item => {
+        const result = resolveFreshCartItem(item, fresh, city, null);
+        if (!result.ok) {
+            // Недоступен — обнуляем ценовые поля, чтобы render() сам
+            // показал серую карточку (как и раньше для ep===null);
+            // баннер "цена изменилась" для недоступных не нужен.
+            delete _priceChangeNotices[item.key];
+            return {
+                ...item,
+                priceKrdPickup: 0, priceMskPickup: 0, priceMskDelivery: 0, priceDelivery: 0,
+                salePriceKrd: 0, salePriceMsk: 0,
+            };
         }
-        return delivery;
-    }
-    if (city === 'krd') {
-        const base = item.priceKrdPickup || item.priceKrd || 0;
-        const sale = item.salePriceKrd || 0;
-        return base ? (sale > 0 ? sale : base) : null;
-    }
-    const base = item.priceMskPickup || item.priceMsk || 0;
-    const sale = item.salePriceMsk || 0;
-    return base ? (sale > 0 ? sale : base) : null;
+        if (result.price !== item.price) {
+            _priceChangeNotices[item.key] = { oldPrice: item.price };
+        }
+        return { ...item, ...result.fields, price: result.price };
+    });
+
+    saveCart(updated);
+    render();
 }
 
 /* ─── Render ────────────────────────────────────────────── */
@@ -165,6 +198,10 @@ function render() {
             ? `<s class="price-old">${fmt(baseForDisplay)}</s><span class="price-sale">${fmt(ep)}</span>`
             : fmt(ep);
         const lineTotal = fmt(ep * item.qty);
+        const notice    = _priceChangeNotices[item.key];
+        const noticeHtml = notice
+            ? `<div style="color:#8A6500;font-size:11px;margin-top:2px">Цена изменилась: было ${fmt(notice.oldPrice)}</div>`
+            : '';
 
         return `
         <div class="cart-item" id="item-${item.key}">
@@ -175,6 +212,7 @@ function render() {
                 <div class="cart-item__name">${item.name}</div>
                 ${item.variantLabel ? `<div class="cart-item__variant">${item.variantLabel}</div>` : ''}
                 <div class="cart-item__unit">${unitHtml}&nbsp;/ шт</div>
+                ${noticeHtml}
                 <div class="cart-item__controls">
                     <button class="qty-btn qty-btn--dec" onclick="updateQty('${safeKey}', -1)" aria-label="Уменьшить">−</button>
                     <span class="qty-value">${item.qty}</span>
@@ -218,4 +256,12 @@ function closeDialog() {
 }
 
 /* ─── Init ──────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', render);
+// render() сразу из localStorage (пустого экрана нет, даже если сеть
+// медленная/недоступна), refreshCartPrices() — фоном поверх неё.
+document.addEventListener('DOMContentLoaded', () => {
+    render();
+    refreshCartPrices();
+});
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshCartPrices();
+});

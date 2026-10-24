@@ -62,14 +62,20 @@ require.cache[botPath] = {
     exports: { notifyStore: async () => {}, notifyCustomer: async () => {} },
 };
 
-/* ─── Клиентская формула effectiveItemPrice() — РЕАЛЬНЫЙ файл checkout.js
-   в песочнице (node:vm): сама функция не трогает DOM, но файл целиком
-   регистрирует document.addEventListener в самом низу — минимальная
-   заглушка document достаточна, чтобы его загрузить и достать функцию. */
+/* ─── Клиентская формула effectiveItemPrice() — РЕАЛЬНЫЙ файл в
+   песочнице (node:vm): сама функция не трогает DOM, но checkout.js
+   целиком регистрирует document.addEventListener в самом низу —
+   минимальная заглушка document достаточна, чтобы его загрузить и
+   достать функцию. С fix-cart-prices-city effectiveItemPrice() вынесена
+   из checkout.js в src/shared/cartPricing.js (общий файл с cart.js, см.
+   PROGRESS.md) — грузим оба файла в один контекст, в том же порядке,
+   что реальный checkout.html (cartPricing.js раньше checkout.js). */
 function loadClientEffectiveItemPrice() {
-    const code = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'cart', 'checkout.js'), 'utf8');
+    const sharedCode   = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'shared', 'cartPricing.js'), 'utf8');
+    const checkoutCode = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'cart', 'checkout.js'), 'utf8');
     const ctx = vm.createContext({ console, document: { addEventListener() {} }, window: {} });
-    vm.runInContext(code, ctx, { filename: 'checkout.js' });
+    vm.runInContext(sharedCode,   ctx, { filename: 'cartPricing.js' });
+    vm.runInContext(checkoutCode, ctx, { filename: 'checkout.js' });
     return (item, city, deliveryMethod) => vm.runInContext(
         `effectiveItemPrice(${JSON.stringify(item)}, ${JSON.stringify(city)}, ${JSON.stringify(deliveryMethod)})`,
         ctx

@@ -138,7 +138,15 @@ function selectCity(cityCode, cityName) {
     if (screen) screen.style.display = 'none';
     const label = document.getElementById('cityLabel');
     if (label) label.textContent = cityLabel();
-    if (_products.length) render();
+    // Смена города открыта только с headerCityBtn внутри screen-root (см.
+    // catalog.html/index.html — у screen-subcats/pair/search свой header
+    // без кнопки города), так что только эти три блока вообще могут быть
+    // на экране в момент вызова; renderCategoryRail() — плитка «Акция»
+    // (isSaleForCity зависит от города), renderHitsRail() — цены в «Хитах»
+    // (как и в render()) тоже городские. Раньше перерисовывался только
+    // render() — «Хиты»/«Акция» оставались по старому городу до
+    // следующей полной перезагрузки каталога.
+    if (_products.length) { renderCategoryRail(); renderHitsRail(); render(); }
     else init();
 }
 
