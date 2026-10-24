@@ -1,4 +1,5 @@
 const db = require('../db');
+const usdPrice = require('./usdPrice');
 
 /* Пересчёт цены позиции заказа на сервере по реальным данным из БД — та же
    формула, что effectiveItemPrice()/_checkCartItem() в src/cart/checkout.js,
@@ -37,7 +38,19 @@ async function loadProductsForPricing(ids) {
     if (!ids.length) return map;
     const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
     const products = await db.query(`SELECT * FROM products WHERE id IN (${placeholders})`, ids);
-    const variants = await db.query(`SELECT * FROM product_variants WHERE product_id IN (${placeholders})`, ids);
+    let variants = await db.query(`SELECT * FROM product_variants WHERE product_id IN (${placeholders})`, ids);
+
+    // usd-pricing: пересчёт $->₽ один раз на вызов, только если среди
+    // загруженных вариантов реально есть $-строки (лишний запрос курса
+    // не нужен для чисто рублёвых заказов). Курс кладём на сам Map
+    // (map.usdRateX10000), чтобы resolveOrderItem() мог прочитать его
+    // синхронно, не делая отдельный запрос в БД на каждую позицию.
+    let rate = null;
+    if (variants.some(v => Number(v.is_usd) === 1)) {
+        rate = await usdPrice.getCurrentRate();
+        variants = variants.map(v => usdPrice.applyUsdToVariantRow(v, rate));
+    }
+    map.usdRateX10000 = rate;
 
     const byProduct = new Map();
     variants.forEach(v => {
@@ -61,14 +74,13 @@ function resolveOrderItem(cartItem, productsById, city, deliveryMethod) {
     const label = cartItem.variantLabel || '';
     const isKrd = city === 'krd';
     const hasVariants = p.variants.length > 0;
+    const krdVar = hasVariants ? (p.variants.find(v => v.is_krd === 1 && v.label === label) || null) : null;
+    const mskVar = hasVariants ? (p.variants.find(v => v.is_krd !== 1 && v.label === label) || null) : null;
 
     let fresh;
     let name = p.name;
 
     if (hasVariants) {
-        const krdVar = p.variants.find(v => v.is_krd === 1 && v.label === label) || null;
-        const mskVar = p.variants.find(v => v.is_krd !== 1 && v.label === label) || null;
-
         if (isKrd && !krdVar) return { ok: false, reason: `«${p.name}» недоступен в выбранном городе` };
         if (!isKrd && deliveryMethod !== 'russia' && !mskVar) {
             return { ok: false, reason: `«${p.name}» недоступен в выбранном городе` };
@@ -95,7 +107,21 @@ function resolveOrderItem(cartItem, productsById, city, deliveryMethod) {
 
     const price = effectiveItemPrice(fresh, city, deliveryMethod);
     if (!price || price <= 0) return { ok: false, reason: `Цена «${p.name}» не определена` };
-    return { ok: true, price, name };
+
+    // usd-pricing, п.11: для аудита сохраняем $ и курс, которым позиция
+    // была посчитана на момент заказа (старые заказы это не трогает —
+    // пишется только при создании). Берём usd-вариант, который реально
+    // определял цену в этом городе (krdVar для КРД, иначе mskVar); сам
+    // rub-пересчёт (скидка/наценка доставки) НЕ переигрывается — это
+    // только для справки, не часть формулы effectiveItemPrice.
+    let usdInfo = null;
+    const usedVariant = isKrd ? krdVar : mskVar;
+    if (usedVariant && Number(usedVariant.is_usd) === 1) {
+        const usdCents = isKrd ? usedVariant.usd_price_krd_pickup : usedVariant.usd_price_msk_pickup;
+        usdInfo = { priceUsdCents: usdCents, rateX10000: productsById.usdRateX10000 };
+    }
+
+    return usdInfo ? { ok: true, price, name, ...usdInfo } : { ok: true, price, name };
 }
 
 module.exports = { effectiveItemPrice, loadProductsForPricing, resolveOrderItem };

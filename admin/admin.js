@@ -26,6 +26,10 @@ function renderVariantRowsKrd() {
                        value="${_escAttr(v.label)}"
                        placeholder="Название (напр. 14 дней)"
                        oninput="_varFieldKrd(${i},'label',this.value)">
+                <label class="variant-row__cur" title="Цена в долларах">
+                    <input type="checkbox" ${v.isUsd ? 'checked' : ''} onchange="_varFieldKrd(${i},'isUsd',this.checked); renderVariantRowsKrd()">
+                    <span>$</span>
+                </label>
                 <label class="variant-row__def" title="По умолчанию">
                     <input type="radio" name="f-var-default-krd"
                            ${v.isDefault ? 'checked' : ''}
@@ -35,6 +39,18 @@ function renderVariantRowsKrd() {
                 <button type="button" class="variant-row__del" onclick="removeVariantRowKrd(${i})" aria-label="Удалить">×</button>
             </div>
             <div class="variant-row__prices">
+                ${v.isUsd ? `
+                <input class="ff__input variant-row__price" type="number"
+                       value="${v.usdPriceKrdPickup || ''}"
+                       placeholder="Цена КРД ($)"
+                       min="0" step="0.01"
+                       oninput="_varFieldKrd(${i},'usdPriceKrdPickup',+this.value||0)">
+                <input class="ff__input variant-row__price variant-row__price--sale" type="number"
+                       value="${v.usdSalePrice || ''}"
+                       placeholder="Акц. цена ($)"
+                       min="0" step="0.01"
+                       oninput="_varFieldKrd(${i},'usdSalePrice',+this.value||0)">
+                ` : `
                 <input class="ff__input variant-row__price" type="number"
                        value="${v.priceKrdPickup || ''}"
                        placeholder="Цена самовывоз (₽)"
@@ -45,6 +61,7 @@ function renderVariantRowsKrd() {
                        placeholder="Акц. цена (₽)"
                        min="0"
                        oninput="_varFieldKrd(${i},'salePrice',+this.value||0)">
+                `}
             </div>
         </div>`).join('');
 }
@@ -63,6 +80,10 @@ function renderVariantRowsMsk() {
                        value="${_escAttr(v.label)}"
                        placeholder="Название (напр. 14 дней)"
                        oninput="_varFieldMsk(${i},'label',this.value)">
+                <label class="variant-row__cur" title="Цена в долларах">
+                    <input type="checkbox" ${v.isUsd ? 'checked' : ''} onchange="_varFieldMsk(${i},'isUsd',this.checked); renderVariantRowsMsk()">
+                    <span>$</span>
+                </label>
                 <label class="variant-row__def" title="По умолчанию">
                     <input type="radio" name="f-var-default-msk"
                            ${v.isDefault ? 'checked' : ''}
@@ -72,6 +93,23 @@ function renderVariantRowsMsk() {
                 <button type="button" class="variant-row__del" onclick="removeVariantRowMsk(${i})" aria-label="Удалить">×</button>
             </div>
             <div class="variant-row__prices">
+                ${v.isUsd ? `
+                <input class="ff__input variant-row__price" type="number"
+                       value="${v.usdPriceMskPickup || ''}"
+                       placeholder="Самовывоз ($)"
+                       min="0" step="0.01"
+                       oninput="_varFieldMsk(${i},'usdPriceMskPickup',+this.value||0)">
+                <input class="ff__input variant-row__price" type="number"
+                       value="${v.usdDeliverySurchargeRub || ''}"
+                       placeholder="Наценка доставки (₽)"
+                       min="0"
+                       oninput="_varFieldMsk(${i},'usdDeliverySurchargeRub',+this.value||0)">
+                <input class="ff__input variant-row__price variant-row__price--sale" type="number"
+                       value="${v.usdSalePrice || ''}"
+                       placeholder="Акц. цена ($)"
+                       min="0" step="0.01"
+                       oninput="_varFieldMsk(${i},'usdSalePrice',+this.value||0)">
+                ` : `
                 <input class="ff__input variant-row__price" type="number"
                        value="${v.priceMskPickup || ''}"
                        placeholder="Самовывоз (₽)"
@@ -87,19 +125,26 @@ function renderVariantRowsMsk() {
                        placeholder="Акц. цена (₽)"
                        min="0"
                        oninput="_varFieldMsk(${i},'salePrice',+this.value||0)">
+                `}
             </div>
         </div>`).join('');
 }
 
 function addVariantRowKrd() {
-    _formVariantsKrd.push({ label: '', priceKrdPickup: 0, salePrice: 0, isDefault: _formVariantsKrd.length === 0 });
+    _formVariantsKrd.push({
+        label: '', priceKrdPickup: 0, salePrice: 0, isDefault: _formVariantsKrd.length === 0,
+        isUsd: false, usdPriceKrdPickup: 0, usdSalePrice: 0,
+    });
     renderVariantRowsKrd();
     const inputs = document.querySelectorAll('#variant-rows-krd .variant-row__label');
     if (inputs.length) inputs[inputs.length - 1].focus();
 }
 
 function addVariantRowMsk() {
-    _formVariantsMsk.push({ label: '', priceMskPickup: 0, priceMskDelivery: 0, salePrice: 0, isDefault: _formVariantsMsk.length === 0 });
+    _formVariantsMsk.push({
+        label: '', priceMskPickup: 0, priceMskDelivery: 0, salePrice: 0, isDefault: _formVariantsMsk.length === 0,
+        isUsd: false, usdPriceMskPickup: 0, usdDeliverySurchargeRub: 0, usdSalePrice: 0,
+    });
     renderVariantRowsMsk();
     const inputs = document.querySelectorAll('#variant-rows-msk .variant-row__label');
     if (inputs.length) inputs[inputs.length - 1].focus();
@@ -123,51 +168,71 @@ function setDefaultVariantKrd(idx) { _formVariantsKrd.forEach((v, i) => { v.isDe
 function setDefaultVariantMsk(idx) { _formVariantsMsk.forEach((v, i) => { v.isDefault = i === idx; }); }
 
 function _collectVariants() {
-    // Read values directly from DOM to capture whatever is currently visible in inputs
+    // Read values directly from DOM to capture whatever is currently visible in inputs.
+    // usd-pricing: isUsd переключает, какие два/три поля .variant-row__price
+    // показаны (₽ или $) — читаем позиционно и интерпретируем по флагу.
     function readKrd() {
         return [...document.querySelectorAll('#variant-rows-krd .variant-row')].map((row, i) => {
             const label   = (row.querySelector('.variant-row__label')?.value ?? '').trim();
+            const isUsd   = row.querySelector('.variant-row__cur input[type="checkbox"]')?.checked ?? (_formVariantsKrd[i]?.isUsd ?? false);
             const prices  = [...row.querySelectorAll('.variant-row__price')];
-            const pickup  = parseFloat(prices[0]?.value) || 0;
-            const sale    = parseFloat(prices[1]?.value) || 0;
+            const p0      = parseFloat(prices[0]?.value) || 0;
+            const p1      = parseFloat(prices[1]?.value) || 0;
             const isDefault = row.querySelector('input[type="radio"]')?.checked ?? (_formVariantsKrd[i]?.isDefault ?? false);
-            return { label, priceKrdPickup: pickup, salePrice: sale, isDefault };
-        }).filter(v => v.label || v.priceKrdPickup > 0);
+            return isUsd
+                ? { label, isUsd: true,  usdPriceKrdPickup: p0, usdSalePrice: p1, priceKrdPickup: 0, salePrice: 0, isDefault }
+                : { label, isUsd: false, priceKrdPickup: p0, salePrice: p1, usdPriceKrdPickup: 0, usdSalePrice: 0, isDefault };
+        }).filter(v => v.label || v.priceKrdPickup > 0 || v.usdPriceKrdPickup > 0);
     }
 
     function readMsk() {
         return [...document.querySelectorAll('#variant-rows-msk .variant-row')].map((row, i) => {
             const label    = (row.querySelector('.variant-row__label')?.value ?? '').trim();
+            const isUsd    = row.querySelector('.variant-row__cur input[type="checkbox"]')?.checked ?? (_formVariantsMsk[i]?.isUsd ?? false);
             const prices   = [...row.querySelectorAll('.variant-row__price')];
-            const pickup   = parseFloat(prices[0]?.value) || 0;
-            const delivery = parseFloat(prices[1]?.value) || 0;
-            const sale     = parseFloat(prices[2]?.value) || 0;
+            const p0       = parseFloat(prices[0]?.value) || 0;
+            const p1       = parseFloat(prices[1]?.value) || 0;
+            const p2       = parseFloat(prices[2]?.value) || 0;
             const isDefault = row.querySelector('input[type="radio"]')?.checked ?? (_formVariantsMsk[i]?.isDefault ?? false);
-            return { label, priceMskPickup: pickup, priceMskDelivery: delivery, salePrice: sale, isDefault };
-        }).filter(v => v.label || v.priceMskPickup > 0 || v.priceMskDelivery > 0);
+            return isUsd
+                ? { label, isUsd: true,  usdPriceMskPickup: p0, usdDeliverySurchargeRub: p1, usdSalePrice: p2,
+                    priceMskPickup: 0, priceMskDelivery: 0, salePrice: 0, isDefault }
+                : { label, isUsd: false, priceMskPickup: p0, priceMskDelivery: p1, salePrice: p2,
+                    usdPriceMskPickup: 0, usdDeliverySurchargeRub: 0, usdSalePrice: 0, isDefault };
+        }).filter(v => v.label || v.priceMskPickup > 0 || v.priceMskDelivery > 0 || v.usdPriceMskPickup > 0);
     }
 
     const krd = readKrd().map((v, i) => ({
-        label:            v.label,
+        label:                 v.label,
         price: 0, priceKrd: 0, priceMsk: 0, priceDelivery: 0,
-        priceKrdPickup:   v.priceKrdPickup,
-        priceMskPickup:   0,
-        priceMskDelivery: 0,
-        isKrd:            true,
-        isDefault:        !!v.isDefault,
-        sortOrder:        i,
-        salePrice:        v.salePrice,
+        priceKrdPickup:        v.priceKrdPickup,
+        priceMskPickup:        0,
+        priceMskDelivery:      0,
+        isKrd:                 true,
+        isDefault:             !!v.isDefault,
+        sortOrder:             i,
+        salePrice:             v.salePrice,
+        isUsd:                 v.isUsd,
+        usdPriceKrdPickup:     v.usdPriceKrdPickup,
+        usdPriceMskPickup:     0,
+        usdSalePrice:          v.usdSalePrice,
+        usdDeliverySurchargeRub:  0,
     }));
     const msk = readMsk().map((v, i) => ({
-        label:            v.label,
+        label:                 v.label,
         price: 0, priceKrd: 0, priceMsk: 0, priceDelivery: 0,
-        priceKrdPickup:   0,
-        priceMskPickup:   v.priceMskPickup,
-        priceMskDelivery: v.priceMskDelivery,
-        isKrd:            false,
-        isDefault:        !!v.isDefault,
-        sortOrder:        i,
-        salePrice:        v.salePrice,
+        priceKrdPickup:        0,
+        priceMskPickup:        v.priceMskPickup,
+        priceMskDelivery:      v.priceMskDelivery,
+        isKrd:                 false,
+        isDefault:             !!v.isDefault,
+        sortOrder:             i,
+        salePrice:             v.salePrice,
+        isUsd:                 v.isUsd,
+        usdPriceKrdPickup:     0,
+        usdPriceMskPickup:     v.usdPriceMskPickup,
+        usdSalePrice:          v.usdSalePrice,
+        usdDeliverySurchargeRub:  v.usdDeliverySurchargeRub,
     }));
     return [...krd, ...msk];
 }
@@ -347,6 +412,7 @@ function switchTab(tab) {
     const isBanners    = tab === 'banners';
     const isService    = tab === 'service';
     const isExports    = tab === 'exports';
+    const isUsdRate    = tab === 'usdrate';
 
     document.getElementById('sectionProducts').classList.toggle('hidden',   !isProducts);
     document.getElementById('sectionCategories').classList.toggle('hidden', !isCategories);
@@ -355,9 +421,11 @@ function switchTab(tab) {
     document.getElementById('sectionBanners').classList.toggle('hidden',    !isBanners);
     document.getElementById('sectionService').classList.toggle('hidden',    !isService);
     document.getElementById('sectionExports').classList.toggle('hidden',    !isExports);
+    document.getElementById('sectionUsdRate').classList.toggle('hidden',    !isUsdRate);
 
     document.getElementById('fabProducts').classList.toggle('hidden',   !isProducts);
     document.getElementById('fabImport').classList.toggle('hidden',     !isProducts);
+    document.getElementById('fabExport').classList.toggle('hidden',     !isProducts);
     document.getElementById('fabCategories').classList.toggle('hidden', !isCategories);
     document.getElementById('fabStores').classList.toggle('hidden',     !isStores);
     document.getElementById('fabBanners').classList.toggle('hidden',    !isBanners);
@@ -369,6 +437,7 @@ function switchTab(tab) {
     document.getElementById('tabBanners').classList.toggle('active',    isBanners);
     document.getElementById('tabService').classList.toggle('active',    isService);
     document.getElementById('tabExports').classList.toggle('active',    isExports);
+    document.getElementById('tabUsdRate').classList.toggle('active',    isUsdRate);
 
     if (isCategories) renderCategories();
     if (isOrders)     renderOrders();
@@ -376,6 +445,45 @@ function switchTab(tab) {
     if (isBanners)    renderBanners();
     if (isService)    renderServiceRequests();
     if (isExports)    renderExports();
+    if (isUsdRate)    renderUsdRate();
+}
+
+/* ─── USD rate (usd-pricing) ─────────────────────────────── */
+async function renderUsdRate() {
+    const currentEl = document.getElementById('usdRateCurrent');
+    const bodyEl    = document.getElementById('usdRateHistoryBody');
+    if (!currentEl || !bodyEl) return;
+    currentEl.textContent = 'Загрузка...';
+    try {
+        const history = await apiAdmin('/api/usd-rate/admin/history');
+        if (!history || !history.length) {
+            currentEl.textContent = 'Курс пока не задан';
+        } else {
+            currentEl.textContent = `Текущий курс: ${history[0].rate.toFixed(4)} ₽`;
+        }
+        bodyEl.innerHTML = (history || []).map(h => `
+            <tr>
+                <td>${h.rate.toFixed(4)}</td>
+                <td>${h.prevRate != null ? h.prevRate.toFixed(4) : '—'}</td>
+                <td>${new Date(h.createdAt).toLocaleString('ru-RU')}</td>
+            </tr>`).join('') || '<tr><td colspan="3">Истории пока нет</td></tr>';
+    } catch (e) {
+        currentEl.textContent = 'Ошибка загрузки курса';
+    }
+}
+
+async function submitUsdRate() {
+    const input = document.getElementById('usdRateInput');
+    const rate  = parseFloat(input.value);
+    if (!rate || rate <= 0) { alert('Введите положительный курс, напр. 92.4567'); return; }
+    try {
+        await apiAdmin('/api/usd-rate/admin', 'POST', { rate });
+        input.value = '';
+        showToast('✓ Курс обновлён');
+        renderUsdRate();
+    } catch (e) {
+        alert('Не удалось сохранить курс.\n\n' + (e.message || e));
+    }
 }
 
 /* ─── Exports ───────────────────────────────────────────── */
@@ -869,17 +977,24 @@ function fillForm(p) {
     document.querySelectorAll('.ff--error').forEach(el => el.classList.remove('ff--error'));
     document.querySelectorAll('.ff__error').forEach(el => el.textContent = '');
     _formVariantsKrd = (p.variants || []).filter(vr => vr.isKrd).map(vr => ({
-        label:          vr.label,
-        priceKrdPickup: vr.priceKrdPickup || 0,
-        salePrice:      vr.salePrice      || 0,
-        isDefault:      vr.isDefault,
+        label:              vr.label,
+        priceKrdPickup:     vr.priceKrdPickup || 0,
+        salePrice:          vr.salePrice      || 0,
+        isDefault:          vr.isDefault,
+        isUsd:              !!vr.isUsd,
+        usdPriceKrdPickup:  vr.usdPriceKrdPickup || 0,
+        usdSalePrice:       vr.usdSalePrice      || 0,
     }));
     _formVariantsMsk = (p.variants || []).filter(vr => !vr.isKrd).map(vr => ({
-        label:           vr.label,
-        priceMskPickup:  vr.priceMskPickup  || 0,
-        priceMskDelivery:vr.priceMskDelivery|| 0,
-        salePrice:       vr.salePrice       || 0,
-        isDefault:       vr.isDefault,
+        label:                   vr.label,
+        priceMskPickup:          vr.priceMskPickup  || 0,
+        priceMskDelivery:        vr.priceMskDelivery|| 0,
+        salePrice:               vr.salePrice       || 0,
+        isDefault:               vr.isDefault,
+        isUsd:                   !!vr.isUsd,
+        usdPriceMskPickup:       vr.usdPriceMskPickup       || 0,
+        usdDeliverySurchargeRub: vr.usdDeliverySurchargeRub || 0,
+        usdSalePrice:            vr.usdSalePrice            || 0,
     }));
     renderVariantRowsKrd();
     renderVariantRowsMsk();
@@ -1013,6 +1128,31 @@ async function saveProduct() {
     }
 }
 
+/* ─── Export catalog to XLSX (usd-pricing, п.13) ────────── */
+// Обычная навигация браузера на /api/products/export не сработает — роут
+// requireAdmin и ждёт Authorization-заголовок, который можно послать
+// только через fetch(), не через переход по ссылке. Поэтому скачиваем
+// файл как Blob и инициируем сохранение через временную <a download>.
+async function exportCatalog() {
+    try {
+        showToast('⏳ Готовим файл...');
+        const r = await fetch('/api/products/export', { headers: { 'Authorization': `Bearer ${getToken()}` } });
+        if (r.status === 401) { logout(); return; }
+        if (!r.ok) throw new Error(await r.text());
+        const blob = await r.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = 'catalog-export.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        alert('Не удалось выгрузить каталог.\n\n' + (err.message || err));
+    }
+}
+
 /* ─── Import products from XLSX ─────────────────────────── */
 function triggerImport() {
     document.getElementById('importFileInput').value = '';
@@ -1059,6 +1199,12 @@ function handleImportFile(input) {
                     priceMskPickup:   +(r['priceMskPickup']   || r['Цена МСК']      || 0),
                     priceMskDelivery: +(r['priceMskDelivery'] || r['Цена доставка'] || 0),
                     isDefault:        +(r['isDefault']        || r['По умолчанию']  || 0),
+                    // usd-pricing, п.12: $-цены — отдельные колонки, смешивать
+                    // с рублёвыми в одной строке нельзя (сервер отклонит строку).
+                    priceKrdPickupUsd:     +(r['priceKrdPickupUsd']     || r['Цена КРД $']        || 0),
+                    priceMskPickupUsd:     +(r['priceMskPickupUsd']     || r['Цена МСК $']        || 0),
+                    deliverySurchargeRub:  +(r['deliverySurchargeRub']  || r['Наценка доставка ₽'] || 0),
+                    salePriceUsd:          +(r['salePriceUsd']          || r['Скидка $']          || 0),
                 };
             });
         } catch (err) {

@@ -339,6 +339,27 @@ function handleLegalCheck() {
 /* ─── Submit ────────────────────────────────────────────── */
 let _pendingFreshProducts = null;
 
+/* usd-pricing, п.9: одна и та же плашка "Цена изменилась" — и для
+   клиентской пред-проверки ниже, и для серверного 409 (курс/цена
+   поменялись между пред-проверкой и реальной отправкой), и для фонового
+   опроса курса во время открытого чекаута. */
+function showPriceCheckWarn(oldTotal, newTotal) {
+    const btn = document.getElementById('submitBtn');
+    let warn = document.getElementById('priceCheckWarn');
+    if (!warn) {
+        warn = document.createElement('div');
+        warn.id = 'priceCheckWarn';
+        warn.style.cssText = 'background:#FFF4D6;border:1px solid rgba(138,101,0,0.25);border-radius:12px;padding:12px 16px;margin:0 0 12px;font-size:13px;color:#8A6500;line-height:1.5';
+        btn.parentNode.insertBefore(warn, btn);
+    }
+    warn.innerHTML = `⚠️ Цена изменилась.<br>`
+        + `Старая сумма: <s>${oldTotal.toLocaleString('ru-RU')} ₽</s> → `
+        + `<b>${newTotal.toLocaleString('ru-RU')} ₽</b>.<br>`
+        + `Нажмите ещё раз для подтверждения.`;
+    document.getElementById('totalPrice').textContent  = fmt(newTotal);
+    document.getElementById('footerPrice').textContent = fmt(newTotal);
+}
+
 function _checkCartItem(item, freshProducts) {
     const city = localStorage.getItem('city');
     const p = freshProducts.find(pr => pr.id === item.id);
@@ -422,19 +443,7 @@ async function submitOrder() {
 
         if (newTotal !== oldTotal) {
             _pendingFreshProducts = fresh;
-            let warn = document.getElementById('priceCheckWarn');
-            if (!warn) {
-                warn = document.createElement('div');
-                warn.id = 'priceCheckWarn';
-                warn.style.cssText = 'background:#FFF4D6;border:1px solid rgba(138,101,0,0.25);border-radius:12px;padding:12px 16px;margin:0 0 12px;font-size:13px;color:#8A6500;line-height:1.5';
-                btn.parentNode.insertBefore(warn, btn);
-            }
-            warn.innerHTML = `⚠️ Цена изменилась.<br>`
-                + `Старая сумма: <s>${oldTotal.toLocaleString('ru-RU')} ₽</s> → `
-                + `<b>${newTotal.toLocaleString('ru-RU')} ₽</b>.<br>`
-                + `Нажмите ещё раз для подтверждения.`;
-            document.getElementById('totalPrice').textContent  = fmt(newTotal);
-            document.getElementById('footerPrice').textContent = fmt(newTotal);
+            showPriceCheckWarn(oldTotal, newTotal);
             btn.disabled = false;
             btn.textContent = `Оформить за ${newTotal.toLocaleString('ru-RU')} ₽`;
             return;
@@ -502,6 +511,27 @@ async function submitOrder() {
         });
 
         if (r.status === 401) throw new Error('AUTH_REQUIRED');
+
+        // usd-pricing, п.9: сервер пересчитал и обнаружил расхождение
+        // (напр. курс поменялся между пред-проверкой и отправкой) —
+        // та же плашка, что и при клиентской пред-проверке; сбрасываем
+        // _pendingFreshProducts, чтобы повторное нажатие заново прошло
+        // полный цикл проверки (а не слепо отправило старые данные).
+        if (r.status === 409) {
+            const body = await r.json().catch(() => ({}));
+            _pendingFreshProducts = null;
+            btn.disabled = false;
+            btn.classList.remove('submit-btn--disabled');
+            if (typeof body.total === 'number') {
+                showPriceCheckWarn(total, body.total);
+                btn.textContent = `Оформить за ${body.total.toLocaleString('ru-RU')} ₽`;
+            } else {
+                btn.textContent = 'Подтвердить заказ';
+                alert('Цена изменилась. Проверьте сумму и попробуйте оформить заказ ещё раз.');
+            }
+            return;
+        }
+
         if (!r.ok) throw new Error(await r.text());
         const data = await r.json();
 
@@ -523,6 +553,7 @@ async function submitOrder() {
 
         document.getElementById('successScreen').classList.remove('hidden');
         localStorage.removeItem('cart');
+        if (window.syncCartToServer) syncCartToServer([]);
 
         // Subscribe to promo if user opted in. Skip if the checkbox is
         // disabled — that means checkPromoSubscriptionStatus() already
@@ -620,11 +651,67 @@ function checkCart() {
     if (!getCart().length) location.href = 'index.html';
 }
 
+/* ─── Опрос курса $ во время открытого чекаута (usd-pricing, п.9) ───
+   Раз в ~30с, с паузой при скрытой вкладке — перепроверяет сумму той
+   же логикой, что и пред-проверка перед отправкой, и показывает ту же
+   плашку, если итог реально изменился. Ничего не отправляет сама. */
+let _rateVersion    = undefined;
+let _ratePollTimer  = null;
+
+async function fetchRateVersion() {
+    try {
+        const r = await fetch('/api/usd-rate');
+        if (!r.ok) return undefined;
+        const data = await r.json();
+        return data.rateVersion;
+    } catch { return undefined; }
+}
+
+async function recheckPricesSilently() {
+    if (_pendingFreshProducts) return; // уже ждём подтверждения — не перебиваем
+    let fresh;
+    try { fresh = await fetch('/api/products').then(r => r.json()); } catch { return; }
+    const cart   = getCart();
+    if (!cart.length) return;
+    const checks = cart.map(i => _checkCartItem(i, fresh));
+    if (checks.some(c => !c.ok)) return; // недоступность позиции — не пугаем фоном, это покажет реальная отправка
+
+    const oldTotal = cart.reduce((s, i) => s + itemPrice(i) * i.qty, 0);
+    const newTotal = checks.reduce((s, c, idx) => s + c.price * cart[idx].qty, 0);
+    if (newTotal === oldTotal) return;
+
+    _pendingFreshProducts = fresh;
+    showPriceCheckWarn(oldTotal, newTotal);
+    const btn = document.getElementById('submitBtn');
+    if (btn && !btn.disabled) btn.textContent = `Оформить за ${newTotal.toLocaleString('ru-RU')} ₽`;
+}
+
+async function checkRateChanged() {
+    const v = await fetchRateVersion();
+    if (v === undefined) return;
+    if (_rateVersion === undefined) { _rateVersion = v; return; }
+    if (v === _rateVersion) return;
+    _rateVersion = v;
+    await recheckPricesSilently();
+}
+
+function startRatePolling() {
+    fetchRateVersion().then(v => { _rateVersion = v; });
+    _ratePollTimer = setInterval(() => {
+        if (document.hidden) return; // пауза при скрытой вкладке
+        checkRateChanged();
+    }, 30000);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) checkRateChanged();
+    });
+}
+
 /* ─── Init ──────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
     checkCart();
     renderSummary();
     loadAndRenderStores();
+    startRatePolling();
     // Текст галочки — из одного места (src/shared/sellerConfig.js), не
     // хардкодится здесь, чтобы не расходился с переключателем в «Мои
     // заказы» (src/orders/orders.js).

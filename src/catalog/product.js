@@ -18,6 +18,7 @@ function getCart() {
 function saveCart(cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
     updateBadges();
+    if (window.syncCartToServer) syncCartToServer(cart);
 }
 
 function getTotalQty() {
@@ -95,6 +96,9 @@ function updatePrice() {
     if (_product.isService) {
         el.className = 'product-price product-price--service';
         el.textContent = _product.priceLabel || fmt(_product.price);
+    } else if (_product.variants && _product.variants.length && !effectiveVariant()) {
+        el.className = 'product-price';
+        el.textContent = '—';
     } else {
         el.className = 'product-price';
         const ev        = effectiveVariant();
@@ -369,7 +373,14 @@ function renderInfo() {
     updatePrice();
 
     const btn = document.getElementById('addToCartBtn');
-    if (!_product.inStock) {
+    // usd-pricing: товар с вариантами, но без доступного варианта в этом
+    // городе (курс $ не задан -> все price=0) — нельзя продавать по 0.
+    const unavailableHere = !!(_product.variants && _product.variants.length && !effectiveVariant());
+    if (unavailableHere) {
+        btn.classList.add('add-to-cart-btn--disabled');
+        btn.disabled = true;
+        btn.textContent = 'Нет в наличии';
+    } else if (!_product.inStock) {
         const tgId = getTgId();
         if (tgId) {
             btn.textContent = '🔔 Сообщить о поступлении';
@@ -389,6 +400,10 @@ function renderInfo() {
 /* ─── Add to cart ───────────────────────────────────────────── */
 function addToCart() {
     const variant = effectiveVariant();
+    if (_product.variants && _product.variants.length && !variant) {
+        showToast('Товар недоступен в выбранном городе');
+        return;
+    }
     const city    = localStorage.getItem('city');
     const isKrd   = city === 'krd';
 

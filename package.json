@@ -22,7 +22,8 @@
     "test:internal-routes": "node server/scripts/test-internal-routes.js",
     "test:pricing-match": "node server/scripts/test-pricing-match.js",
     "test:admin-auth": "node server/scripts/test-admin-auth.js",
-    "test:auth-verify": "node server/scripts/test-auth-verify.js"
+    "test:auth-verify": "node server/scripts/test-auth-verify.js",
+    "test:usd-pricing": "node server/scripts/test-usd-pricing.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",

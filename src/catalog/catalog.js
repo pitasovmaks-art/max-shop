@@ -21,10 +21,24 @@ function loadCatalogCache() {
     } catch { return null; }
 }
 
-function saveCatalogCache(categories, subcategories, products) {
+function saveCatalogCache(categories, subcategories, products, rateVersion) {
     try {
-        localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({ categories, subcategories, products, savedAt: Date.now() }));
+        localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({
+            categories, subcategories, products, rateVersion: rateVersion ?? null, savedAt: Date.now(),
+        }));
     } catch { /* localStorage переполнен/недоступен (приватный режим) — не критично */ }
+}
+
+// usd-pricing, п.8: тихо дёргает текущую версию курса — используется и
+// после успешного обновления каталога (чтобы сохранить версию рядом с
+// кэшем), и при сбое фонового обновления (чтобы решить, можно ли
+// доверять уже показанному кэшу дальше, см. init()).
+async function fetchRateVersion() {
+    try {
+        const r = await fetch('/api/usd-rate');
+        if (!r.ok) return null;
+        return (await r.json()).rateVersion;
+    } catch { return null; }
 }
 
 /* ─── City ──────────────────────────────────────────────────── */
@@ -230,6 +244,7 @@ function getCart() {
 function saveCart(cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
     updateBadges();
+    if (window.syncCartToServer) syncCartToServer(cart);
 }
 
 function addToCart(productId) {
@@ -238,6 +253,12 @@ function addToCart(productId) {
 
     const city    = _city || localStorage.getItem('city');
     const variant = _effectiveVariant(product);
+    // usd-pricing: у товара есть варианты, но ни один не продаётся в этом
+    // городе (курс $ не задан -> все price=0) — не добавлять по цене 0.
+    if (product.variants && product.variants.length && !variant) {
+        showToast('Товар недоступен в выбранном городе');
+        return;
+    }
     const label   = variant?.label ?? '';
 
     // Strict match by label only — no fallback to a different label's variant
@@ -1860,6 +1881,12 @@ function productCardHTML(p) {
 
         const cityVars  = _cityVariants(p.variants || []);
         const activeVar = _effectiveVariant(p);
+        // usd-pricing: если у товара есть варианты, но ни один не продаётся
+        // в этом городе (курс $ ещё не задан -> price=0 у всех $-вариантов,
+        // либо для товара в принципе нет варианта на этот город) — нельзя
+        // падать на цену товара "как есть": у variant-товара своей базовой
+        // цены может не быть, и это превращается в "0 ₽" + активную кнопку.
+        const unavailableHere = !!(p.variants && p.variants.length && !activeVar);
         const displayPrice = displayPriceFor(p);
         const displaySale  = activeVar?.salePrice || 0;
 
@@ -1898,7 +1925,9 @@ function productCardHTML(p) {
         }
 
         let btn;
-        if (p.inStock) {
+        if (unavailableHere) {
+            btn = `<button class="add-btn add-btn--disabled" disabled>Нет в наличии</button>`;
+        } else if (p.inStock) {
             btn = `<button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})" aria-label="В корзину">${CART_SVG}В корзину</button>`;
         } else if (tgId) {
             const subscribed = _subscriptions.has(p.id);
@@ -1917,7 +1946,7 @@ function productCardHTML(p) {
                 <div class="product-card__name">${p.name}</div>
                 ${variantPills}
                 <div class="product-card__footer">
-                    <span class="product-card__price">${fmtPrice(displayPrice, displaySale)}</span>
+                    <span class="product-card__price">${unavailableHere ? '—' : fmtPrice(displayPrice, displaySale)}</span>
                     ${btn}
                 </div>
             </div>
@@ -2156,7 +2185,7 @@ async function init() {
         _products      = prods;
         _favorites     = new Set(favs.map(f => Number(f.id)));
         _subscriptions = new Set((stockSubs || []).map(id => Number(id)));
-        saveCatalogCache(cats, subs, prods);
+        saveCatalogCache(cats, subs, prods, await fetchRateVersion());
     } catch (e) {
         console.error('Ошибка загрузки каталога:', e);
         // Фоновое обновление упало, но на экране уже валидный кэш — не
@@ -2170,6 +2199,16 @@ async function init() {
             if (emptyEl) emptyEl.classList.remove('hidden');
             if (countEl) countEl.textContent = 'Ошибка загрузки';
             if (!emptyEl) showToast('Ошибка загрузки каталога');
+        } else {
+            // usd-pricing, п.8: полное обновление не удалось (сеть/сервер),
+            // но если курс кэша уже точно устарел — нельзя оставлять
+            // показанные (возможно неверные) цены висеть неограниченно
+            // долго офлайн. Чистим кэш — следующая загрузка уже не покажет
+            // его, будет ждать свежих данных, как при пустом кэше.
+            const freshVersion = await fetchRateVersion();
+            if (cached.rateVersion != null && freshVersion != null && freshVersion !== cached.rateVersion) {
+                try { localStorage.removeItem(CATALOG_CACHE_KEY); } catch {}
+            }
         }
     }
 

@@ -168,6 +168,8 @@ app.use('/api/check-subscription', require('./routes/subscription'));
 app.use('/api/exports',           require('./routes/exports'));
 app.use('/api/uploads',           require('./routes/uploads'));
 app.use('/api/sync',              require('./routes/sync'));
+app.use('/api/cart-sync',         require('./routes/cart-sync'));
+app.use('/api/usd-rate',          require('./routes/usd-rate'));
 
 /* Reset catalog tables (admin only) — TRUNCATE only, does NOT reseed demo data */
 app.post('/api/admin/reset', require('./middleware/auth').requireAdmin, async (req, res) => {
@@ -215,6 +217,17 @@ const db = require('./db');
                     require('../services/agentBot').start();
                 } catch (e) {
                     console.error('[agentBot] start error:', e.message);
+                }
+                try {
+                    // usd-pricing: cart_sync хранит снимок корзины только для
+                    // уведомлений о смене цены — строки старше 14 дней больше
+                    // никому не нужны (см. PROGRESS.md). Ежедневно в 4:00.
+                    require('node-cron').schedule('0 4 * * *', () => {
+                        db.execute(`DELETE FROM cart_sync WHERE updated_at < NOW() - INTERVAL '14 days'`)
+                            .catch(e => console.error('[cart-sync] cleanup error:', e.message));
+                    });
+                } catch (e) {
+                    console.error('[cart-sync] cron setup error:', e.message);
                 }
             })
             .catch((e) => {

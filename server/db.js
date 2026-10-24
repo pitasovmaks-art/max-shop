@@ -128,6 +128,41 @@ async function createSchema() {
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_msk_pickup INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS price_msk_delivery INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS is_krd INTEGER NOT NULL DEFAULT 0`);
+
+    /* ─── Цены в долларах (usd-pricing, см. PROGRESS.md) ─── */
+    await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS is_usd INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS usd_price_krd_pickup INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS usd_price_msk_pickup INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS usd_sale_price INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS usd_delivery_surcharge_rub INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS usd_rate_history (
+            id         SERIAL    PRIMARY KEY,
+            rate       INTEGER   NOT NULL,
+            prev_rate  INTEGER,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+    `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS cart_sync (
+            id            SERIAL    PRIMARY KEY,
+            tg_id         BIGINT    NOT NULL,
+            product_id    BIGINT    NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+            variant_label TEXT      NOT NULL DEFAULT '',
+            city          TEXT      NOT NULL DEFAULT '',
+            qty           INTEGER   NOT NULL,
+            price_seen    INTEGER   NOT NULL,
+            updated_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (tg_id, product_id, variant_label)
+        )
+    `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS usd_notify_log (
+            tg_id       BIGINT    PRIMARY KEY,
+            notified_at TIMESTAMP NOT NULL
+        )
+    `);
+
     await pool.query(`
         CREATE TABLE IF NOT EXISTS orders (
             id         SERIAL PRIMARY KEY,

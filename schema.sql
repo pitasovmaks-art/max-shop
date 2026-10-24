@@ -72,6 +72,49 @@ CREATE TABLE IF NOT EXISTS product_variants (
     is_krd               INTEGER NOT NULL DEFAULT 0      -- boolean-флаг (0/1)
 );
 
+-- Цены в долларах (usd-pricing, см. PROGRESS.md) — только на уровне
+-- варианта: любой товар (в т.ч. "без вариантов" для пользователя)
+-- представлен в этой таблице хотя бы одной строкой (пустой label).
+-- usd_* в центах, is_usd=1 переключает normalizeVariant() на пересчёт
+-- через server/utils/usdPrice.js вместо чтения рублёвых колонок напрямую.
+ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS is_usd INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS usd_price_krd_pickup INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS usd_price_msk_pickup INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS usd_sale_price INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS usd_delivery_surcharge_rub INTEGER NOT NULL DEFAULT 0;
+
+-- Курс доллара (целое число ×10000, напр. 92.4567 -> 924567). Текущий
+-- курс = последняя по created_at строка; пустая таблица = курс не задан.
+CREATE TABLE IF NOT EXISTS usd_rate_history (
+    id         SERIAL    PRIMARY KEY,
+    rate       INTEGER   NOT NULL,
+    prev_rate  INTEGER,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Синхронизация корзины с сервера (нужна для уведомлений о смене цены
+-- при смене курса, см. PROGRESS.md). Полностью перезаписывается при
+-- каждой синхронизации (DELETE+INSERT в транзакции) — не upsert.
+-- price_seen считает сервер (server/utils/pricing.js), не принимается
+-- от клиента.
+CREATE TABLE IF NOT EXISTS cart_sync (
+    id            SERIAL    PRIMARY KEY,
+    tg_id         BIGINT    NOT NULL,
+    product_id    BIGINT    NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    variant_label TEXT      NOT NULL DEFAULT '',
+    city          TEXT      NOT NULL DEFAULT '',
+    qty           INTEGER   NOT NULL,
+    price_seen    INTEGER   NOT NULL,
+    updated_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE (tg_id, product_id, variant_label)
+);
+
+-- Лимит уведомлений о смене цены — не чаще раза в сутки на человека.
+CREATE TABLE IF NOT EXISTS usd_notify_log (
+    tg_id       BIGINT    PRIMARY KEY,
+    notified_at TIMESTAMP NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS product_images (
     id         SERIAL  PRIMARY KEY,
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,

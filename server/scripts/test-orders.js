@@ -192,8 +192,10 @@ async function main() {
         check('заявка не сохранена', orders.length === 0);
     }
 
-    /* ── Главное: клиент присылает заниженную цену — сервер игнорирует её
-       и считает реальную ─────────────────────────────────────────────── */
+    /* ── Главное: клиент присылает заниженную total — сервер НЕ создаёт
+       заказ по ней, а отвечает 409 с реальной ценой (usd-pricing, п.9:
+       раньше total тихо перезаписывалась realTotal, теперь — явный 409,
+       чекаут должен показать тот же баннер "цена изменилась") ───────── */
     resetDb();
     {
         const r = await post(baseBody({
@@ -201,16 +203,29 @@ async function main() {
             items: [{ id: 1, name: 'ЛОЖЬ', price: 1, qty: 3 }],
             total: 3,
         }), initA);
-        check('заказ с заниженной ценой всё равно создаётся (товар реальный) -> 201', r.status === 201);
-        const saved = orders[orders.length - 1];
-        const items = JSON.parse(saved.items);
-        check('цена позиции взята из БД (900₽ КРД), а не присланная (1₽)', items[0].price === 900);
-        check('название позиции взято из БД ("Пистолет Toua NTC57"), а не из тела запроса', items[0].name === 'Пистолет Toua NTC57');
-        check('итог пересчитан (900*3=2700), а не присланный (3)', saved.total === 2700);
+        check('заниженная total -> 409 price_changed (а не тихое создание по старой цене)',
+            r.status === 409 && r.body.error === 'price_changed');
+        check('409 содержит реальную цену позиции из БД (900₽ КРД), а не присланную (1₽)', r.body.items[0].price === 900);
+        check('название позиции в 409 взято из БД, а не из тела запроса', r.body.items[0].name === 'Пистолет Toua NTC57');
+        check('409 содержит реальный итог (900*3=2700), а не присланный (3)', r.body.total === 2700);
+        check('заказ НЕ создан при 409', orders.length === 0);
+        check('notifyStore не вызывался (заказ не создан)', lastNotifyStoreCall === null);
+
+        const rOk = await post(baseBody({
+            city: 'krd', delivery: 'pickup',
+            items: [{ id: 1, name: 'ЛОЖЬ', price: 1, qty: 3 }],
+            total: 2700,
+        }), initA);
+        check('повтор с правильной total (из тела 409) -> 201, создаётся', rOk.status === 201);
+        const savedOk = orders[orders.length - 1];
+        const itemsOk = JSON.parse(savedOk.items);
+        check('цена позиции в созданном заказе — из БД (900₽), а не из тела', itemsOk[0].price === 900);
+        check('название позиции — из БД, а не "ЛОЖЬ"', itemsOk[0].name === 'Пистолет Toua NTC57');
+        check('итог сохранён верно (2700)', savedOk.total === 2700);
         check('notifyStore получил реальную сумму', lastNotifyStoreCall && lastNotifyStoreCall.total === 2700);
     }
 
-    /* ── Нулевая/произвольная цена — тоже не проходит ────────────────── */
+    /* ── Нулевая/произвольная total — тоже 409, не создаёт заказ ─────── */
     resetDb();
     {
         const r = await post(baseBody({
@@ -218,9 +233,16 @@ async function main() {
             items: [{ id: 1, name: 'x', price: 0, qty: 1 }],
             total: 0,
         }), initA);
-        check('нулевая цена от клиента игнорируется, заказ всё равно по реальной цене (1000₽ МСК)', r.status === 201);
-        const saved = orders[orders.length - 1];
-        check('сохранённая сумма — реальная, не 0', saved.total === 1000);
+        check('нулевая total -> 409 (не тихое создание по реальной цене)', r.status === 409 && r.body.error === 'price_changed');
+        check('заказ не создан', orders.length === 0);
+
+        const rOk = await post(baseBody({
+            city: 'msk', delivery: 'pickup',
+            items: [{ id: 1, name: 'x', price: 0, qty: 1 }],
+            total: 1000,
+        }), initA);
+        check('с правильной total (1000₽ МСК) -> 201', rOk.status === 201);
+        check('сохранённая сумма — реальная (1000)', orders[orders.length - 1].total === 1000);
     }
 
     /* ── Товар с вариантами: КРД / МСК / Россия (со скидкой) ─────────── */
@@ -229,21 +251,21 @@ async function main() {
         const rKrd = await post(baseBody({
             city: 'krd', delivery: 'pickup',
             items: [{ id: 2, variantLabel: 'M', price: 1, qty: 1 }],
-            total: 1,
+            total: 500,
         }), initA);
         check('вариант КРД -> 201, цена 500₽ (price_krd_pickup)', rKrd.status === 201 && JSON.parse(orders[orders.length - 1].items)[0].price === 500);
 
         const rMsk = await post(baseBody({
             city: 'msk', delivery: 'pickup',
             items: [{ id: 2, variantLabel: 'M', price: 1, qty: 1 }],
-            total: 1,
+            total: 600,
         }), initA);
         check('вариант МСК -> 201, цена 600₽ (sale_price варианта)', rMsk.status === 201 && JSON.parse(orders[orders.length - 1].items)[0].price === 600);
 
         const rRussia = await post(baseBody({
             city: 'msk', delivery: 'russia',
             items: [{ id: 2, variantLabel: 'M', price: 1, qty: 2 }],
-            total: 2,
+            total: 1400,
         }), initA);
         check('доставка по России -> 201, цена 700₽ (формула sale+surcharge, не больше полной доставки)',
             rRussia.status === 201 && JSON.parse(orders[orders.length - 1].items)[0].price === 700);
@@ -260,7 +282,7 @@ async function main() {
         check('товар не в наличии (не услуга) -> 400', outOfStock.status === 400);
 
         const service = await post(baseBody({
-            city: 'krd', items: [{ id: 4, price: 1, qty: 1 }], total: 1,
+            city: 'krd', items: [{ id: 4, price: 1, qty: 1 }], total: 500,
         }), initA);
         check('услуга (не в наличии, но is_service) -> 201, цена из БД (500₽)', service.status === 201);
 
@@ -297,7 +319,7 @@ async function main() {
                 { id: 1, price: 1, qty: 2 },               // 900 * 2 = 1800
                 { id: 2, variantLabel: 'M', price: 1, qty: 1 }, // 500
             ],
-            total: 1,
+            total: 2300,
         }), initA);
         check('заказ из 2 позиций -> 201', r.status === 201);
         check('итог = 1800 + 500 = 2300 (не то, что прислал клиент)', orders[orders.length - 1].total === 2300);

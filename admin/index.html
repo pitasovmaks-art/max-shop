@@ -83,6 +83,7 @@
         <button class="tab-btn" id="tabBanners" onclick="switchTab('banners')">Баннеры</button>
         <button class="tab-btn" id="tabService" onclick="switchTab('service')">🔧 Сервис</button>
         <button class="tab-btn" id="tabExports" onclick="switchTab('exports')">📥 Экспорт файлов</button>
+        <button class="tab-btn" id="tabUsdRate" onclick="switchTab('usdrate')">💵 Курс доллара</button>
     </div>
 
     <!-- Products section -->
@@ -135,6 +136,15 @@
             </svg>
         </button>
         <input type="file" id="importFileInput" accept=".xlsx" style="display:none" onchange="handleImportFile(this)">
+
+        <!-- FAB: export catalog to XLSX (usd-pricing, п.13) -->
+        <button class="fab fab--import" id="fabExport" onclick="exportCatalog()" aria-label="Экспорт товаров в XLSX" title="Экспорт в XLSX">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+        </button>
 
     </div><!-- /sectionProducts -->
 
@@ -215,6 +225,29 @@
             <div id="exportsList"></div>
         </div>
     </div><!-- /sectionExports -->
+
+    <!-- USD rate section (usd-pricing) -->
+    <div id="sectionUsdRate" class="hidden">
+        <div class="exports-section">
+            <div class="exports-header">
+                <span class="exports-title">Курс доллара</span>
+            </div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:8px;max-width:320px">
+                <div id="usdRateCurrent" style="font-size:15px">Загрузка...</div>
+                <div style="display:flex;gap:8px">
+                    <input type="number" class="ff__input" id="usdRateInput" min="0" step="0.0001" placeholder="Новый курс (напр. 92.4567)">
+                    <button class="exports-refresh-btn" onclick="submitUsdRate()">Сохранить</button>
+                </div>
+            </div>
+            <div style="padding:0 16px 16px">
+                <div style="font-weight:600;margin-bottom:8px">История курса</div>
+                <table class="exports-table">
+                    <thead><tr><th>Курс</th><th>Был</th><th>Когда</th></tr></thead>
+                    <tbody id="usdRateHistoryBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div><!-- /sectionUsdRate -->
 
     <!-- Bottom nav -->
     <nav class="bottom-nav">
