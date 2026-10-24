@@ -142,6 +142,40 @@ async function fakeQuery(sql, params = []) {
         return p ? [p] : [];
     }
 
+    // ── PUT /:id/variants (бэккомпат со старым admin.js без $, см. п.4) ─
+    if (s.startsWith('SELECT 1 FROM product_variants WHERE product_id=$1 AND (sale_price>0 OR usd_sale_price>0)')) {
+        const has = variants.some(v => v.product_id === params[0] && (v.sale_price > 0 || v.usd_sale_price > 0));
+        return has ? [{ '1': 1 }] : [];
+    }
+    if (s.startsWith('SELECT * FROM product_variants WHERE product_id=$1 ORDER BY sort_order, id')) {
+        return variants.filter(v => v.product_id === params[0]).sort((a, b) => a.sort_order - b.sort_order || a.id - b.id);
+    }
+    if (s.startsWith('SELECT * FROM product_variants WHERE product_id=$1')) {
+        return variants.filter(v => v.product_id === params[0]);
+    }
+    if (s.startsWith('DELETE FROM product_variants WHERE product_id=$1')) {
+        const before = variants.length;
+        variants = variants.filter(v => v.product_id !== params[0]);
+        return { rowCount: before - variants.length };
+    }
+    if (s.startsWith('INSERT INTO product_variants')) {
+        const [productId, label, price, priceKrd, priceMsk, priceDelivery,
+            priceKrdPickup, priceMskPickup, priceMskDelivery, isKrd, isDefault, sortOrder, salePrice,
+            isUsd, usdPriceKrdPickup, usdPriceMskPickup, usdSalePrice, usdDeliverySurchargeRub] = params;
+        const row = addVariant({
+            product_id: productId, label, price, price_krd: priceKrd, price_msk: priceMsk, price_delivery: priceDelivery,
+            price_krd_pickup: priceKrdPickup, price_msk_pickup: priceMskPickup, price_msk_delivery: priceMskDelivery,
+            is_krd: isKrd, is_default: isDefault, sort_order: sortOrder, sale_price: salePrice,
+            is_usd: isUsd, usd_price_krd_pickup: usdPriceKrdPickup, usd_price_msk_pickup: usdPriceMskPickup,
+            usd_sale_price: usdSalePrice, usd_delivery_surcharge_rub: usdDeliverySurchargeRub,
+        });
+        return [row];
+    }
+    if (s.startsWith('SELECT name, sale_notified FROM products WHERE id=$1')) {
+        const p = products.find(p => p.id === params[0]);
+        return p ? [{ name: p.name, sale_notified: p.sale_notified || 0 }] : [];
+    }
+
     // ── orders ───────────────────────────────────────────────────────
     if (s.startsWith('INSERT INTO orders')) {
         const [name, phone, store, delivery, address, city, tgId, comment, items, total] = params;
@@ -171,6 +205,11 @@ async function fakeQuery(sql, params = []) {
     }
     if (s.startsWith('SELECT * FROM cart_sync')) {
         return [...cartSync];
+    }
+    if (s.startsWith('UPDATE products SET sale_notified')) {
+        const p = products.find(p => p.id === params[0]);
+        if (p) p.sale_notified = s.includes('sale_notified=1') ? 1 : 0;
+        return { rowCount: p ? 1 : 0 };
     }
     if (s.startsWith('UPDATE cart_sync SET price_seen')) {
         const [priceSeen, id] = params;
@@ -249,6 +288,13 @@ async function main() {
     }
     async function get(path, headers = {}) {
         const r = await fetch(`${base}${path}`, { headers });
+        return { status: r.status, body: await r.json().catch(() => ({})) };
+    }
+    async function put(path, body, headers = {}) {
+        const r = await fetch(`${base}${path}`, {
+            method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+            body: JSON.stringify(body),
+        });
         return { status: r.status, body: await r.json().catch(() => ({})) };
     }
 
@@ -515,6 +561,49 @@ async function main() {
         await notifyCartPriceChanges();
         check('первая установка курса: уведомления не отправлены (cart_sync был пуст — нечего сравнивать)',
             notifyPriceChangeCalls.length === 0);
+    }
+
+    /* ═══ 13. Старый admin.js (без $) сохраняет товар — $-поля не теряются ═══
+       Старый клиент не знает о isUsd вообще и не присылает это поле; но при
+       GET видит уже конвертированную ₽-цену $-варианта в priceKrdPickup и
+       решает, что это обычная рублёвая цена. PUT /:id/variants должен
+       распознать такую строку (по label+isKrd находит текущий $-вариант в
+       БД) и сохранить is_usd/usd_*-поля как было, не записывая присланное
+       старым клиентом число как новую рублёвую цену. */
+    resetDb();
+    {
+        const p = addProduct({ name: 'USD-товар (старый админ)', in_stock: 1 });
+        addVariant({
+            product_id: p.id, label: 'Стандарт', is_krd: 1, is_default: 1, sort_order: 0,
+            is_usd: 1, usd_price_krd_pickup: 1000, usd_sale_price: 800, // $10 / скидка $8
+        });
+
+        // Старый admin.js прислал бы ровно такой PUT: без isUsd, с тем, что
+        // он увидел в форме (конвертированную по курсу ₽-цену варианта) —
+        // но курс в этом тесте не задан, поэтому старый клиент увидел бы 0;
+        // неважно, что именно он прислал — важно, что это должно быть
+        // проигнорировано для $-варианта.
+        const rOld = await put(`/api/products/${p.id}/variants`, [
+            { label: 'Стандарт', isKrd: true, isDefault: true, sortOrder: 0, priceKrdPickup: 777, salePrice: 777 },
+        ], adminHeaders);
+        check('старый admin.js: PUT /:id/variants -> 200', rOld.status === 200);
+
+        const afterOld = variants.find(v => v.product_id === p.id && v.label === 'Стандарт');
+        check('старый клиент НЕ затёр is_usd (осталось 1)', Number(afterOld.is_usd) === 1);
+        check('старый клиент НЕ затёр usd_price_krd_pickup (осталось 1000 центов = $10)', afterOld.usd_price_krd_pickup === 1000);
+        check('старый клиент НЕ затёр usd_sale_price (осталось 800 центов = $8)', afterOld.usd_sale_price === 800);
+        check('присланное старым клиентом число (777) НЕ записано как рублёвая цена', afterOld.price_krd_pickup === 0 && afterOld.sale_price === 0);
+
+        // Новый admin.js, наоборот, явно присылает isUsd:false — такую
+        // строку нужно сохранить как обычную рублёвую (сознательный выбор
+        // администратора "снять доллар"), а не защищать от затирания.
+        const rNew = await put(`/api/products/${p.id}/variants`, [
+            { label: 'Стандарт', isKrd: true, isDefault: true, sortOrder: 0, isUsd: false, priceKrdPickup: 500, salePrice: 0 },
+        ], adminHeaders);
+        check('новый admin.js: PUT /:id/variants -> 200', rNew.status === 200);
+        const afterNew = variants.find(v => v.product_id === p.id && v.label === 'Стандарт');
+        check('новый клиент с явным isUsd:false осознанно переводит вариант в рубли (is_usd=0)', Number(afterNew.is_usd) === 0);
+        check('рублёвая цена из явного запроса сохранена (500₽)', afterNew.price_krd_pickup === 500);
     }
 
     server.close();
