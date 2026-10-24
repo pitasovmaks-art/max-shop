@@ -18,6 +18,7 @@ function getCart() {
 function saveCart(cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
     updateBadges();
+    if (window.syncCartToServer) syncCartToServer(cart);
 }
 
 function getTotalQty() {

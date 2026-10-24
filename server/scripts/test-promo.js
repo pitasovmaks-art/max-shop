@@ -79,8 +79,8 @@ db.queryOne = async (sql, params = []) => {
         const row = subscribers.find(x => x.tg_id === String(params[0]) && !x.unsubscribed_at);
         return row ? { '1': 1 } : null;
     }
-    if (s.startsWith('SELECT 1 FROM product_variants WHERE product_id=$1 AND sale_price>0')) {
-        const has = variants.some(v => v.product_id === params[0] && v.sale_price > 0);
+    if (s.startsWith('SELECT 1 FROM product_variants WHERE product_id=$1 AND (sale_price>0 OR usd_sale_price>0)')) {
+        const has = variants.some(v => v.product_id === params[0] && (v.sale_price > 0 || v.usd_sale_price > 0));
         return has ? { '1': 1 } : null;
     }
     if (s.startsWith('SELECT name, sale_notified FROM products WHERE id=$1')) {
@@ -163,8 +163,12 @@ db.inTransaction = async (fn) => {
             }
             if (s.startsWith('INSERT INTO product_variants')) {
                 const [productId, label, price, priceKrd, priceMsk, priceDelivery,
-                    priceKrdPickup, priceMskPickup, priceMskDelivery, isKrd, isDefault, sortOrder, salePrice] = params;
-                variants.push({ product_id: productId, label, price, sale_price: salePrice, sort_order: sortOrder });
+                    priceKrdPickup, priceMskPickup, priceMskDelivery, isKrd, isDefault, sortOrder, salePrice,
+                    isUsd, usdPriceKrdPickup, usdPriceMskPickup, usdSalePrice, usdDeliverySurchargeRub] = params;
+                variants.push({
+                    product_id: productId, label, price, sale_price: salePrice, sort_order: sortOrder,
+                    is_usd: isUsd, usd_sale_price: usdSalePrice,
+                });
                 return;
             }
             throw new Error('test-promo: неизвестный client.query в транзакции: ' + s);

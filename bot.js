@@ -659,6 +659,42 @@ async function notifyPromo(tgId, productName) {
     }
 }
 
+/* ─── Notify: цена в корзине изменилась (смена курса $, usd-pricing) ──
+   changes: [{ name, oldPrice, newPrice }] — хотя бы одна позиция из
+   cart_sync этого tg_id изменилась в любую сторону. Не чаще раза в сутки
+   на tg_id — ограничение проверяется ДО вызова этой функции (см.
+   server/routes/usd-rate.js, usd_notify_log), сама функция просто шлёт. */
+async function notifyPriceChange(tgId, changes) {
+    if (!TOKEN || !tgId || !changes.length) return;
+    const lines = changes.map(c =>
+        `«${c.name}»: ${c.oldPrice.toLocaleString('ru-RU')} ₽ → ${c.newPrice.toLocaleString('ru-RU')} ₽`
+    );
+    const text = `💱 Цена изменилась у товаров в вашей корзине:\n\n${lines.join('\n')}`;
+    const trySend = async (id) => {
+        const result = await sendMessage(+id, text);
+        console.log(`[bot] notifyPriceChange OK: tg_id=${tgId} items=${changes.length}`, result);
+    };
+    try {
+        await trySend(tgId);
+    } catch (e) {
+        console.error(`[bot] notifyPriceChange FAIL first try: tg_id=${tgId}`, e.message);
+        try {
+            const r = await internalFetch(`/api/users/chat?user_id=${tgId}`);
+            if (r.status === 401) console.error('[bot] users/chat lookup: сервер ответил 401 (проверьте INTERNAL_API_SECRET)');
+            if (r.ok) {
+                const data = await r.json();
+                if (data.chatId && data.chatId !== String(tgId)) {
+                    await trySend(data.chatId);
+                    return;
+                }
+            }
+        } catch (e2) {
+            console.error(`[bot] notifyPriceChange user_map lookup failed:`, e2.message);
+        }
+        console.error(`[bot] notifyPriceChange FAIL final: tg_id=${tgId}`, e.message);
+    }
+}
+
 /* ─── Start bot ─────────────────────────────────────────── */
 function startBot() {
     if (!TOKEN) {
@@ -671,6 +707,7 @@ function startBot() {
 
 module.exports = {
     startBot, notifyStore, processUpdate, notifyCustomer, notifyStock, notifyPromo,
+    notifyPriceChange,
     notifyServiceRequest, notifyServiceRequestStatus, SERVICE_REQUEST_MANAGERS,
     // Экспортированы только для test-promo.js (проверка распознавания фраз
     // отписки без запуска всего processUpdate/sendMessage) — тем же

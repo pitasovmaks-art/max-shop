@@ -164,16 +164,33 @@ async function main() {
     );
     check('что видит покупатель на чекауте (МСК, самовывоз, со скидкой) = 800₽', whatCustomerSees === 800);
 
+    // usd-pricing: заведомо неверная total теперь не тихо перезаписывается —
+    // сервер отвечает 409 с реальной ценой, заказ не создаётся (см. PROGRESS.md).
+    const rBad = await fetch(`${base}/api/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Init-Data': initUser },
+        body: JSON.stringify({
+            name: 'Покупатель', phone: '+79990001122', store: 'Краснодар',
+            delivery: 'pickup', city: 'msk', items: [{ id: PRODUCT_ID, variantLabel: 'Стандарт', price: 1, qty: 1 }],
+            total: 1, // клиент присылает заведомо неверную цену
+        }),
+    });
+    const rBadBody = await rBad.json();
+    check('POST /api/orders с неверной total -> 409 price_changed (заказ не создаётся)',
+        rBad.status === 409 && rBadBody.error === 'price_changed');
+    check('409 содержит реальную цену позиции (800₽), не присланную клиентом (1₽)', rBadBody.items[0].price === 800);
+    check('заказ не создан при 409', orders.length === 0);
+
     const r = await fetch(`${base}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Init-Data': initUser },
         body: JSON.stringify({
             name: 'Покупатель', phone: '+79990001122', store: 'Краснодар',
             delivery: 'pickup', city: 'msk', items: [{ id: PRODUCT_ID, variantLabel: 'Стандарт', price: 1, qty: 1 }],
-            total: 1, // клиент присылает заведомо неверную цену — сервер должен её проигнорировать
+            total: 800, // правильная total (как из тела 409 выше)
         }),
     });
-    check('POST /api/orders (заказ со скидкой, заведомо неверная цена от клиента) -> 201', r.status === 201);
+    check('POST /api/orders (заказ со скидкой, правильная total) -> 201', r.status === 201);
 
     const saved = orders[orders.length - 1];
     const savedItemPrice = JSON.parse(saved.items)[0].price;

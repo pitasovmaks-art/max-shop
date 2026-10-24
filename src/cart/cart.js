@@ -9,6 +9,7 @@ function getCart() {
 
 function saveCart(cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
+    if (window.syncCartToServer) syncCartToServer(cart);
 }
 
 /* ─── Mutations ─────────────────────────────────────────── */

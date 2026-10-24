@@ -399,6 +399,7 @@ async function reorderItems(orderItems) {
 
     localStorage.setItem('cart', JSON.stringify(cart));
     updateCartBadge();
+    if (window.syncCartToServer) syncCartToServer(cart);
 
     if (skipped === 0) {
         showReorderToast('✓ Товары добавлены в корзину');

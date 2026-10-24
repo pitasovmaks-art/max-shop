@@ -12,7 +12,10 @@ function getCart() {
     try { return JSON.parse(localStorage.getItem('cart') || '[]').map(i => ({ ...i, key: i.key || String(i.id) })); }
     catch { return []; }
 }
-function saveCart(c) { localStorage.setItem('cart', JSON.stringify(c)); }
+function saveCart(c) {
+    localStorage.setItem('cart', JSON.stringify(c));
+    if (window.syncCartToServer) syncCartToServer(c);
+}
 
 function updateCartBadge() {
     try {

@@ -78,4 +78,14 @@ function requireAdmin(req, res, next) {
     next();
 }
 
-module.exports = { requireAdmin, issueAdminToken, verifyAdminPassword, timingSafeEqualStr };
+// usd-pricing: нужна НЕОБЯЗАТЕЛЬНАЯ проверка (не блокирующая запрос), чтобы
+// публичный GET /api/products мог по желанию отдать админке доп. $-поля —
+// admin.js уже шлёт Authorization на этот роут (см. admin/admin.js), хотя
+// requireAdmin там не стоит.
+function isValidAdminAuthHeader(authHeader) {
+    const auth  = authHeader || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+    return isValidAdminToken(token);
+}
+
+module.exports = { requireAdmin, issueAdminToken, verifyAdminPassword, timingSafeEqualStr, isValidAdminAuthHeader };

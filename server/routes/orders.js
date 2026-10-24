@@ -73,8 +73,21 @@ router.post('/', requireUser, async (req, res) => {
 
         const realItems = resolved.map((r, idx) => ({
             id: items[idx].id, name: r.name, price: r.price, qty: items[idx].qty,
+            // usd-pricing, п.11: $ и курс на момент заказа — только для
+            // аудита, в сумму/формулу не участвуют и не влияют на realTotal.
+            ...(r.priceUsdCents != null ? { priceUsdCents: r.priceUsdCents, rateX10000: r.rateX10000 } : {}),
         }));
         const realTotal = realItems.reduce((sum, it) => sum + it.price * it.qty, 0);
+
+        // usd-pricing, п.9: раньше присланная клиентом total читалась, но
+        // никогда не сравнивалась с пересчитанной — заказ создавался по
+        // realTotal молча. Теперь при расхождении (курс/цена поменялись
+        // между показом чекаута и отправкой) отвечаем 409 с актуальными
+        // ценами вместо тихого создания заказа по другой сумме, чем видел
+        // покупатель — чекаут показывает тот же "Цена изменилась"-баннер.
+        if (Number(total) !== realTotal) {
+            return res.status(409).json({ error: 'price_changed', items: realItems, total: realTotal });
+        }
 
         const row = await db.queryOne(
             `INSERT INTO orders (name,phone,store,delivery,address,city,tg_id,comment,items,total)

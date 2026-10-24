@@ -21,10 +21,24 @@ function loadCatalogCache() {
     } catch { return null; }
 }
 
-function saveCatalogCache(categories, subcategories, products) {
+function saveCatalogCache(categories, subcategories, products, rateVersion) {
     try {
-        localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({ categories, subcategories, products, savedAt: Date.now() }));
+        localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({
+            categories, subcategories, products, rateVersion: rateVersion ?? null, savedAt: Date.now(),
+        }));
     } catch { /* localStorage переполнен/недоступен (приватный режим) — не критично */ }
+}
+
+// usd-pricing, п.8: тихо дёргает текущую версию курса — используется и
+// после успешного обновления каталога (чтобы сохранить версию рядом с
+// кэшем), и при сбое фонового обновления (чтобы решить, можно ли
+// доверять уже показанному кэшу дальше, см. init()).
+async function fetchRateVersion() {
+    try {
+        const r = await fetch('/api/usd-rate');
+        if (!r.ok) return null;
+        return (await r.json()).rateVersion;
+    } catch { return null; }
 }
 
 /* ─── City ──────────────────────────────────────────────────── */
@@ -230,6 +244,7 @@ function getCart() {
 function saveCart(cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
     updateBadges();
+    if (window.syncCartToServer) syncCartToServer(cart);
 }
 
 function addToCart(productId) {
@@ -2156,7 +2171,7 @@ async function init() {
         _products      = prods;
         _favorites     = new Set(favs.map(f => Number(f.id)));
         _subscriptions = new Set((stockSubs || []).map(id => Number(id)));
-        saveCatalogCache(cats, subs, prods);
+        saveCatalogCache(cats, subs, prods, await fetchRateVersion());
     } catch (e) {
         console.error('Ошибка загрузки каталога:', e);
         // Фоновое обновление упало, но на экране уже валидный кэш — не
@@ -2170,6 +2185,16 @@ async function init() {
             if (emptyEl) emptyEl.classList.remove('hidden');
             if (countEl) countEl.textContent = 'Ошибка загрузки';
             if (!emptyEl) showToast('Ошибка загрузки каталога');
+        } else {
+            // usd-pricing, п.8: полное обновление не удалось (сеть/сервер),
+            // но если курс кэша уже точно устарел — нельзя оставлять
+            // показанные (возможно неверные) цены висеть неограниченно
+            // долго офлайн. Чистим кэш — следующая загрузка уже не покажет
+            // его, будет ждать свежих данных, как при пустом кэше.
+            const freshVersion = await fetchRateVersion();
+            if (cached.rateVersion != null && freshVersion != null && freshVersion !== cached.rateVersion) {
+                try { localStorage.removeItem(CATALOG_CACHE_KEY); } catch {}
+            }
         }
     }
 

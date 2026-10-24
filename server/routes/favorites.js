@@ -1,6 +1,7 @@
 const router          = require('express').Router();
 const db              = require('../db');
 const { requireUser } = require('../middleware/requireUser');
+const usdPrice        = require('../utils/usdPrice');
 
 /* ─── Attach variants to product list ───────────────────── */
 async function withVariants(products) {
@@ -9,8 +10,12 @@ async function withVariants(products) {
         'SELECT * FROM product_variants WHERE product_id = ANY($1::int[]) ORDER BY sort_order, id',
         [products.map(p => p.id)]
     );
+    // usd-pricing, п.6: та же конвертация $->₽, что и в products.js —
+    // избранное получает уже пересчитанные рубли в тех же полях.
+    const rate = allVars.some(v => Number(v.is_usd) === 1) ? await usdPrice.getCurrentRate() : null;
     const byProduct = {};
-    for (const v of allVars) {
+    for (const raw of allVars) {
+        const v = usdPrice.applyUsdToVariantRow(raw, rate);
         if (!byProduct[v.product_id]) byProduct[v.product_id] = [];
         byProduct[v.product_id].push({
             id:               v.id,
@@ -26,6 +31,11 @@ async function withVariants(products) {
             isKrd:            v.is_krd             === 1,
             isDefault:        v.is_default         === 1,
             sortOrder:        v.sort_order,
+            // Раньше здесь не было salePrice вообще — расхождение с
+            // products.js normalizeVariant(), скидка не была видна в
+            // избранном даже для обычных рублёвых товаров. Добавлено
+            // по месту правки usd-pricing (не связано с $ напрямую).
+            salePrice:        v.sale_price || 0,
         });
     }
     for (const p of products) p.variants = byProduct[p.id] || [];
