@@ -406,36 +406,31 @@ function renderCategoryRail() {
     const nonEmptyCats = _categories.filter(c => _products.some(p => p.categoryId === c.id));
 
     if (onCatalogPage) {
-        // Карточки 2 колонки (не рельса, не список строк) — Главную
-        // (.cat-rail/.cat-tile ниже) эта ветка не трогает. cat.icon
-        // проверяем явно: если его нет в API — иконку не показываем вообще
-        // (ни свою, ни дефолтную; categoryIconSvg() сама всегда возвращает
-        // какую-то иконку через фолбэк на DEFAULT_CATEGORY_ICON — тут он
-        // сознательно не используется, чтобы не придумывать данных).
         const saleCard = hasSale
             ? `<button class="cat-card cat-card--sale" onclick="${openTile('sale')}">
-                <span class="cat-card__ic">${iconSvg('sale', 18)}</span>
+                <span class="cat-card__ic">${iconSvg('sale', 40)}</span>
                 <span class="cat-card__label">Акции</span>
             </button>`
             : '';
         rail.innerHTML = saleCard + nonEmptyCats.map(c =>
             `<button class="cat-card" onclick="${openTile(c.id)}">
-                ${c.icon ? `<span class="cat-card__ic">${categoryIconSvg(c, 18)}</span>` : ''}
+                <span class="cat-card__ic">${categoryIconSvg(c, 40)}</span>
                 <span class="cat-card__label">${c.name}</span>
             </button>`
         ).join('');
+        initRailFade(rail);
         return;
     }
 
     const saleTile = hasSale
         ? `<button class="cat-tile cat-tile--sale" onclick="${openTile('sale')}">
-            <span class="cat-tile__ic">${iconSvg('sale', 20)}</span>
+            <span class="cat-tile__ic">${iconSvg('sale', 40)}</span>
             <span>Акции</span>
         </button>`
         : '';
     rail.innerHTML = saleTile + nonEmptyCats.map(c =>
         `<button class="cat-tile" onclick="${openTile(c.id)}">
-            <span class="cat-tile__ic">${categoryIconSvg(c, 20)}</span>
+            <span class="cat-tile__ic">${categoryIconSvg(c, 40)}</span>
             <span>${c.name}</span>
         </button>`
     ).join('');

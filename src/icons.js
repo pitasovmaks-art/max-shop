@@ -6,7 +6,11 @@
    ──────────────────────────────────────────────────────────────── */
 const ICON_PATHS = {
     bolt:    '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
-    gun:     '<rect x="3" y="9" width="13" height="6" rx="1.5" stroke="currentColor" stroke-width="2"/><path d="M16 11h4v2h-4z" stroke="currentColor" stroke-width="2"/><path d="M7 15v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+    gun: '<path d="M3 5h13v6H3zM16 7h5v2h-5M6 11l-2 9h5l2-9M11 11h5v8h-5M4 8h8M13 5V3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+    drill: '<path d="M3 5h12v7H3zM15 7h5m-5 3h4M7 12l-1 7h6l-1-7M5 19h9v2H5z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+    fasteners: '<path d="M3 4h6m-3 0v16l2-3M12 4h6m-3 0v16l2-3M20 9h2m-1 0v11M4 8h4m5 0h4M4 11h4m5 0h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+    pouch: '<path d="M3 7h18v13H3zM3 10h18M8 10v6h8v-6M7 7V3h3v4m4 0V3h3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+    toolbox: '<path d="M3 8h18v12H3zM8 8V4h8v4M3 12h18M8 11v4m8-4v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
     box:     '<path d="M3 8l9-5 9 5-9 5-9-5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M3 8v8l9 5 9-5V8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 13v8" stroke="currentColor" stroke-width="2"/>',
     wrench:  '<path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.8 2.8-2-2 2.8-2.8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
     search:  '<circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
@@ -42,6 +46,14 @@ const CATEGORY_ICON_MAP = {
 const DEFAULT_CATEGORY_ICON = 'box';
 
 function categoryIconSvg(cat, size) {
-    const key = (cat && CATEGORY_ICON_MAP[cat.icon]) || DEFAULT_CATEGORY_ICON;
-    return iconSvg(key, size);
+    // Known product families override legacy emoji; new categories keep their fallback.
+    const name = String(cat && cat.name || '').toLowerCase();
+    let key;
+    if (/монтажн.*пистолет/.test(name)) key = 'gun';
+    else if (/систем.*хранен|органайзер|ящик/.test(name)) key = 'toolbox';
+    else if (/экипиров|подсум|перчат|сумк/.test(name)) key = 'pouch';
+    else if (/расход|креп[её]ж/.test(name)) key = 'fasteners';
+    else if (/инструмент/.test(name)) key = 'drill';
+    else if (/акци/.test(name)) key = 'sale';
+    return iconSvg(key || (cat && CATEGORY_ICON_MAP[cat.icon]) || DEFAULT_CATEGORY_ICON, size);
 }

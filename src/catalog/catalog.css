@@ -304,89 +304,68 @@ html.city-unknown #city-screen { display: flex; }
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent 100%);
             mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent 100%);
 }
-.cat-tile {
-    scroll-snap-align: start;
-    flex: 0 0 calc((100% - 20px) / 2.275);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    background: var(--bg-card);
-    border-radius: var(--radius-md);
-    padding: 14px 6px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.05);
-}
-.cat-tile__ic {
-    width: 38px; height: 38px;
-    border-radius: 11px;
-    background: var(--accent);
-    color: #fff;
-    font-size: 18px;
-    display: flex; align-items: center; justify-content: center;
-}
-.cat-tile--sale .cat-tile__ic { background: var(--red-fill); }
-.cat-tile span:last-child {
-    font-size: 11px;
-    font-weight: 700;
-    text-align: center;
-    line-height: 1.25;
-    color: var(--text-primary);
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    overflow-wrap: break-word;
-}
-
-/* ─── Catalog (root only — Главная по-прежнему рельса, см. .cat-rail
-   выше): сетка карточек 2 колонки, без горизонтального скролла.
-   align-items:stretch (по умолчанию для grid) — все карточки в ряду
-   одинаковой высоты, даже если у одной из них нет иконки (см.
-   categoryIconSvg() и проверку cat.icon в renderCategoryRail()).
-   min-height:var(--tap-min) — нажимаемая зона не меньше 44px, даже у
-   карточки без иконки с однострочным названием. ──────────────────── */
+/* Category cards retain a horizontal rail, including future categories. */
 .cat-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 4px 16px 10px;
+    display: flex;
+    gap: 12px;
+    padding: 10px 16px 6px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 16px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
 }
-.cat-card {
+.cat-grid::-webkit-scrollbar { display: none; }
+.cat-grid.rail--fade {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+}
+.cat-tile, .cat-card {
+    box-sizing: border-box;
+    scroll-snap-align: start;
+    flex: 0 0 168px;
+    min-height: 142px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
-    min-height: var(--tap-min);
-    padding: 14px;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 16px;
     background: var(--bg-card);
+    color: var(--text-primary);
     border-radius: var(--radius-md);
     box-shadow: var(--card-shadow);
     text-align: left;
-    transition: transform .15s;
 }
-.cat-card:active { transform: scale(.98); }
-.cat-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.cat-card__ic {
+.cat-tile:active, .cat-card:active { transform: scale(.98); }
+.cat-tile:focus-visible, .cat-card:focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: -3px;
+}
+.cat-tile__ic, .cat-card__ic {
     flex-shrink: 0;
-    width: 36px; height: 36px;
-    border-radius: 10px;
-    background: var(--accent);
-    color: #fff;
-    display: flex; align-items: center; justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.cat-card--sale .cat-card__ic { background: var(--red-fill); }
-.cat-card__label {
+.cat-tile--sale .cat-tile__ic, .cat-card--sale .cat-card__ic {
+    background: var(--accent-ink);
+    color: var(--accent);
+    border-radius: 10px;
+}
+.cat-tile--sale .i, .cat-card--sale .i { width: 30px; height: 30px; }
+.cat-tile span:last-child, .cat-card__label {
     font-size: 14px;
     font-weight: 700;
     line-height: 1.3;
+    min-height: 2.6em;
     color: var(--text-primary);
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
 }
-.cat-card--skel .skel-tile__ic { width: 36px; height: 36px; border-radius: 10px; }
+.cat-card--skel .skel-tile__ic { width: 44px; height: 44px; border-radius: 10px; }
 
 /* ─── Catalog: subcategory screen — тоже вертикальный список (не сетка
    2×N). У подкатегорий своей иконки в API нет, поэтому слева её нет —
