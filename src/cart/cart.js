@@ -115,8 +115,12 @@ async function refreshCartPrices() {
                 salePriceKrd: 0, salePriceMsk: 0,
             };
         }
-        if (result.price !== item.price) {
-            _priceChangeNotices[item.key] = { oldPrice: item.price };
+        // Compare with the saved price for THIS city, not item.price from
+        // whichever city the item was added in.
+        const previousPrice = effectiveItemPrice(item, city, null);
+        if (_priceChangeNotices[item.key]?.city !== city) delete _priceChangeNotices[item.key];
+        if (previousPrice !== null && result.price !== previousPrice) {
+            _priceChangeNotices[item.key] = { oldPrice: previousPrice, city };
         }
         return { ...item, ...result.fields, price: result.price };
     });

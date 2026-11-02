@@ -37,39 +37,27 @@ function _effectiveVariant(p) {
 
 function getPrice(p) {
     const v = _effectiveVariant(p);
-    if (v) return _city === 'krd' ? v.priceKrdPickup : v.priceMskPickup;
-    return _city === 'krd' ? (p.priceKrd || p.price || 0) : (p.priceMsk || p.price || 0);
+    const result = resolveFreshCartItem({ id: p.id, name: p.name, variantLabel: v?.label ?? '' }, [p], _city, null);
+    return result.ok ? result.price : 0;
 }
 
 /* ─── Add to cart ───────────────────────────────────────── */
 function addToCart(productId, products) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
-
     const variant = _effectiveVariant(product);
-    const key     = variant ? `${productId}_v${variant.id}` : String(productId);
-
-    let priceKrdPickup, priceMskPickup, priceMskDelivery;
-    if (variant) {
-        priceKrdPickup   = variant.priceKrdPickup   || 0;
-        priceMskPickup   = variant.priceMskPickup   || 0;
-        priceMskDelivery = variant.priceMskDelivery || 0;
-    } else {
-        priceKrdPickup   = product.priceKrd      || product.price || 0;
-        priceMskPickup   = product.priceMsk      || product.price || 0;
-        priceMskDelivery = product.priceDelivery || product.price || 0;
-    }
-    const price = _city === 'krd' ? priceKrdPickup : priceMskPickup;
-
-    const cart     = getCart();
+    const result = resolveFreshCartItem({ id: productId, name: product.name, variantLabel: variant?.label ?? '' }, [product], _city, null);
+    if (!result.ok) { showToast(result.reason); return; }
+    const key = variant ? `${productId}_v${variant.id}` : String(productId);
+    const cart = getCart();
     const existing = cart.find(i => i.key === key);
+    const fields = { ...result.fields, price: result.price };
     if (existing) {
+        Object.assign(existing, fields);
         existing.qty += 1;
     } else {
         const item = {
-            key, id: productId, name: product.name,
-            price, priceKrdPickup, priceMskPickup, priceMskDelivery,
-            priceDelivery: priceMskDelivery,
+            key, id: productId, name: product.name, ...fields,
             qty: 1, categoryId: product.categoryId,
             image: product.image || undefined,
         };
@@ -131,12 +119,15 @@ function renderFavorites(products) {
         const price    = unavailable ? 0 : getPrice(p);
         const imgBg    = p.image ? '' : 'img-bg--default';
         const imgIcon  = p.image ? `<img class="product-card__photo" src="${p.image}" alt="${p.name}">` : iconSvg('image', 28);
+        const basePrice = effectiveVar ? (_city === 'krd' ? effectiveVar.priceKrdPickup : effectiveVar.priceMskPickup) : price;
         const priceStr = unavailable
             ? `<span style="display:flex;flex-direction:column;gap:2px">
                 <span style="color:var(--text-secondary);font-size:11px;font-weight:500">Доступен в другом городе</span>
                 <span style="color:var(--text-secondary);font-size:10px;font-weight:400">Смените город, чтобы заказать</span>
                </span>`
-            : (price > 0 ? fmt(price) : (p.priceLabel || fmt(p.price || 0)));
+            : (price > 0 ? (basePrice > price
+                ? `<s class="price-old">${fmt(basePrice)}</s> <span class="price-sale">${fmt(price)}</span>`
+                : fmt(price)) : (p.priceLabel || fmt(p.price || 0)));
         const addBtn   = (!unavailable && p.inStock)
             ? `<button class="add-btn" onclick="event.stopPropagation();_addToCart(${p.id})" aria-label="В корзину">В корзину</button>`
             : `<button class="add-btn add-btn--disabled" disabled>Нет в наличии</button>`;

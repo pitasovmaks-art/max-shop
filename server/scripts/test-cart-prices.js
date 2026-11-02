@@ -157,6 +157,36 @@ async function main() {
     pending.shift()({ok:true,json:async()=>({error:'bad response'})}); await refresh;
     check('invalid API payload preserves previous prices', JSON.parse(storage.get('cart'))[0].price === 300);
 
+    storage.set('cart', JSON.stringify([{...item, price:20000, priceKrd:20000, priceMsk:18000}]));
+    storage.set('city', 'msk');
+    refresh = vm.runInContext('refreshCartPrices()', context);
+    pending.shift()({ok:true,json:async()=>[{id:1,inStock:true,priceKrd:20000,priceMsk:18000}]}); await refresh;
+    check('city switch changes price without a price-change notice', JSON.parse(storage.get('cart'))[0].price === 18000 && vm.runInContext('!_priceChangeNotices["1"]',context));
+    refresh = vm.runInContext('refreshCartPrices()', context);
+    pending.shift()(response(17000)); await refresh;
+    check('actual price change compares against same-city price', vm.runInContext('_priceChangeNotices["1"].oldPrice === 18000',context));
+
+    for (const city of ['krd','msk']) {
+        const values = new Map([['city',city],['cart','[]']]);
+        const ctx = vm.createContext({console,window:{},getTgId:()=>'',document:{addEventListener(){}},
+            localStorage:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v)}});
+        vm.runInContext(fs.readFileSync(path.join(__dirname,'../../src/shared/cartPricing.js'),'utf8'),ctx);
+        vm.runInContext(fs.readFileSync(path.join(__dirname,'../../src/favorites/favorites.js'),'utf8'),ctx);
+        vm.runInContext('showToast=function(){};updateCartBadge=function(){};',ctx);
+        const product = {id:9,name:'Tool',inStock:true,variants:[
+            {id:91,isKrd:true,label:'M',priceKrdPickup:20000,salePrice:19000},
+            {id:92,isKrd:false,label:'M',priceMskPickup:18000,priceMskDelivery:18500,salePrice:17000}]};
+        ctx.product=product;
+        check('favorites displays discounted price in '+city,vm.runInContext('getPrice(product)',ctx)===(city==='krd'?19000:17000));
+        vm.runInContext('addToCart(9,[product])',ctx);
+        const added=JSON.parse(values.get('cart'))[0];
+        check('favorites saves both city discounts in '+city,added.salePriceKrd===19000 && added.salePriceMsk===17000 && added.price===(city==='krd'?19000:17000));
+        product.variants.forEach(v=>v.salePrice=0);
+        vm.runInContext('addToCart(9,[product])',ctx);
+        const repeated=JSON.parse(values.get('cart'))[0];
+        check('repeat add refreshes ended discount in '+city,repeated.qty===2 && repeated.salePriceKrd===0 && repeated.salePriceMsk===0);
+    }
+
     console.log(failures === 0
         ? '\n✅ Все проверки прошли'
         : `\n❌ ${failures} проверка(и) провалены`);
