@@ -33,6 +33,7 @@ function cdekRequest(method, path, body = null, token = null) {
 }
 
 async function getToken() {
+    if (!CDEK_CLIENT_ID || !CDEK_CLIENT_SECRET) throw new Error('CDEK_CLIENT_ID/CDEK_CLIENT_SECRET не настроены');
     if (_token && Date.now() < _tokenExpAt) return _token;
     const body = new URLSearchParams({
         grant_type:    'client_credentials',

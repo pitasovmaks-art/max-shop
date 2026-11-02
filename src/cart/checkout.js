@@ -146,7 +146,7 @@ function applyDelivery(method) {
     });
 
     if (method === 'russia') initDeliveryPointPicker();
-    else { _cdekSequence++; cancelAddressSuggestions(); }
+    else { _cdekSequence++; }
 
     renderSummary();
 }
@@ -533,9 +533,6 @@ let _cdekOffices = [];
 let _cdekOfficeQuery = '';
 let _pointCity = '';
 let _cdekSequence = 0;
-let _suggestionSequence = 0;
-let _suggestionTimer;
-let _suggestionAbort;
 
 function deliveryPointCity() {
     return localStorage.getItem('cityName') || (localStorage.getItem('city') === 'krd' ? 'Краснодар' : 'Москва');
@@ -549,24 +546,15 @@ function initDeliveryPointPicker() {
         document.getElementById('selectedPoint').textContent = '';
         _cdekOffices = [];
         _cdekSequence++;
-        cancelAddressSuggestions();
     }
     document.getElementById('pvzCity').textContent = 'Город получения: ' + city;
     if (_deliveryCarrier === 'cdek' && !document.getElementById('manualPoint').checked) loadCdekOfficesForCurrentCity();
-}
-function cancelAddressSuggestions() {
-    clearTimeout(_suggestionTimer);
-    _suggestionSequence++;
-    _suggestionAbort?.abort();
-    document.getElementById('addressSuggestions').replaceChildren();
-    document.getElementById('pointAddress').setAttribute('aria-expanded', 'false');
 }
 function setDeliveryCarrier(carrier) {
     if (!['cdek','ozon'].includes(carrier) || carrier === _deliveryCarrier) return;
     _deliveryCarrier = carrier;
     _selectedCdekAddress = '';
     _cdekSequence++;
-    cancelAddressSuggestions();
     document.getElementById('pointAddress').value = '';
     document.getElementById('selectedPoint').textContent = '';
     document.getElementById('cdekError').classList.add('hidden');
@@ -582,13 +570,12 @@ function setDeliveryCarrier(carrier) {
 }
 function toggleManualPoint() {
     _cdekSequence++;
-    cancelAddressSuggestions();
     _selectedCdekAddress = '';
     document.getElementById('selectedPoint').textContent = '';
     const manual = _deliveryCarrier === 'ozon' || document.getElementById('manualPoint').checked;
     document.getElementById('manualPointFields').classList.toggle('hidden', !manual);
     document.getElementById('cdekPicker').classList.toggle('hidden', manual);
-    document.getElementById('pointHint').textContent = 'Введите улицу и номер дома. Подсказки помогают найти адрес, но не подтверждают наличие пункта выдачи.';
+    document.getElementById('pointHint').textContent = 'Укажите точный адрес пункта: улицу, номер дома и корпус, если есть.';
     if (!manual) loadCdekOfficesForCurrentCity();
     else initDeliveryPointPicker();
 }
@@ -649,41 +636,7 @@ function renderCdekOffices() {
     }
 }
 function handlePointAddressInput() {
-    cancelAddressSuggestions();
     document.getElementById('cdekError').classList.add('hidden');
-    const input = document.getElementById('pointAddress');
-    const query = input.value.trim();
-    if (query.length < 3) return;
-    const sequence = _suggestionSequence;
-    const city = deliveryPointCity();
-    _suggestionTimer = setTimeout(async () => {
-        const hint = document.getElementById('pointHint');
-        _suggestionAbort = new AbortController();
-        try {
-            const response = await authFetch(`/api/address-suggestions?city=${encodeURIComponent(city)}&q=${encodeURIComponent(query)}`, { signal: _suggestionAbort.signal });
-            if (!response.ok) throw new Error('unavailable');
-            const data = await response.json();
-            if (sequence !== _suggestionSequence || city !== deliveryPointCity()) return;
-            if (!data.enabled) { hint.textContent = 'Подсказки пока не подключены. Введите улицу и номер дома вручную.'; return; }
-            hint.textContent = 'Выберите адрес или продолжите ввод. Это адресные подсказки, а не список ПВЗ.';
-            const list = document.getElementById('addressSuggestions');
-            list.replaceChildren();
-            for (const suggestion of (data.suggestions || [])) {
-                const button = document.createElement('button');
-                button.type = 'button'; button.className = 'address-suggestion'; button.textContent = suggestion.value;
-                button.addEventListener('click', () => {
-                    input.value = suggestion.value;
-                    cancelAddressSuggestions();
-                    hint.textContent = suggestion.hasHouse ? 'Проверьте, что по этому адресу находится нужный пункт выдачи.' : 'Теперь укажите номер дома.';
-                    input.focus();
-                });
-                list.append(button);
-            }
-            input.setAttribute('aria-expanded', String(list.children.length > 0));
-        } catch (error) {
-            if (sequence === _suggestionSequence && error.name !== 'AbortError') hint.textContent = 'Подсказки недоступны. Введите улицу и номер дома вручную.';
-        }
-    }, 350);
 }
 
 /* ─── Redirect if cart empty ────────────────────────────── */

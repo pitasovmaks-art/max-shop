@@ -159,7 +159,6 @@ app.use('/api/subcategories', require('./routes/subcategories'));
 app.use('/api/orders',        require('./routes/orders'));
 app.use('/api/service-requests', require('./routes/service-requests'));
 app.use('/api/stores',        require('./routes/stores'));
-app.use('/api/address-suggestions', require('./routes/address-suggestions'));
 app.use('/api/cdek',          require('./routes/cdek'));
 app.use('/api/users',         require('./routes/users'));
 app.use('/api/favorites',     require('./routes/favorites'));

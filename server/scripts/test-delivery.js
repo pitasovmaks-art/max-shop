@@ -1,58 +1,20 @@
-/* Real auth/router + fake address provider. No external requests or orders. */
+/* CDEK directory and carrier-specific notifications; HTTPS stubbed, no external requests. */
 process.env.MAX_BOT_TOKEN = 'delivery-test-token';
 process.env.ADMIN_PASSWORD = 'delivery-test-admin';
 process.env.BOT_ADMIN_IDS = '123';
+process.env.CDEK_CLIENT_ID = 'test-account';
+process.env.CDEK_CLIENT_SECRET = 'test-secret';
 const assert = require('node:assert/strict');
-const crypto = require('node:crypto');
 const express = require('express');
-const { createRouter } = require('../routes/address-suggestions');
-function signed(id) {
-    const params = new URLSearchParams({ auth_date: String(Math.floor(Date.now()/1000)), user: JSON.stringify({id}) });
-    const secret = crypto.createHmac('sha256','WebAppData').update(process.env.MAX_BOT_TOKEN).digest();
-    params.set('hash',crypto.createHmac('sha256',secret).update([...params].map(([k,v])=>`${k}=${v}`).sort().join('\n')).digest('hex'));
-    return encodeURIComponent(params.toString());
-}
 async function main() {
-    let calls=0,lastRequest;
     const app=express();
-    app.use('/disabled',createRouter({token:''}));
-    app.use('/broken',createRouter({token:'test',fetchImpl:async()=>{throw Error('network')}}));
-    app.use('/suggest',createRouter({token:'server-only-key',fetchImpl:async(url,options)=>{
-        calls++;lastRequest={url,...options};return {ok:true,json:async()=>({suggestions:[
-            {value:'ул Авроры',data:{city:'Самара'}},
-            {value:'ул Авроры, д 7',data:{city:'Самара',house:'7'}},
-            {value:'Москва, Авроры 7',data:{city:'Москва',house:'7'}},
-        ]})};
-    }}));
     const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
     const base=`http://127.0.0.1:${server.address().port}`;
     let count=0;
     const check=(name,fn)=>{fn();count++;console.log('✅ '+name)};
-    const get=async(path,auth=signed(123))=>{const res=await fetch(base+path,{headers:auth?{'X-Init-Data':auth}:{}});return {status:res.status,body:await res.json()}};
+    const get=async path=>{const res=await fetch(base+path);return {status:res.status,body:await res.json()}};
+    let r;
     try {
-        let r=await get('/suggest?city=Самара&q=Авр',null);
-        check('unauthenticated request rejected',()=>assert.equal(r.status,401));
-        r=await get('/disabled?city=Самара&q=Авр');
-        check('no key: explicit disabled response, manual input remains available',()=>assert.deepEqual(r.body,{enabled:false,suggestions:[]}));
-        r=await get('/suggest?city=Самара&q=А');
-        check('short query rejected before provider',()=>assert.equal(r.status,400));
-        r=await get('/suggest?city=&q=Авр');
-        check('missing city rejected',()=>assert.equal(r.status,400));
-        r=await get('/suggest?city=Самара&q='+ 'a'.repeat(201));
-        check('long query rejected',()=>assert.equal(r.status,400));
-        r=await get('/suggest?city=Самара&q=Авр');
-        check('street and house suggestions returned',()=>assert.equal(r.body.suggestions.length,2));
-        check('other-city suggestions removed',()=>assert.ok(r.body.suggestions.every(s=>!s.value.includes('Москва'))));
-        check('house flag differentiates partial street from complete address',()=>assert.deepEqual(r.body.suggestions.map(s=>s.hasHouse),[false,true]));
-        check('city passed as provider restriction',()=>assert.deepEqual(JSON.parse(lastRequest.body).locations,[{city:'Самара'}]));
-        check('only server sends provider key',()=>{assert.equal(lastRequest.headers.Authorization,'Token server-only-key');assert.ok(!JSON.stringify(r.body).includes('server-only-key'))});
-        r=await get('/broken?city=Самара&q=Авр');
-        check('provider failure gives recoverable 503',()=>assert.equal(r.status,503));
-        for(let i=0;i<29;i++) await get('/suggest?city=Самара&q=Авр');
-        const previous=calls;r=await get('/suggest?city=Самара&q=Авр');
-        check('30/min per-user quota, excess never reaches provider',()=>{assert.equal(r.status,429);assert.equal(calls,previous)});
-        r=await get('/suggest?city=Самара&q=Авр',signed(456));
-        check('other user has separate quota',()=>assert.equal(r.status,200));
         // Exercise real bot formatting and CDEK route with HTTPS stubbed at the boundary.
         const https=require('https'),{EventEmitter}=require('events');
         const originalRequest=https.request;
@@ -82,6 +44,31 @@ async function main() {
             r=await get('/cdek/offices?city=Другой');
             check('CDEK does not silently select unrelated first city',()=>assert.deepEqual(r.body,[]));
         } finally {https.request=originalRequest;}
+        const fs=require('fs'),vm=require('vm'),path=require('path');
+        const elements=new Map();
+        const getElement=id=>{if(!elements.has(id))elements.set(id,{value:'',checked:false,textContent:'',classList:{add(){},toggle(){}},setAttribute(){}});return elements.get(id)};
+        const values=new Map([['city','msk'],['cityName','Самара']]);
+        let externalRequests=0;
+        const ctx=vm.createContext({console,window:{},document:{addEventListener(){},getElementById:getElement},
+            localStorage:{getItem:key=>values.get(key)||null},fetch:()=>{externalRequests++;throw Error('unexpected network')}});
+        const source=fs.readFileSync(path.join(__dirname,'../../src/cart/checkout.js'),'utf8');
+        vm.runInContext(source,ctx);
+        vm.runInContext('loadCdekOfficesForCurrentCity=function(){};setDeliveryCarrier("ozon")',ctx);
+        check('empty manual Ozon address is rejected',()=>assert.equal(vm.runInContext('deliveryPointAddress()',ctx),''));
+        getElement('pointAddress').value='Авроры';
+        check('manual address requires a house number',()=>assert.equal(vm.runInContext('deliveryPointAddress()',ctx),''));
+        getElement('pointAddress').value='ул. Авроры, 7, корпус 2';
+        check('manual Ozon address includes selected city',()=>assert.equal(vm.runInContext('deliveryPointAddress()',ctx),'Ozon: Самара, ул. Авроры, 7, корпус 2'));
+        vm.runInContext('handlePointAddressInput()',ctx);
+        check('typing manual address makes no external request',()=>assert.equal(externalRequests,0));
+        vm.runInContext('setDeliveryCarrier("cdek")',ctx);
+        check('carrier switch clears previous manual address',()=>assert.equal(getElement('pointAddress').value,''));
+        getElement('manualPoint').checked=true;
+        vm.runInContext('toggleManualPoint()',ctx);
+        getElement('pointAddress').value='Тестовая, 9';
+        check('CDEK manual fallback works',()=>assert.equal(vm.runInContext('deliveryPointAddress()',ctx),'СДЭК: Самара, Тестовая, 9'));
+        values.set('cityName','Москва');
+        check('city change resets previous point',()=>assert.equal(vm.runInContext('deliveryPointAddress()',ctx),''));
         console.log(`Passed ${count} checks`);
     } finally {server.close();}
 }

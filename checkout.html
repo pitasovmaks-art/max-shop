@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="light dark">
     <title>Точка Монтажа — Оформление заказа</title>
-    <link rel="stylesheet" href="src/cart/checkout.css?v=20261102delivery">
+    <link rel="stylesheet" href="src/cart/checkout.css?v=20261102manual">
     <link rel="stylesheet" href="src/cookie.css?v=20261102status">
     <script src="https://st.max.ru/js/max-web-app.js"></script>
     <script src="/src/shopGuard.js?v=20261026b"></script>
@@ -86,8 +86,7 @@
                     <div id="manualPointFields" class="hidden">
                         <label class="field__label" for="pointAddress">Адрес пункта выдачи *</label>
                         <input class="field__input" id="pointAddress" maxlength="350" type="text" autocomplete="off"
-                            placeholder="Начните вводить улицу, затем укажите дом" aria-describedby="pointHint" aria-controls="addressSuggestions" aria-expanded="false" oninput="handlePointAddressInput()">
-                        <div id="addressSuggestions" class="address-suggestions" aria-label="Подсказки адреса"></div>
+                            placeholder="Улица, дом, корпус" aria-describedby="pointHint" oninput="handlePointAddressInput()">
                         <p class="pvz-hint" id="pointHint" role="status"></p>
                     </div>
                     <p class="pvz-hint hidden" id="ozonPointNote">Укажите адрес пункта выдачи Ozon, в котором хотите получить заказ. Доступность пункта подтвердим при оформлении отправления. Номер получателя должен быть привязан к аккаунту Ozon.</p>
@@ -230,7 +229,7 @@
 <script src="src/shared/sellerConfig.js?v=20261023"></script>
 <script src="src/shared/escHtml.js?v=20261020"></script>
 <script src="src/shared/cartPricing.js?v=20261024cart"></script>
-<script src="src/cart/checkout.js?v=20261102delivery"></script>
+<script src="src/cart/checkout.js?v=20261102manual"></script>
 <script src="src/cookie.js?v=20260530b"></script>
 </body>
 </html>
