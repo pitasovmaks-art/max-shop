@@ -344,8 +344,8 @@ html.city-unknown #city-screen { display: flex; }
 }
 .cat-tile__ic, .cat-card__ic {
     flex-shrink: 0;
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -356,16 +356,16 @@ html.city-unknown #city-screen { display: flex; }
     color: var(--accent);
     border-radius: 10px;
 }
-.cat-tile--sale .i, .cat-card--sale .i { width: 30px; height: 30px; }
+.cat-tile--sale .i, .cat-card--sale .i { width: 26px; height: 26px; }
 .cat-tile span:last-child, .cat-card__label {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     line-height: 1.3;
     min-height: 2.6em;
     color: var(--text-primary);
     overflow-wrap: anywhere;
 }
-.cat-card--skel .skel-tile__ic { width: 44px; height: 44px; border-radius: 10px; }
+.cat-card--skel .skel-tile__ic { width: 36px; height: 36px; border-radius: 10px; }
 
 /* ─── Catalog: subcategory screen — тоже вертикальный список (не сетка
    2×N). У подкатегорий своей иконки в API нет, поэтому слева её нет —

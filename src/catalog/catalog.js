@@ -408,13 +408,13 @@ function renderCategoryRail() {
     if (onCatalogPage) {
         const saleCard = hasSale
             ? `<button class="cat-card cat-card--sale" onclick="${openTile('sale')}">
-                <span class="cat-card__ic">${iconSvg('sale', 40)}</span>
+                <span class="cat-card__ic">${iconSvg('sale', 32)}</span>
                 <span class="cat-card__label">Акции</span>
             </button>`
             : '';
         rail.innerHTML = saleCard + nonEmptyCats.map(c =>
             `<button class="cat-card" onclick="${openTile(c.id)}">
-                <span class="cat-card__ic">${categoryIconSvg(c, 40)}</span>
+                <span class="cat-card__ic">${categoryIconSvg(c, 32)}</span>
                 <span class="cat-card__label">${c.name}</span>
             </button>`
         ).join('');
@@ -424,13 +424,13 @@ function renderCategoryRail() {
 
     const saleTile = hasSale
         ? `<button class="cat-tile cat-tile--sale" onclick="${openTile('sale')}">
-            <span class="cat-tile__ic">${iconSvg('sale', 40)}</span>
+            <span class="cat-tile__ic">${iconSvg('sale', 32)}</span>
             <span>Акции</span>
         </button>`
         : '';
     rail.innerHTML = saleTile + nonEmptyCats.map(c =>
         `<button class="cat-tile" onclick="${openTile(c.id)}">
-            <span class="cat-tile__ic">${categoryIconSvg(c, 40)}</span>
+            <span class="cat-tile__ic">${categoryIconSvg(c, 32)}</span>
             <span>${c.name}</span>
         </button>`
     ).join('');
