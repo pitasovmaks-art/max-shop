@@ -322,15 +322,16 @@ html.city-unknown #city-screen { display: flex; }
 }
 .cat-tile, .cat-card {
     box-sizing: border-box;
+    position: relative;
     scroll-snap-align: start;
     flex: 0 0 168px;
-    min-height: 142px;
+    min-height: 112px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 18px 16px;
+    justify-content: flex-start;
+    gap: 0;
+    padding: 16px 14px 40px;
     background: var(--bg-card);
     color: var(--text-primary);
     border-radius: var(--radius-md);
@@ -343,29 +344,49 @@ html.city-unknown #city-screen { display: flex; }
     outline-offset: -3px;
 }
 .cat-tile__ic, .cat-card__ic {
-    flex-shrink: 0;
-    width: 36px;
-    height: 36px;
+    position: absolute;
+    right: 14px;
+    bottom: 12px;
+    width: 26px;
+    height: 26px;
     color: var(--text-primary);
     display: flex;
     align-items: center;
     justify-content: center;
 }
-.cat-tile--sale .cat-tile__ic, .cat-card--sale .cat-card__ic {
-    background: var(--accent-ink);
-    color: var(--accent);
-    border-radius: 10px;
+.category-art__body { fill: var(--text-primary); }
+.category-art__paint { fill: var(--accent); }
+.category-art__detail {
+    fill: none;
+    stroke: var(--bg-card);
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+    stroke-linecap: round;
 }
-.cat-tile--sale .i, .cat-card--sale .i { width: 26px; height: 26px; }
+.category-art__accent-line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
 .cat-tile span:last-child, .cat-card__label {
-    font-size: 15px;
+    position: relative;
+    font-size: 16px;
     font-weight: 700;
     line-height: 1.3;
     min-height: 2.6em;
     color: var(--text-primary);
     overflow-wrap: anywhere;
 }
-.cat-card--skel .skel-tile__ic { width: 36px; height: 36px; border-radius: 10px; }
+.cat-card--skel .skel-tile__ic {
+    position: absolute;
+    right: 14px;
+    bottom: 12px;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+}
 
 /* ─── Catalog: subcategory screen — тоже вертикальный список (не сетка
    2×N). У подкатегорий своей иконки в API нет, поэтому слева её нет —

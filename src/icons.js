@@ -45,6 +45,15 @@ const CATEGORY_ICON_MAP = {
 };
 const DEFAULT_CATEGORY_ICON = 'box';
 
+const CATEGORY_ART = {
+    sale: '<path class="category-art__accent-line" d="m12 35 24-24"/><circle cx="14" cy="14" r="5" class="category-art__accent-line"/><circle cx="34" cy="34" r="5" class="category-art__accent-line"/>',
+    gun: '<path class="category-art__body" d="M4 13h7v-3h30l3 5v13l-8 2-6-2 4 12-8 2-5-15h-6l2 14h13v4H7v-4h4L8 19H1v-3h3z"/><path class="category-art__paint" d="M14 11h25v14H14z"/><path class="category-art__detail" d="M17 15h7m-7 4h7M10 21l2 17M34 14h3"/>',
+    drill: '<path class="category-art__body" d="M2 13h6l2-5h11V6h19l2 5v16l-7 3-1 9h6v7H17v-7h7l-2-17H10l-2-3H2z"/><path class="category-art__paint" d="M23 8h16v17H28v-5h-5zM20 39h18v5H20zM25 27h7v10h-5z"/><path class="category-art__detail" d="M12 12v7m5-7v7m12-7h7"/>',
+    fasteners: '<path class="category-art__body" d="M6 11h5v26l-2 8-3-8zM18 8h5v26l-2 8-3-8zM30 5h5v26l-2 8-3-8zM40 3h5v25l-2 8-3-8z"/><path class="category-art__paint" d="m3 13 42-9v12L3 25z"/><path class="category-art__detail" d="m14 13 1 8m11-11 1 8m10-11 1 8"/>',
+    pouch: '<path class="category-art__body" d="M16 3h16l4 11 7 4 1 22-11 5-10-2-9 2-10-6 2-20 7-5z"/><path class="category-art__paint" d="M15 5h18v4H15zM8 23l12 3v14l-11-4zM23 26l16-4v15l-15 4z"/><path class="category-art__detail" d="M14 14q10 7 22 0M17 10h14M24 29v8M10 21l9 2"/>',
+    toolbox: '<path class="category-art__body" d="M29 1h12v28h3v15H8V12h21z"/><path class="category-art__detail" d="M31 10V3h8v7M9 20h33M9 31h33M12 15h10m-10 10h10m-10 12h10"/><path class="category-art__paint" d="M27 15h6v3h-6zM27 25h6v3h-6zM27 36h6v3h-6z"/><circle cx="12" cy="44" r="3" class="category-art__body"/><circle cx="41" cy="44" r="3" class="category-art__body"/>',
+};
+
 function categoryIconSvg(cat, size) {
     // Known product families override legacy emoji; new categories keep their fallback.
     const name = String(cat && cat.name || '').toLowerCase();
@@ -55,5 +64,7 @@ function categoryIconSvg(cat, size) {
     else if (/расход|креп[её]ж/.test(name)) key = 'fasteners';
     else if (/инструмент/.test(name)) key = 'drill';
     else if (/акци/.test(name)) key = 'sale';
-    return iconSvg(key || (cat && CATEGORY_ICON_MAP[cat.icon]) || DEFAULT_CATEGORY_ICON, size);
+    key = key || (cat && CATEGORY_ICON_MAP[cat.icon]) || DEFAULT_CATEGORY_ICON;
+    if (!CATEGORY_ART[key]) return iconSvg(key, size);
+    return `<svg class="i category-art" width="${size || 26}" height="${size || 26}" viewBox="0 0 48 48" fill="none" aria-hidden="true">${CATEGORY_ART[key]}</svg>`;
 }
