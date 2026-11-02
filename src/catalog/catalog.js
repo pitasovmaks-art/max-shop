@@ -418,7 +418,6 @@ function renderCategoryRail() {
                 <span class="cat-card__label">${c.name}</span>
             </button>`
         ).join('');
-        initRailFade(rail);
         return;
     }
 
@@ -1150,22 +1149,13 @@ function openSubcatsScreen(catId, navMode = 'push') {
     titleEl.textContent = cat.name;
     const crumb = document.getElementById('subcatsBreadcrumb');
     if (crumb) crumb.textContent = cat.name;
-    // Правка 3: вертикальный список вместо сетки 2×N. У подкатегорий своей
-    // иконки в API нет (только у категорий) — строки без иконки, только
-    // название + стрелка; «Все товары» — функциональная строка, не данные
-    // из API, поэтому у неё иконка остаётся (помогает отличить от обычных
-    // подкатегорий на глаз).
-    const chev = `<span class="subcat-list__chevron">${iconSvg('chev', 18)}</span>`;
     const subs = categoryNonEmptySubs(catId);
     grid.innerHTML = subs.map(s => `
         <button class="subcat-list__item" onclick="openPairProducts(${catId},${s.id})">
             <span class="subcat-list__label">${s.name}</span>
-            ${chev}
         </button>`).join('')
         + `<button class="subcat-list__item subcat-list__item--all" onclick="openPairProducts(${catId},null)">
-            <span class="subcat-list__ic">${iconSvg('grid', 18)}</span>
             <span class="subcat-list__label">Все товары</span>
-            ${chev}
         </button>`;
     catalogPushOrReplace(`catalog.html?category=${catId}`, navMode);
     showCatalogScreen('subcats');

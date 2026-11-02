@@ -59,7 +59,7 @@ function categoryIconSvg(cat, size) {
     const name = String(cat && cat.name || '').toLowerCase();
     let key;
     if (/монтажн.*пистолет/.test(name)) key = 'gun';
-    else if (/систем.*хранен|органайзер|ящик/.test(name)) key = 'toolbox';
+    else if (/систем.*хран[еа]н|органайзер|ящик/.test(name)) key = 'toolbox';
     else if (/экипиров|подсум|перчат|сумк/.test(name)) key = 'pouch';
     else if (/расход|креп[её]ж/.test(name)) key = 'fasteners';
     else if (/инструмент/.test(name)) key = 'drill';

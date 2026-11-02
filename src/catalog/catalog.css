@@ -304,22 +304,14 @@ html.city-unknown #city-screen { display: flex; }
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent 100%);
             mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent 100%);
 }
-/* Category cards retain a horizontal rail, including future categories. */
+/* Home retains its horizontal rail; Catalog wraps into two columns. */
 .cat-grid {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     padding: 10px 16px 6px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: 16px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
 }
-.cat-grid::-webkit-scrollbar { display: none; }
-.cat-grid.rail--fade {
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
-    mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
-}
+.cat-grid > .cat-card { min-width: 0; }
 .cat-tile, .cat-card {
     box-sizing: border-box;
     position: relative;
@@ -388,55 +380,35 @@ html.city-unknown #city-screen { display: flex; }
     border-radius: 4px;
 }
 
-/* ─── Catalog: subcategory screen — тоже вертикальный список (не сетка
-   2×N). У подкатегорий своей иконки в API нет, поэтому слева её нет —
-   кроме служебной строки «Все товары» (не данные API, см. catalog.js). */
+/* Subcategories use the same two-column cards, with text only. */
 .subcat-list {
-    display: flex;
-    flex-direction: column;
-    padding: 4px 16px 10px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 10px 16px 6px;
 }
 .subcat-list__item {
+    box-sizing: border-box;
     display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-height: 56px;
-    padding: 8px 2px;
-    background: transparent;
-    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+    min-width: 0;
+    min-height: 112px;
+    padding: 16px 14px;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    box-shadow: var(--card-shadow);
     text-align: left;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
+    line-height: 1.3;
     color: var(--text-primary);
 }
-.subcat-list__item:last-child { border-bottom: none; }
-/* Было color:var(--accent-ink) (#FFFFFF в обеих темах) — на var(--bg-page)
-   (фон под этой строкой, у .subcat-list-item--all нет своего background)
-   это даёт контраст по WCAG ~1.12:1 в светлой теме (#FFFFFF на #EEF3F1 —
-   почти невидимо) и ~18.4:1 в тёмной (#FFFFFF на #0E1613 — там было
-   нормально). var(--text-primary) — та же переменная, что уже использует
-   .subcat-list__item по умолчанию (обычные строки подкатегорий) — даёт
-   ~14.4:1 в светлой и ~16:1 в тёмной теме, то есть с запасом выше
-   требуемых 4.5:1 в обеих. --accent-ink предназначена для текста НА
-   цветной/акцентной заливке (кнопки и т.п.), а не на var(--bg-page) — тут
-   её применение и было ошибкой. */
-.subcat-list__item--all { color: var(--text-primary); }
-.subcat-list__ic {
-    flex-shrink: 0;
-    width: 36px; height: 36px;
-    border-radius: 10px;
-    background: var(--accent);
-    color: var(--accent-ink);
-    display: flex; align-items: center; justify-content: center;
+.subcat-list__item:active { transform: scale(.98); }
+.subcat-list__item:focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: -3px;
 }
-.subcat-list__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.subcat-list__chevron {
-    flex-shrink: 0;
-    display: flex;
-    color: var(--text-secondary);
-    opacity: .6;
-}
+.subcat-list__label { min-width: 0; overflow-wrap: anywhere; }
 
 /* ─── Home: promo banner carousel ───────────────────────── */
 .banner-wrap { padding: 10px 16px 4px; }
