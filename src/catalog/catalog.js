@@ -1153,10 +1153,7 @@ function openSubcatsScreen(catId, navMode = 'push') {
     grid.innerHTML = subs.map(s => `
         <button class="subcat-list__item" onclick="openPairProducts(${catId},${s.id})">
             <span class="subcat-list__label">${s.name}</span>
-        </button>`).join('')
-        + `<button class="subcat-list__item subcat-list__item--all" onclick="openPairProducts(${catId},null)">
-            <span class="subcat-list__label">Все товары</span>
-        </button>`;
+        </button>`).join('');
     catalogPushOrReplace(`catalog.html?category=${catId}`, navMode);
     showCatalogScreen('subcats');
 }
