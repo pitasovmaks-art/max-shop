@@ -169,7 +169,7 @@ function orderCardHtml(o) {
         });
         const itemsText  = o.items.map(i => `${escHtml(i.name)} × ${Number(i.qty) || 0}`).join(', ');
         const itemsData  = encodeURIComponent(JSON.stringify(o.items));
-        const trackBtn   = o.trackingNumber
+        const trackBtn   = o.trackingNumber && o.deliveryCarrier !== 'ozon'
             ? `<a class="track-btn" href="https://www.cdek.ru/ru/tracking?order_id=${encodeURIComponent(o.trackingNumber)}" target="_blank">
                    📦 Отследить посылку
                </a>`
@@ -184,7 +184,7 @@ function orderCardHtml(o) {
             <div class="order-card__date">${date}</div>
             <div class="order-card__items">${itemsText}</div>
             <div class="order-card__store">📍 ${escHtml(o.store)}</div>
-            ${o.delivery === 'russia' && o.address ? `<div class="order-card__address">📦 Пункт СДЭК: ${escHtml(o.address)}</div>` : ''}
+            ${o.delivery === 'russia' && o.address ? `<div class="order-card__address">📦 ${o.deliveryCarrier === 'ozon' ? 'Ozon' : 'СДЭК'}: ${escHtml(o.address)}</div>` : ''}
             ${o.delivery === 'city'   && o.address ? `<div class="order-card__address">🚗 Адрес доставки: ${escHtml(o.address)}</div>` : ''}
             ${o.trackingNumber ? `<div class="order-card__tracking">🔖 Трек-номер: ${escHtml(o.trackingNumber)}</div>` : ''}
             ${trackBtn}

@@ -181,6 +181,7 @@ async function createSchema() {
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS city TEXT`);
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tg_id TEXT`);
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT`);
+    await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_carrier TEXT;`);
     await pool.query(`
         CREATE TABLE IF NOT EXISTS service_requests (
             id              SERIAL  PRIMARY KEY,

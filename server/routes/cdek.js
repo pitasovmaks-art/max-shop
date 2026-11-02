@@ -63,7 +63,7 @@ router.post('/token', requireAdmin, async (req, res) => {
 /* GET /api/cdek/offices?city=Москва */
 router.get('/offices', async (req, res) => {
     const cityName = req.query.city;
-    if (!cityName) return res.status(400).json({ error: 'city required' });
+    if (typeof cityName !== 'string' || !cityName.trim() || cityName.length > 100) return res.status(400).json({ error: 'city required' });
 
     try {
         const token = await getToken();
@@ -74,13 +74,15 @@ router.get('/offices', async (req, res) => {
         if (!Array.isArray(cities) || !cities.length) {
             return res.json([]);
         }
-        const cityCode = cities[0].code;
+        const matching = cities.find(c => (c.city || '').toLocaleLowerCase('ru') === cityName.trim().toLocaleLowerCase('ru'));
+        if (!matching) return res.json([]);
+        const cityCode = matching.code;
 
         /* 2. Получить отделения */
         const points = await cdekRequest('GET', `/v2/deliverypoints?city_code=${cityCode}&type=PVZ&have_cash_less=1`, null, token);
         if (!Array.isArray(points)) return res.json([]);
 
-        const result = points.slice(0, 50).map(p => ({
+        const result = points.map(p => ({
             code:      p.code,
             name:      p.name || p.code,
             address:   p.location?.address || '',

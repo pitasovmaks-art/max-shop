@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="light dark">
     <title>Точка Монтажа — Оформление заказа</title>
-    <link rel="stylesheet" href="src/cart/checkout.css?v=20261102status">
+    <link rel="stylesheet" href="src/cart/checkout.css?v=20261102delivery">
     <link rel="stylesheet" href="src/cookie.css?v=20261102status">
     <script src="https://st.max.ru/js/max-web-app.js"></script>
     <script src="/src/shopGuard.js?v=20261026b"></script>
@@ -71,15 +71,28 @@
             <!-- Russia delivery -->
             <div id="delivery-russia" class="hidden">
                 <div class="card" style="margin-top:12px;">
-                    <div class="cdek-section">
-                        <div class="cdek-section__label">Выберите отделение СДЭК</div>
-                        <input class="field__input cdek-office-search" id="cdekOfficeSearch" type="text"
-                            placeholder="Поиск отделения..."
-                            oninput="handleCdekOfficeSearch(this.value)"
-                            autocomplete="off" style="margin-bottom:8px;">
-                        <div id="cdekOfficesList" class="cdek-offices-list"></div>
-                        <div id="cdekError" class="cdek-error-msg hidden">Выберите отделение СДЭК</div>
+                    <div class="delivery-tabs" role="group" aria-label="Служба доставки">
+                        <button type="button" class="delivery-tab delivery-tab--active" id="carrier-cdek" aria-pressed="true" onclick="setDeliveryCarrier('cdek')">СДЭК</button>
+                        <button type="button" class="delivery-tab" id="carrier-ozon" aria-pressed="false" onclick="setDeliveryCarrier('ozon')">Ozon</button>
                     </div>
+                    <p class="pvz-city" id="pvzCity"></p>
+                    <div id="cdekPicker">
+                        <label class="field__label" for="cdekOfficeSearch">Найти пункт СДЭК</label>
+                        <input class="field__input cdek-office-search" id="cdekOfficeSearch" type="search"
+                            placeholder="Улица или название пункта" oninput="handleCdekOfficeSearch(this.value)" autocomplete="off">
+                        <div id="cdekOfficesList" class="cdek-offices-list"></div>
+                    </div>
+                    <label class="legal-check" id="manualPointToggle"><input type="checkbox" id="manualPoint" onchange="toggleManualPoint()"><span>Указать адрес пункта вручную</span></label>
+                    <div id="manualPointFields" class="hidden">
+                        <label class="field__label" for="pointAddress">Адрес пункта выдачи *</label>
+                        <input class="field__input" id="pointAddress" maxlength="350" type="text" autocomplete="off"
+                            placeholder="Начните вводить улицу, затем укажите дом" aria-describedby="pointHint" aria-controls="addressSuggestions" aria-expanded="false" oninput="handlePointAddressInput()">
+                        <div id="addressSuggestions" class="address-suggestions" aria-label="Подсказки адреса"></div>
+                        <p class="pvz-hint" id="pointHint" role="status"></p>
+                    </div>
+                    <p class="pvz-hint hidden" id="ozonPointNote">Укажите адрес пункта выдачи Ozon, в котором хотите получить заказ. Доступность пункта подтвердим при оформлении отправления. Номер получателя должен быть привязан к аккаунту Ozon.</p>
+                    <p class="pvz-selected" id="selectedPoint" aria-live="polite"></p>
+                    <div id="cdekError" class="field__error hidden" role="alert">Выберите пункт или введите его адрес с номером дома.</div>
                 </div>
             </div>
         </section>
@@ -217,7 +230,7 @@
 <script src="src/shared/sellerConfig.js?v=20261023"></script>
 <script src="src/shared/escHtml.js?v=20261020"></script>
 <script src="src/shared/cartPricing.js?v=20261024cart"></script>
-<script src="src/cart/checkout.js?v=20261024cart"></script>
+<script src="src/cart/checkout.js?v=20261102delivery"></script>
 <script src="src/cookie.js?v=20260530b"></script>
 </body>
 </html>

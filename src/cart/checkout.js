@@ -2,6 +2,7 @@
 let _stores = [];
 let _deliveryMethod = 'pickup'; // 'pickup' | 'city' | 'russia'
 let _selectedCdekAddress = '';
+let _deliveryCarrier = 'cdek';
 
 async function loadAndRenderStores() {
     try {
@@ -144,7 +145,8 @@ function applyDelivery(method) {
         if (sec) sec.classList.toggle('hidden', m !== method);
     });
 
-    if (method === 'russia') loadCdekOfficesForCurrentCity();
+    if (method === 'russia') initDeliveryPointPicker();
+    else { _cdekSequence++; cancelAddressSuggestions(); }
 
     renderSummary();
 }
@@ -292,7 +294,7 @@ function validate() {
         if (!addr) { showError('fieldAddress', 'Введите адрес доставки'); ok = false; }
     }
     if (_deliveryMethod === 'russia') {
-        if (!_selectedCdekAddress) {
+        if (!deliveryPointAddress()) {
             const err = document.getElementById('cdekError');
             if (err) err.classList.remove('hidden');
             ok = false;
@@ -424,7 +426,7 @@ async function submitOrder() {
         address    = document.getElementById('inputAddress').value.trim();
         storeLabel = city === 'krd' ? 'Краснодар' : city === 'msk' ? 'Москва' : 'Доставка по городу';
     } else {
-        address    = _selectedCdekAddress;
+        address    = deliveryPointAddress();
         storeLabel = 'Доставка по России';
     }
 
@@ -437,6 +439,7 @@ async function submitOrder() {
                 phone,
                 store:    storeLabel,
                 delivery: _deliveryMethod,
+                deliveryCarrier: _deliveryMethod === 'russia' ? _deliveryCarrier : undefined,
                 address:  address || undefined,
                 city:     city    || undefined,
                 comment:  comment || undefined,
@@ -525,66 +528,162 @@ async function submitOrder() {
     }
 }
 
-/* ─── CDEK office search ────────────────────────────────── */
-let _cdekOffices     = [];
+/* ─── Delivery points: CDEK directory + manual address for both carriers ─── */
+let _cdekOffices = [];
 let _cdekOfficeQuery = '';
+let _pointCity = '';
+let _cdekSequence = 0;
+let _suggestionSequence = 0;
+let _suggestionTimer;
+let _suggestionAbort;
 
-async function loadCdekOfficesForCurrentCity() {
-    const cityName = localStorage.getItem('cityName')
-        || (localStorage.getItem('city') === 'krd' ? 'Краснодар' : 'Москва');
-    await fetchCdekOffices(cityName);
+function deliveryPointCity() {
+    return localStorage.getItem('cityName') || (localStorage.getItem('city') === 'krd' ? 'Краснодар' : 'Москва');
 }
-
-async function fetchCdekOffices(cityName) {
-    const list = document.getElementById('cdekOfficesList');
-    if (!list) return;
-    list.innerHTML = '<div class="cdek-loading">Загружаем отделения...</div>';
-    try {
-        const r = await fetch(`/api/cdek/offices?city=${encodeURIComponent(cityName)}`);
-        if (!r.ok) throw new Error(r.status);
-        _cdekOffices = await r.json();
-        _cdekOfficeQuery = '';
+function initDeliveryPointPicker() {
+    const city = deliveryPointCity();
+    if (_pointCity !== city) {
+        _pointCity = city;
         _selectedCdekAddress = '';
+        document.getElementById('pointAddress').value = '';
+        document.getElementById('selectedPoint').textContent = '';
+        _cdekOffices = [];
+        _cdekSequence++;
+        cancelAddressSuggestions();
+    }
+    document.getElementById('pvzCity').textContent = 'Город получения: ' + city;
+    if (_deliveryCarrier === 'cdek' && !document.getElementById('manualPoint').checked) loadCdekOfficesForCurrentCity();
+}
+function cancelAddressSuggestions() {
+    clearTimeout(_suggestionTimer);
+    _suggestionSequence++;
+    _suggestionAbort?.abort();
+    document.getElementById('addressSuggestions').replaceChildren();
+    document.getElementById('pointAddress').setAttribute('aria-expanded', 'false');
+}
+function setDeliveryCarrier(carrier) {
+    if (!['cdek','ozon'].includes(carrier) || carrier === _deliveryCarrier) return;
+    _deliveryCarrier = carrier;
+    _selectedCdekAddress = '';
+    _cdekSequence++;
+    cancelAddressSuggestions();
+    document.getElementById('pointAddress').value = '';
+    document.getElementById('selectedPoint').textContent = '';
+    document.getElementById('cdekError').classList.add('hidden');
+    document.getElementById('manualPoint').checked = carrier === 'ozon';
+    document.getElementById('manualPointToggle').classList.toggle('hidden', carrier === 'ozon');
+    document.getElementById('ozonPointNote').classList.toggle('hidden', carrier !== 'ozon');
+    for (const c of ['cdek','ozon']) {
+        const button = document.getElementById('carrier-' + c);
+        button.classList.toggle('delivery-tab--active', c === carrier);
+        button.setAttribute('aria-pressed', String(c === carrier));
+    }
+    toggleManualPoint();
+}
+function toggleManualPoint() {
+    _cdekSequence++;
+    cancelAddressSuggestions();
+    _selectedCdekAddress = '';
+    document.getElementById('selectedPoint').textContent = '';
+    const manual = _deliveryCarrier === 'ozon' || document.getElementById('manualPoint').checked;
+    document.getElementById('manualPointFields').classList.toggle('hidden', !manual);
+    document.getElementById('cdekPicker').classList.toggle('hidden', manual);
+    document.getElementById('pointHint').textContent = 'Введите улицу и номер дома. Подсказки помогают найти адрес, но не подтверждают наличие пункта выдачи.';
+    if (!manual) loadCdekOfficesForCurrentCity();
+    else initDeliveryPointPicker();
+}
+function deliveryPointAddress() {
+    if (_pointCity !== deliveryPointCity()) { initDeliveryPointPicker(); return ''; }
+    const carrier = _deliveryCarrier === 'ozon' ? 'Ozon' : 'СДЭК';
+    if (_deliveryCarrier === 'ozon' || document.getElementById('manualPoint').checked) {
+        const address = document.getElementById('pointAddress').value.trim();
+        if (address.length < 5 || !/\d/.test(address)) return '';
+        return `${carrier}: ${_pointCity}, ${address}`;
+    }
+    return _selectedCdekAddress;
+}
+async function loadCdekOfficesForCurrentCity() {
+    const city = deliveryPointCity();
+    const sequence = ++_cdekSequence;
+    const list = document.getElementById('cdekOfficesList');
+    list.textContent = 'Загружаем отделения…';
+    try {
+        const response = await fetch(`/api/cdek/offices?city=${encodeURIComponent(city)}`);
+        if (!response.ok) throw new Error('unavailable');
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error('invalid response');
+        if (sequence !== _cdekSequence || city !== deliveryPointCity()) return;
+        _cdekOffices = data;
+        _cdekOfficeQuery = document.getElementById('cdekOfficeSearch').value.toLocaleLowerCase('ru');
         renderCdekOffices();
     } catch {
-        list.innerHTML = '<div class="cdek-loading cdek-error">Не удалось загрузить отделения. Введите адрес вручную.</div>';
+        if (sequence === _cdekSequence) list.textContent = 'Не удалось загрузить пункты. Можно указать адрес вручную.';
     }
 }
-
-function handleCdekOfficeSearch(val) {
-    _cdekOfficeQuery = val.toLowerCase();
+function handleCdekOfficeSearch(value) {
+    _cdekOfficeQuery = value.toLocaleLowerCase('ru');
     renderCdekOffices();
 }
-
 function renderCdekOffices() {
     const list = document.getElementById('cdekOfficesList');
-    if (!list) return;
-    const filtered = _cdekOfficeQuery
-        ? _cdekOffices.filter(o =>
-            (o.name + o.address).toLowerCase().includes(_cdekOfficeQuery))
-        : _cdekOffices;
-
-    if (!filtered.length) {
-        list.innerHTML = '<div class="cdek-loading">Отделения не найдены</div>';
-        return;
+    list.replaceChildren();
+    const filtered = _cdekOffices.filter(o => (o.name + ' ' + o.address).toLocaleLowerCase('ru').includes(_cdekOfficeQuery));
+    if (!filtered.length) { list.textContent = 'Пункты не найдены. Можно указать адрес вручную.'; return; }
+    for (const office of filtered) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'cdek-office-item';
+        const address = `СДЭК: ${_pointCity}, ${office.name}, ${office.address}`;
+        button.classList.toggle('cdek-office-item--selected', address === _selectedCdekAddress);
+        for (const [cls, value] of [['cdek-office-name',office.name],['cdek-office-addr',office.address],['cdek-office-hours',office.work_time]]) {
+            if (!value) continue;
+            const line = document.createElement('div'); line.className = cls; line.textContent = value; button.append(line);
+        }
+        button.addEventListener('click', () => {
+            _selectedCdekAddress = address;
+            document.getElementById('selectedPoint').textContent = address;
+            document.getElementById('cdekError').classList.add('hidden');
+            renderCdekOffices();
+        });
+        list.append(button);
     }
-    list.innerHTML = filtered.map(o => {
-        const data = JSON.stringify(o).replace(/"/g, '&quot;');
-        const isSelected = _selectedCdekAddress === `СДЭК: ${o.name}, ${o.address}`;
-        return `<button class="cdek-office-item${isSelected ? ' cdek-office-item--selected' : ''}" onclick="selectCdekOffice(${data},this)">
-            <div class="cdek-office-name">${o.name}</div>
-            <div class="cdek-office-addr">${o.address}</div>
-            ${o.work_time ? `<div class="cdek-office-hours">${o.work_time}</div>` : ''}
-        </button>`;
-    }).join('');
 }
-
-function selectCdekOffice(office, btn) {
-    _selectedCdekAddress = `СДЭК: ${office.name}, ${office.address}`;
-    document.querySelectorAll('.cdek-office-item').forEach(el => el.classList.remove('cdek-office-item--selected'));
-    if (btn) btn.classList.add('cdek-office-item--selected');
-    const err = document.getElementById('cdekError');
-    if (err) err.classList.add('hidden');
+function handlePointAddressInput() {
+    cancelAddressSuggestions();
+    document.getElementById('cdekError').classList.add('hidden');
+    const input = document.getElementById('pointAddress');
+    const query = input.value.trim();
+    if (query.length < 3) return;
+    const sequence = _suggestionSequence;
+    const city = deliveryPointCity();
+    _suggestionTimer = setTimeout(async () => {
+        const hint = document.getElementById('pointHint');
+        _suggestionAbort = new AbortController();
+        try {
+            const response = await authFetch(`/api/address-suggestions?city=${encodeURIComponent(city)}&q=${encodeURIComponent(query)}`, { signal: _suggestionAbort.signal });
+            if (!response.ok) throw new Error('unavailable');
+            const data = await response.json();
+            if (sequence !== _suggestionSequence || city !== deliveryPointCity()) return;
+            if (!data.enabled) { hint.textContent = 'Подсказки пока не подключены. Введите улицу и номер дома вручную.'; return; }
+            hint.textContent = 'Выберите адрес или продолжите ввод. Это адресные подсказки, а не список ПВЗ.';
+            const list = document.getElementById('addressSuggestions');
+            list.replaceChildren();
+            for (const suggestion of (data.suggestions || [])) {
+                const button = document.createElement('button');
+                button.type = 'button'; button.className = 'address-suggestion'; button.textContent = suggestion.value;
+                button.addEventListener('click', () => {
+                    input.value = suggestion.value;
+                    cancelAddressSuggestions();
+                    hint.textContent = suggestion.hasHouse ? 'Проверьте, что по этому адресу находится нужный пункт выдачи.' : 'Теперь укажите номер дома.';
+                    input.focus();
+                });
+                list.append(button);
+            }
+            input.setAttribute('aria-expanded', String(list.children.length > 0));
+        } catch (error) {
+            if (sequence === _suggestionSequence && error.name !== 'AbortError') hint.textContent = 'Подсказки недоступны. Введите улицу и номер дома вручную.';
+        }
+    }, 350);
 }
 
 /* ─── Redirect if cart empty ────────────────────────────── */

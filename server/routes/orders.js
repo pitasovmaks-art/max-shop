@@ -15,6 +15,7 @@ function normalize(o) {
         phone:          o.phone,
         store:          o.store,
         delivery:       o.delivery       || 'pickup',
+        deliveryCarrier: o.delivery === 'russia' ? (o.delivery_carrier || 'cdek') : undefined,
         address:        o.address        || undefined,
         city:           o.city           || undefined,
         tgId:           o.tg_id          || undefined,
@@ -41,7 +42,7 @@ function normalize(o) {
    обычного покупателя (прошёл через настоящий чекаут) цена совпадёт 1:1 —
    он уже проверил её свежими данными перед отправкой. */
 router.post('/', requireUser, async (req, res) => {
-    const { name, phone, store, delivery, address, city, comment, items, total } = req.body;
+    const { name, phone, store, delivery, address, city, comment, items, total, deliveryCarrier } = req.body;
     const tgId = req.tgId;
     if (!name || !phone || !store || !items || total == null) {
         return res.status(400).json({ error: 'Обязательные поля: name, phone, store, items, total' });
@@ -59,6 +60,13 @@ router.post('/', requireUser, async (req, res) => {
     }
 
     const deliveryMethod = delivery || 'pickup';
+    if (!['pickup', 'city', 'russia'].includes(deliveryMethod)) return res.status(400).json({ error: 'Некорректный способ доставки' });
+    const carrier = deliveryMethod === 'russia' ? (deliveryCarrier ?? 'cdek') : null;
+    if (carrier !== null && !['cdek', 'ozon'].includes(carrier)) return res.status(400).json({ error: 'Некорректный перевозчик' });
+    if (deliveryMethod !== 'russia' && deliveryCarrier != null) return res.status(400).json({ error: 'Перевозчик доступен только для доставки по России' });
+    if (deliveryMethod === 'russia' && (typeof address !== 'string' || address.trim().length < 5 || address.length > 500)) {
+        return res.status(400).json({ error: 'Укажите адрес пункта выдачи (до 500 символов)' });
+    }
 
     try {
         const productsById = await loadProductsForPricing(items.map(it => it.id));
@@ -90,10 +98,10 @@ router.post('/', requireUser, async (req, res) => {
         }
 
         const row = await db.queryOne(
-            `INSERT INTO orders (name,phone,store,delivery,address,city,tg_id,comment,items,total)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+            `INSERT INTO orders (name,phone,store,delivery,address,city,tg_id,comment,items,total,delivery_carrier)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
             [name, phone, store, deliveryMethod, address || null, city || null,
-             tgId, comment || null, JSON.stringify(realItems), realTotal]
+             tgId, comment || null, JSON.stringify(realItems), realTotal, carrier]
         );
         const order = normalize(await db.queryOne('SELECT * FROM orders WHERE id=$1', [row.id]));
         notifyStore(order).catch(e => console.error('[bot] notifyStore:', e.message));
@@ -143,7 +151,7 @@ router.put('/:id/status', requireAdmin, async (req, res) => {
         );
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         // Notify customer
-        const o = await db.queryOne('SELECT tg_id, id FROM orders WHERE id=$1', [+req.params.id]);
+        const o = await db.queryOne('SELECT tg_id, id, delivery_carrier FROM orders WHERE id=$1', [+req.params.id]);
         if (o?.tg_id) {
             notifyCustomer(o.tg_id, o.id, status).catch(e => console.error('[bot] notify:', e.message));
         }
@@ -161,9 +169,9 @@ router.put('/:id/tracking', requireAdmin, async (req, res) => {
             [tracking_number, +req.params.id]
         );
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
-        const o = await db.queryOne('SELECT tg_id, id FROM orders WHERE id=$1', [+req.params.id]);
+        const o = await db.queryOne('SELECT tg_id, id, delivery_carrier FROM orders WHERE id=$1', [+req.params.id]);
         if (o?.tg_id) {
-            notifyCustomer(o.tg_id, o.id, 'tracking', tracking_number)
+            notifyCustomer(o.tg_id, o.id, 'tracking', tracking_number, o.delivery_carrier || 'cdek')
                 .catch(e => console.error('[bot] notify tracking:', e.message));
         }
         res.json({ ok: true });

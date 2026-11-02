@@ -126,10 +126,10 @@ db.query = async (sql, params = []) => {
 db.queryOne = async (sql, params = []) => {
     const s = sql.replace(/\s+/g, ' ').trim();
     if (s.startsWith('INSERT INTO orders')) {
-        const [name, phone, store, delivery, address, city, tgId, comment, items, total] = params;
+        const [name, phone, store, delivery, address, city, tgId, comment, items, total, deliveryCarrier] = params;
         const row = {
             id: nextOrderId++, name, phone, store, delivery, address, city,
-            tg_id: tgId, comment, items, total, status: 'new',
+            tg_id: tgId, delivery_carrier: deliveryCarrier, comment, items, total, status: 'new',
             tracking_number: null, created_at: isoNow(),
         };
         orders.push(row);
@@ -263,13 +263,34 @@ async function main() {
         check('вариант МСК -> 201, цена 600₽ (sale_price варианта)', rMsk.status === 201 && JSON.parse(orders[orders.length - 1].items)[0].price === 600);
 
         const rRussia = await post(baseBody({
-            city: 'msk', delivery: 'russia',
+            city: 'msk', delivery: 'russia', address: 'Москва, ул. Тестовая, д. 1',
             items: [{ id: 2, variantLabel: 'M', price: 1, qty: 2 }],
             total: 1400,
         }), initA);
         check('доставка по России -> 201, цена 700₽ (формула sale+surcharge, не больше полной доставки)',
             rRussia.status === 201 && JSON.parse(orders[orders.length - 1].items)[0].price === 700);
         check('итог по России = 700*2 = 1400', orders[orders.length - 1].total === 1400);
+    }
+
+    /* Carrier metadata and legacy compatibility, price formula stays unchanged. */
+    {
+        const valid = {city:'msk',delivery:'russia',address:'Самара, ул. Авроры, д. 7',total:1200};
+        let result = await post(baseBody({...valid,deliveryCarrier:'ozon'}),initA);
+        check('Ozon order is saved with carrier',result.status===201 && orders.at(-1).delivery_carrier==='ozon');
+        check('manager notification retains Ozon carrier/address',lastNotifyStoreCall?.deliveryCarrier==='ozon' && lastNotifyStoreCall.address===valid.address);
+        result = await post(baseBody(valid),initA);
+        check('legacy Russia order without carrier defaults to CDEK',result.status===201 && orders.at(-1).delivery_carrier==='cdek');
+        const before=orders.length;
+        for(const [label,changes] of [
+            ['unknown carrier',{deliveryCarrier:'unknown'}],
+            ['empty address',{deliveryCarrier:'ozon',address:''}],
+            ['too long address',{deliveryCarrier:'ozon',address:'a'.repeat(501)}],
+            ['carrier for pickup',{delivery:'pickup',deliveryCarrier:'ozon'}],
+        ]) {
+            result=await post(baseBody({...valid,...changes}),initA);
+            check(label+' is rejected',result.status===400);
+        }
+        check('invalid carrier/address never creates orders',orders.length===before);
     }
 
     /* ── Недопустимые позиции — 400, ничего не сохраняется ───────────── */

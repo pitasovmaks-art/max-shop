@@ -292,3 +292,14 @@ a      { text-decoration: none; color: inherit; }
 .legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
 .legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
 .legal-footer__links a { color: var(--accent-text); text-decoration: none; }
+
+/* Russia delivery: carrier and address selection */
+.pvz-city { color: var(--text-primary); font-weight: 600; margin: 12px 0; }
+.pvz-hint { color: var(--text-secondary); font-size: 13px; line-height: 1.5; margin: 8px 0; }
+.pvz-selected { color: var(--text-primary); font-size: 14px; line-height: 1.5; margin-top: 12px; overflow-wrap: anywhere; }
+.address-suggestions { max-height: 240px; overflow-y: auto; }
+.address-suggestion { display: block; width: 100%; min-height: 44px; padding: 12px; background: var(--bg-card); color: var(--text-primary); text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.4; }
+.address-suggestion:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; }
+.address-suggestion:active { background: var(--bg-secondary); }
+#manualPointToggle { min-height: 44px; align-items: center; }
+#cdekOfficesList { margin-top: 8px; }

@@ -168,6 +168,8 @@ CREATE TABLE IF NOT EXISTS orders (
     tracking_number TEXT
 );
 
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_carrier TEXT;
+
 -- ─── Заявки на ремонт/обслуживание инструмента ──────────────────────────
 -- Этап 1 (см. PROGRESS.md): создание заявки покупателем + уведомление
 -- менеджера магазина. Назначение стоимости/мастера/статуса — этап 2,

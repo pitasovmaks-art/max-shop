@@ -450,7 +450,7 @@ async function main() {
         check('рублёвый товар: $ и курс в заказе не пишутся (не было $)', JSON.parse(orders[orders.length - 1].items)[0].priceUsdCents === undefined);
 
         const rMsk = await post('/api/orders', {
-            name: 'Т', phone: '+7', store: 'Москва', delivery: 'russia', city: 'msk',
+            name: 'Т', phone: '+7', store: 'Москва', delivery: 'russia', city: 'msk', address: 'Москва, Тестовая, 1',
             items: [{ id: p.id, variantLabel: 'M', price: 1, qty: 1 }], total: 700,
         }, { 'X-Init-Data': initA });
         check('рублёвый товар доставка по России: 201, цена 700₽ (формула sale+surcharge не изменилась)',

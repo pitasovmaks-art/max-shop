@@ -1401,13 +1401,13 @@ function renderOrderList() {
             </div>
             <div class="order-card__store">&#128205; ${escHtml(o.store)}${dlLabel ? ` <span style="opacity:.6;font-size:12px">(${dlLabel})</span>` : ''}</div>
             ${o.delivery === 'city'   && o.address ? `<div class="order-card__store">&#128205; Адрес доставки: ${escHtml(o.address)}</div>` : ''}
-            ${o.delivery === 'russia' && o.address ? `<div class="order-card__store">&#128230; Пункт СДЭК: ${escHtml(o.address)}</div>` : ''}
+            ${o.delivery === 'russia' && o.address ? `<div class="order-card__store">&#128230; ${o.deliveryCarrier === 'ozon' ? 'Ozon' : 'СДЭК'}: ${escHtml(o.address)}</div>` : ''}
             <div class="order-card__items">${itemsText}</div>
             ${o.comment ? `<div class="order-card__comment">&#128172; ${escHtml(o.comment)}</div>` : ''}
             ${(o.delivery === 'russia' || o.deliveryType === 'russia' || (o.delivery !== 'pickup' && o.delivery !== 'city')) ? `
             <div class="order-card__tracking">
                 <input class="tracking-input" id="tracking-${o.id}"
-                       value="${escHtml(o.trackingNumber || '')}" placeholder="Введите трек-номер СДЭК...">
+                       value="${escHtml(o.trackingNumber || '')}" placeholder="${o.deliveryCarrier === 'ozon' ? 'Номер отправления Ozon' : 'Введите трек-номер СДЭК...'}">
                 <button class="tracking-btn" onclick="saveTracking(${o.id})">&#128228; Отправить</button>
             </div>` : ''}
             <div class="order-card__footer">

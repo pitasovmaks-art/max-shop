@@ -380,7 +380,7 @@ async function notifyStore(order) {
     );
 
     const delivery = order.delivery || 'pickup';
-    const methodLabel = DELIVERY_METHOD_LABELS[delivery] || delivery;
+    const methodLabel = delivery === 'russia' ? `По России — ${order.deliveryCarrier === 'ozon' ? 'Ozon' : 'СДЭК'}` : (DELIVERY_METHOD_LABELS[delivery] || delivery);
 
     const parts = [
         `🛍 Новый заказ!`,
@@ -462,10 +462,12 @@ async function notifyServiceRequest(request) {
 }
 
 /* ─── Notify customer about order status change ─────────── */
-async function notifyCustomer(tgId, orderId, status, extra) {
+async function notifyCustomer(tgId, orderId, status, extra, carrier = 'cdek') {
     if (!TOKEN || !tgId) return;
     let text;
-    if (status === 'tracking') {
+    if ((status === 'tracking' || extra) && carrier === 'ozon') {
+        text = `📬 Ваш заказ №${orderId} отправлен через Ozon.\nНомер отправления: ${extra}\nИнформация о доставке и код получения — в приложении Ozon на номере получателя.`;
+    } else if (status === 'tracking') {
         text = `📬 Ваш заказ №${orderId} отправлен!\nТрек-номер СДЭК: ${extra}\nОтследить: https://www.cdek.ru/ru/tracking?order_id=${extra}`;
     } else if (extra) {
         text = `📬 Ваш заказ №${orderId} отправлен! Трек-номер СДЭК: ${extra}\nОтследить: https://www.cdek.ru/ru/tracking?order_id=${extra}`;
