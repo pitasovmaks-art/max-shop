@@ -101,6 +101,19 @@
     --red-rgb: 178,58,46; /* для rgba(var(--red-rgb),alpha) — подложки бейджей типа
                               «нет в наличии» без дублирования hex по файлам */
 
+    /* Order/service badges: opaque foreground/background pairs, WCAG AA. */
+    --status-new-text: #5E5848;
+    --status-new-bg: #E3E0D6;
+    --status-progress-text: #24558C;
+    --status-progress-bg: #E8F0FA;
+    --status-ready-text: #755E00;
+    --status-ready-bg: #F7EBCB;
+    --status-ready-press: #EDDEB1;
+    --status-completed-text: #23603C;
+    --status-completed-bg: #E7F2EA;
+    --status-cancelled-text: #9F3027;
+    --status-cancelled-bg: #F9E9E7;
+
     /* фон карточек категорий (фото товара) — осознанно НЕ менялся при
        смене направления: это мягкие декоративные плашки под фото/иконкой
        товара, на них не лежит текст, требующий контраста, и если
@@ -214,6 +227,18 @@
         --sale-rgb: 224,138,62;
         --shipped: #4FD3B8; /* на rgba(14,124,107,.15)-подложке поверх --bg-card: 8.12:1 */
         --red-rgb: 227,106,95;
+
+        --status-new-text: #B0A890;
+        --status-new-bg: #302B23;
+        --status-progress-text: #8AB9EF;
+        --status-progress-bg: #1D2D40;
+        --status-ready-text: #E8B93A;
+        --status-ready-bg: #39321E;
+        --status-ready-press: #453C23;
+        --status-completed-text: #78CA98;
+        --status-completed-bg: #203527;
+        --status-cancelled-text: #F08C82;
+        --status-cancelled-bg: #3B2321;
 
         --cat-bg-1: #22271F;
         --cat-bg-2: #1C2327;

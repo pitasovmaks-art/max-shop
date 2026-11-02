@@ -36,6 +36,7 @@
     --radius:       14px;
     --nav-h:        64px;
     --header-h:     56px;
+    --logo-surface: #FFFFFF;
 }
 
 /* ─── Reset ─────────────────────────────────────────────── */
@@ -143,9 +144,11 @@ a      { text-decoration: none; color: inherit; }
 }
 
 .login-logo {
-    height: 64px; width: auto;
+    width: 112px; height: 112px;
     object-fit: contain;
-    margin-bottom: 28px;
+    background: var(--logo-surface);
+    border-radius: 16px;
+    margin-bottom: 24px;
 }
 
 .login-lock {

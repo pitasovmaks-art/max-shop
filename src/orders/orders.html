@@ -11,7 +11,7 @@
     <script src="/src/utils/authFetch.js?v=20261003"></script>
     <script src="/src/shared/cartSync.js?v=20261024usd"></script>
     <style>
-        @import url('/src/theme.css?v=20261027');
+        @import url('/src/theme.css?v=20261102status');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { -webkit-text-size-adjust: 100%; }
         body {
@@ -65,11 +65,11 @@
         .order-badge {
             font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 10px;
         }
-        .badge-new       { background: rgba(var(--ink-rgb),0.08); color: rgba(var(--ink-rgb),0.55); }
-        .badge-in_progress { background: rgba(47,111,191,.2); color: var(--info); }
-        .badge-shipped   { background: rgba(14,124,107,.15);   color: var(--shipped); }
-        .badge-completed { background: rgba(47,143,78,.18);    color: var(--success); }
-        .badge-cancelled { background: rgba(192,57,43,.15);    color: var(--red); }
+        .badge-new { background: var(--status-new-bg); color: var(--status-new-text); }
+        .badge-in_progress { background: var(--status-progress-bg); color: var(--status-progress-text); }
+        .badge-shipped { background: var(--status-ready-bg); color: var(--status-ready-text); }
+        .badge-completed { background: var(--status-completed-bg); color: var(--status-completed-text); }
+        .badge-cancelled { background: var(--status-cancelled-bg); color: var(--status-cancelled-text); }
 
         .order-card__items { font-size: 13px; opacity: .75; line-height: 1.5; }
         .order-card__store { font-size: 13px; opacity: .65; }
@@ -90,11 +90,11 @@
 
         .track-btn {
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            height: 44px; background: rgba(14,124,107,0.15); border: 1px solid rgba(14,124,107,0.4);
-            border-radius: var(--radius-md); color: var(--shipped); font-size: 14px; font-weight: 600;
+            height: 44px; background: var(--status-ready-bg); border: 1px solid var(--status-ready-text);
+            border-radius: var(--radius-md); color: var(--status-ready-text); font-size: 14px; font-weight: 600;
             width: 100%; text-decoration: none;
         }
-        .track-btn:active { background: rgba(14,124,107,0.3); }
+        .track-btn:active { background: var(--status-ready-press); }
 
         .reorder-btn {
             display: flex; align-items: center; justify-content: center;
