@@ -7,18 +7,8 @@ const usdPrice = require('./usdPrice');
    иначе сервер начнёт отклонять легитимные заказы или (хуже) считать иначе,
    чем показано покупателю на чекауте. */
 function effectiveItemPrice(item, city, deliveryMethod) {
-    if (deliveryMethod === 'russia') {
-        const delivery = item.priceMskDelivery || item.priceDelivery || 0;
-        if (!delivery) return null;
-        const sale   = item.salePriceMsk || 0;
-        const pickup = item.priceMskPickup || item.priceMsk || 0;
-        if (sale > 0 && pickup > 0) {
-            const surcharge     = delivery - pickup;
-            const saleDelivery  = sale + (surcharge > 0 ? surcharge : 0);
-            return Math.min(saleDelivery, delivery);
-        }
-        return delivery;
-    }
+    // Carrier/delivery changes fulfilment, never the city's product price.
+    // Legacy delivery-price columns remain stored for compatibility only.
     if (city === 'krd') {
         const base = item.priceKrdPickup || item.priceKrd || 0;
         const sale = item.salePriceKrd || 0;
@@ -82,7 +72,7 @@ function resolveOrderItem(cartItem, productsById, city, deliveryMethod) {
 
     if (hasVariants) {
         if (isKrd && !krdVar) return { ok: false, reason: `«${p.name}» недоступен в выбранном городе` };
-        if (!isKrd && deliveryMethod !== 'russia' && !mskVar) {
+        if (!isKrd && !mskVar) {
             return { ok: false, reason: `«${p.name}» недоступен в выбранном городе` };
         }
 

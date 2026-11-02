@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="light dark">
     <title>Точка Монтажа — Оформление заказа</title>
-    <link rel="stylesheet" href="src/cart/checkout.css?v=20261102manual">
+    <link rel="stylesheet" href="src/cart/checkout.css?v=20261102cityprice">
     <link rel="stylesheet" href="src/cookie.css?v=20261102status">
     <script src="https://st.max.ru/js/max-web-app.js"></script>
     <script src="/src/shopGuard.js?v=20261026b"></script>
@@ -213,23 +213,10 @@
     </div>
 </div>
 
-<!-- Price change modal -->
-<div id="priceChangeModal" class="hidden" style="position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);">
-    <div style="width:100%;max-width:400px;background:rgba(30,30,50,0.92);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:24px;color:#fff;">
-        <h3 style="font-size:18px;font-weight:700;margin:0 0 8px;">Изменение цены</h3>
-        <p style="font-size:14px;opacity:.75;margin:0 0 16px;">При доставке по России цена товара изменяется</p>
-        <div id="priceChangeList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;max-height:240px;overflow-y:auto;"></div>
-        <div style="display:flex;gap:10px;">
-            <button id="priceChangeConfirm" style="flex:1;height:48px;background:var(--accent);border:none;border-radius:14px;color:var(--accent-ink);font-size:15px;font-weight:700;cursor:pointer;">Подтвердить</button>
-            <button id="priceChangeCancel" style="flex:1;height:48px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:14px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">Вернуться</button>
-        </div>
-    </div>
-</div>
-
 <script src="src/shared/sellerConfig.js?v=20261023"></script>
 <script src="src/shared/escHtml.js?v=20261020"></script>
-<script src="src/shared/cartPricing.js?v=20261024cart"></script>
-<script src="src/cart/checkout.js?v=20261102manual"></script>
+<script src="src/shared/cartPricing.js?v=20261102cityprice"></script>
+<script src="src/cart/checkout.js?v=20261102cityprice"></script>
 <script src="src/cookie.js?v=20260530b"></script>
 </body>
 </html>

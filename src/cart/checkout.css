@@ -242,20 +242,6 @@ a      { text-decoration: none; color: inherit; }
     color: var(--accent-ink);
 }
 
-/* ─── Price change modal items ──────────────────────────── */
-.pchange-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-    font-size: 14px;
-}
-.pchange-row:last-child { border-bottom: none; }
-.pchange-name { flex: 1; opacity: .9; }
-.pchange-prices { flex-shrink: 0; text-align: right; }
-
 /* ─── CDEK section ──────────────────────────────────────── */
 .cdek-section { display: flex; flex-direction: column; gap: 0; }
 .cdek-section__label { font-size: 12px; font-weight: 600; color: rgba(var(--ink-rgb),0.5); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }

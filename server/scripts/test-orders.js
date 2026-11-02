@@ -265,16 +265,16 @@ async function main() {
         const rRussia = await post(baseBody({
             city: 'msk', delivery: 'russia', address: 'Москва, ул. Тестовая, д. 1',
             items: [{ id: 2, variantLabel: 'M', price: 1, qty: 2 }],
-            total: 1400,
+            total: 1200,
         }), initA);
-        check('доставка по России -> 201, цена 700₽ (формула sale+surcharge, не больше полной доставки)',
-            rRussia.status === 201 && JSON.parse(orders[orders.length - 1].items)[0].price === 700);
-        check('итог по России = 700*2 = 1400', orders[orders.length - 1].total === 1400);
+        check('доставка по России -> 201, цена 600₽ выбранного города без наценки доставки',
+            rRussia.status === 201 && JSON.parse(orders[orders.length - 1].items)[0].price === 600);
+        check('итог по России = 600*2 = 1200', orders[orders.length - 1].total === 1200);
     }
 
     /* Carrier metadata and legacy compatibility, price formula stays unchanged. */
     {
-        const valid = {city:'msk',delivery:'russia',address:'Самара, ул. Авроры, д. 7',total:1200};
+        const valid = {city:'msk',delivery:'russia',address:'Самара, ул. Авроры, д. 7',total:1000};
         let result = await post(baseBody({...valid,deliveryCarrier:'ozon'}),initA);
         check('Ozon order is saved with carrier',result.status===201 && orders.at(-1).delivery_carrier==='ozon');
         check('manager notification retains Ozon carrier/address',lastNotifyStoreCall?.deliveryCarrier==='ozon' && lastNotifyStoreCall.address===valid.address);
@@ -291,6 +291,12 @@ async function main() {
             check(label+' is rejected',result.status===400);
         }
         check('invalid carrier/address never creates orders',orders.length===before);
+    }
+
+    for (const deliveryCarrier of ['cdek','ozon']) {
+        const r=await post(baseBody({city:'krd',delivery:'russia',deliveryCarrier,address:'Краснодар, Тестовая, 1',
+            items:[{id:2,variantLabel:'M',qty:1}],total:500}),initA);
+        check(deliveryCarrier+': Russia order preserves Krasnodar variant price 500, not Moscow 600',r.status===201 && JSON.parse(orders.at(-1).items)[0].price===500);
     }
 
     /* ── Недопустимые позиции — 400, ничего не сохраняется ───────────── */

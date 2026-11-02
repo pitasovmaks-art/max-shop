@@ -117,6 +117,20 @@ async function main() {
         check('товар не в наличии -> ok:false, "нет в наличии"', !r2.ok && /нет в наличии/.test(r2.reason));
     }
 
+    {
+        const p={id:99,name:'GSN50',inStock:true,variants:[
+            {id:1,label:'Гарантия 14 дней',isKrd:true,priceKrdPickup:19990,salePrice:18990},
+            {id:2,label:'Гарантия 14 дней',isKrd:false,priceMskPickup:18000,priceMskDelivery:18000,salePrice:17550},
+            {id:3,label:'Гарантия 12 месяцев',isKrd:true,priceKrdPickup:25000,salePrice:0},
+        ]};
+        const item={id:99,name:p.name,variantLabel:'Гарантия 14 дней'};
+        check('Russia delivery keeps Krasnodar sale 18990 instead of Moscow 17550',resolveFreshCartItem(item,[p],'krd','russia').price===18990);
+        check('Russia delivery keeps Moscow sale 17550 when Moscow is selected',resolveFreshCartItem(item,[p],'msk','russia').price===17550);
+        const longWarranty={...item,variantLabel:'Гарантия 12 месяцев'};
+        check('Krasnodar warranty without Moscow/delivery price stays available',resolveFreshCartItem(longWarranty,[p],'krd','russia').price===25000);
+        check('missing warranty for Moscow is not substituted from another city',!resolveFreshCartItem(longWarranty,[p],'msk','russia').ok);
+    }
+
     // Exercise the actual asynchronous cart refresh, not only the price helper.
     const storage = new Map([['city', 'krd']]);
     let pending = [];

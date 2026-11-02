@@ -84,7 +84,7 @@ function loadClientEffectiveItemPrice() {
 
 /* ─── Серверная формула — обычный require, тот же файл, что использует
    server/routes/orders.js. ───────────────────────────────────────── */
-const { effectiveItemPrice: serverEffectiveItemPrice } = require('../utils/pricing');
+const { effectiveItemPrice: serverEffectiveItemPrice, resolveOrderItem } = require('../utils/pricing');
 
 /* ─── Товар со скидкой на варианте: обычная цена 1000₽, цена со скидкой
    (sale_price) 800₽ — во всех городах/способах доставки, просто чтобы
@@ -116,6 +116,27 @@ async function main() {
         check(`${sc.label}: клиентская и серверная формулы дают одну и ту же цену (${serverPrice}₽)`,
             clientPrice === serverPrice && clientPrice != null);
     }
+
+    // Regression: Krasnodar warranty choice must not become Moscow pricing.
+    const prices = {priceKrdPickup:19990,salePriceKrd:18990,priceMskPickup:18000,salePriceMsk:17550,priceMskDelivery:18000};
+    for (const [city,expected] of [['krd',18990],['msk',17550]]) {
+        for (const method of ['pickup','city','russia']) {
+            check(`${city}/${method}: client preserves selected city's price`,clientEffectiveItemPrice(prices,city,method)===expected);
+            check(`${city}/${method}: server preserves selected city's price`,serverEffectiveItemPrice(prices,city,method)===expected);
+        }
+    }
+    const product={id:9,name:'Инструмент',in_stock:1,variants:[
+        {label:'Гарантия 14 дней',is_krd:1,price_krd_pickup:19990,sale_price:18990},
+        {label:'Гарантия 14 дней',is_krd:0,price_msk_pickup:18000,price_msk_delivery:18000,sale_price:17550},
+        {label:'Гарантия 12 месяцев',is_krd:1,price_krd_pickup:25000,sale_price:0},
+    ]};
+    const map=new Map([[9,product]]);
+    let resolved=resolveOrderItem({id:9,variantLabel:'Гарантия 14 дней'},map,'krd','russia');
+    check('Krasnodar Russia order uses 18990, not Moscow 17550',resolved.ok && resolved.price===18990);
+    resolved=resolveOrderItem({id:9,variantLabel:'Гарантия 12 месяцев'},map,'krd','russia');
+    check('Krasnodar-only warranty stays available without Moscow counterpart/delivery field',resolved.ok && resolved.price===25000 && resolved.name.includes('12 месяцев'));
+    resolved=resolveOrderItem({id:9,variantLabel:'Гарантия 12 месяцев'},map,'msk','russia');
+    check('Russia delivery cannot substitute another city or warranty when selected one is unavailable',!resolved.ok);
 
     /* ── 2. Настоящий заказ: сервер игнорирует цену от клиента, но
        сохранённая сумма совпадает с тем, что увидел бы покупатель на

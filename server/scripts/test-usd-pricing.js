@@ -346,14 +346,13 @@ async function main() {
         check('доставка = округлённый pickup (950) + рублёвая наценка (300) = 1250₽ — наценка НЕ проходит через $-округление',
             converted.price_msk_delivery === 1250);
 
-        // Применяем существующую (неизменную) формулу скидки на доставке:
-        // surcharge = delivery - pickup = 300; saleDelivery = sale + surcharge = 1100; min(1100, delivery=1250) = 1100.
+        // Доставка не добавляет наценку к цене товара и сохраняет городскую скидку.
         const { effectiveItemPrice } = require('../utils/pricing');
         const price = effectiveItemPrice({
             priceMskPickup: converted.price_msk_pickup, priceMskDelivery: converted.price_msk_delivery,
             priceDelivery: converted.price_msk_delivery, salePriceMsk: converted.sale_price,
         }, 'msk', 'russia');
-        check('доставка по России с $-скидкой считается той же неизменённой формулой (1100₽)', price === 1100);
+        check('доставка по России сохраняет городскую $-скидку (800₽)', price === 800);
     }
 
     /* ═══ 4. Совпадение цены из API (GET /api/products) и из заказа (POST /api/orders) ═ */
@@ -451,10 +450,10 @@ async function main() {
 
         const rMsk = await post('/api/orders', {
             name: 'Т', phone: '+7', store: 'Москва', delivery: 'russia', city: 'msk', address: 'Москва, Тестовая, 1',
-            items: [{ id: p.id, variantLabel: 'M', price: 1, qty: 1 }], total: 700,
+            items: [{ id: p.id, variantLabel: 'M', price: 1, qty: 1 }], total: 600,
         }, { 'X-Init-Data': initA });
-        check('рублёвый товар доставка по России: 201, цена 700₽ (формула sale+surcharge не изменилась)',
-            rMsk.status === 201 && JSON.parse(orders[orders.length - 1].items)[0].price === 700);
+        check('рублёвый товар доставка по России: 201, городская цена 600₽',
+            rMsk.status === 201 && JSON.parse(orders[orders.length - 1].items)[0].price === 600);
     }
 
     /* ═══ 8-11. Синхронизация корзины + уведомления ═══════════════════ */

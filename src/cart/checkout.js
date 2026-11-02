@@ -78,53 +78,6 @@ function renderStoreList() {
     initStoreCards();
 }
 
-/* ─── Price change modal ────────────────────────────────── */
-function showPriceChangeModal(prevMethod) {
-    const cart    = getCart();
-    const changes = cart.filter(item => {
-        const prev    = _itemPriceFor(item, prevMethod);
-        const newPr   = _itemPriceFor(item, 'russia');
-        return newPr > 0 && newPr !== prev;
-    });
-
-    if (!changes.length) { applyDelivery('russia'); return; }
-
-    const list = document.getElementById('priceChangeList');
-    if (list) {
-        list.innerHTML = changes.map(item => {
-            const prev  = _itemPriceFor(item, prevMethod);
-            const newPr = _itemPriceFor(item, 'russia');
-            const name  = item.name + (item.variantLabel ? ` · ${item.variantLabel}` : '');
-            return `<div class="pchange-row">
-                <span class="pchange-name">${name}</span>
-                <span class="pchange-prices">${fmtStrike(prev)} → <b>${newPr.toLocaleString('ru-RU')} ₽</b></span>
-            </div>`;
-        }).join('');
-    }
-
-    document.getElementById('priceChangeModal')?.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-
-    document.getElementById('priceChangeConfirm')?.addEventListener('click', () => {
-        closePriceModal();
-        applyDelivery('russia');
-    }, { once: true });
-
-    document.getElementById('priceChangeCancel')?.addEventListener('click', () => {
-        closePriceModal();
-        applyDelivery(prevMethod);
-    }, { once: true });
-}
-
-function closePriceModal() {
-    document.getElementById('priceChangeModal')?.classList.add('hidden');
-    document.body.style.overflow = '';
-}
-
-function _itemPriceFor(item, method) {
-    return effectiveItemPrice(item, localStorage.getItem('city'), method) || 0;
-}
-
 /* ─── Delivery method ───────────────────────────────────── */
 function setDelivery(method) {
     applyDelivery(method);
