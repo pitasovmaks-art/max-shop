@@ -79,21 +79,29 @@ function plural(n, one, few, many) {
    т.к. это обычная переменная модуля. */
 let _priceChangeNotices = {}; // { [item.key]: { oldPrice } }
 
+let _cartRefreshSequence = 0;
+
 async function refreshCartPrices() {
+    const sequence = ++_cartRefreshSequence;
     const cart = getCart();
     if (!cart.length) return;
 
     let fresh;
     try {
-        fresh = await fetch('/api/products').then(r => r.json());
+        const response = await fetch('/api/products');
+        if (!response.ok) return;
+        fresh = await response.json();
+        if (!Array.isArray(fresh)) return;
     } catch {
         // Сеть/сервер недоступны — оставляем старые цены как есть,
         // оформление всё равно проверит их заново (409 при расхождении).
         return;
     }
 
+    if (sequence !== _cartRefreshSequence) return;
     const city = localStorage.getItem('city') || 'msk';
-    const updated = cart.map(item => {
+    // Read again after await: preserve removals and quantity changes.
+    const updated = getCart().map(item => {
         const result = resolveFreshCartItem(item, fresh, city, null);
         if (!result.ok) {
             // Недоступен — обнуляем ценовые поля, чтобы render() сам
@@ -103,6 +111,7 @@ async function refreshCartPrices() {
             return {
                 ...item,
                 priceKrdPickup: 0, priceMskPickup: 0, priceMskDelivery: 0, priceDelivery: 0,
+                priceKrd: 0, priceMsk: 0,
                 salePriceKrd: 0, salePriceMsk: 0,
             };
         }
@@ -200,7 +209,7 @@ function render() {
         const lineTotal = fmt(ep * item.qty);
         const notice    = _priceChangeNotices[item.key];
         const noticeHtml = notice
-            ? `<div style="color:#8A6500;font-size:11px;margin-top:2px">Цена изменилась: было ${fmt(notice.oldPrice)}</div>`
+            ? `<div style="color:var(--warning);font-size:11px;margin-top:2px">Цена изменилась: было ${fmt(notice.oldPrice)}</div>`
             : '';
 
         return `

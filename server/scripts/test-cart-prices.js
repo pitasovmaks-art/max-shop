@@ -35,7 +35,7 @@ function loadCartPricing() {
     };
 }
 
-function main() {
+async function main() {
     let failures = 0;
     function check(label, cond) {
         console.log(`${cond ? '✅' : '❌'} ${label}`);
@@ -116,6 +116,46 @@ function main() {
         const r2 = resolveFreshCartItem(cartItem2, fresh2, 'krd', null);
         check('товар не в наличии -> ok:false, "нет в наличии"', !r2.ok && /нет в наличии/.test(r2.reason));
     }
+
+    // Exercise the actual asynchronous cart refresh, not only the price helper.
+    const storage = new Map([['city', 'krd']]);
+    let pending = [];
+    const context = vm.createContext({
+        console, window: {}, document: { addEventListener() {} },
+        localStorage: { getItem: k => storage.get(k) ?? null, setItem: (k,v) => storage.set(k,v) },
+        fetch: () => new Promise(resolve => pending.push(resolve)),
+    });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../src/shared/cartPricing.js'), 'utf8'), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../src/cart/cart.js'), 'utf8'), context);
+    vm.runInContext('render = function() {};', context);
+    const item = { id: 1, key: '1', qty: 1, price: 100, priceKrd: 100, priceMsk: 100 };
+    const response = price => ({ ok: true, json: async () => [{id:1, inStock:true, priceKrd:price, priceMsk:price}] });
+    storage.set('cart', JSON.stringify([item]));
+    let refresh = vm.runInContext('refreshCartPrices()', context);
+    storage.set('cart', '[]');
+    pending.shift()(response(200)); await refresh;
+    check('refresh does not restore a removed item', JSON.parse(storage.get('cart')).length === 0);
+    storage.set('cart', JSON.stringify([item]));
+    refresh = vm.runInContext('refreshCartPrices()', context);
+    storage.set('cart', JSON.stringify([{...item, qty: 3}]));
+    pending.shift()(response(200)); await refresh;
+    check('refresh preserves current quantity', JSON.parse(storage.get('cart'))[0].qty === 3);
+    refresh = vm.runInContext('refreshCartPrices()', context);
+    pending.shift()({ok:true, json:async () => []}); await refresh;
+    check('unavailable item cannot fall back to legacy prices', vm.runInContext("effectiveItemPrice(getCart()[0], 'krd', null)", context) === null);
+    storage.set('cart', JSON.stringify([item]));
+    const first = vm.runInContext('refreshCartPrices()', context);
+    const second = vm.runInContext('refreshCartPrices()', context);
+    const oldResponse = pending.shift(), newResponse = pending.shift();
+    newResponse(response(300)); await second;
+    oldResponse(response(200)); await first;
+    check('older response cannot overwrite newer prices', JSON.parse(storage.get('cart'))[0].price === 300);
+    refresh = vm.runInContext('refreshCartPrices()', context);
+    pending.shift()({ok:false}); await refresh;
+    check('HTTP error preserves previous prices', JSON.parse(storage.get('cart'))[0].price === 300);
+    refresh = vm.runInContext('refreshCartPrices()', context);
+    pending.shift()({ok:true,json:async()=>({error:'bad response'})}); await refresh;
+    check('invalid API payload preserves previous prices', JSON.parse(storage.get('cart'))[0].price === 300);
 
     console.log(failures === 0
         ? '\n✅ Все проверки прошли'
