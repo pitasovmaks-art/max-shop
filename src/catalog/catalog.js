@@ -415,7 +415,7 @@ function renderCategoryRail() {
         rail.innerHTML = saleCard + nonEmptyCats.map(c =>
             `<button class="cat-card" onclick="${openTile(c.id)}">
                 <span class="cat-card__ic">${categoryIconSvg(c, 26)}</span>
-                <span class="cat-card__label">${c.name}</span>
+                <span class="cat-card__label">${escHtml(c.name)}</span>
             </button>`
         ).join('');
         return;
@@ -430,7 +430,7 @@ function renderCategoryRail() {
     rail.innerHTML = saleTile + nonEmptyCats.map(c =>
         `<button class="cat-tile" onclick="${openTile(c.id)}">
             <span class="cat-tile__ic">${categoryIconSvg(c, 26)}</span>
-            <span>${c.name}</span>
+            <span>${escHtml(c.name)}</span>
         </button>`
     ).join('');
     initRailFade(rail);
@@ -1152,7 +1152,7 @@ function openSubcatsScreen(catId, navMode = 'push') {
     const subs = categoryNonEmptySubs(catId);
     grid.innerHTML = subs.map(s => `
         <button class="subcat-list__item" onclick="openPairProducts(${catId},${s.id})">
-            <span class="subcat-list__label">${s.name}</span>
+            <span class="subcat-list__label">${escHtml(s.name)}</span>
         </button>`).join('');
     catalogPushOrReplace(`catalog.html?category=${catId}`, navMode);
     showCatalogScreen('subcats');
@@ -1863,7 +1863,7 @@ function productCardHTML(p) {
         const sub     = subById(p.subId);
         const imgBg   = p.image ? '' : `cat-bg-${cat.color}`;
         const imgIcon = p.image
-            ? `<img class="product-card__photo" src="${p.image}" alt="${p.name}" loading="lazy" decoding="async">`
+            ? `<img class="product-card__photo" src="${escHtml(safeImageUrl(p.image))}" alt="${escHtml(p.name)}" loading="lazy" decoding="async">`
             : iconSvg('image', 28);
 
         const outBadge = !p.inStock
@@ -1885,7 +1885,7 @@ function productCardHTML(p) {
             ? `<div class="variant-pills">${visiblePills.map(vr =>
                 `<button class="variant-pill${activeVar && vr.id === activeVar.id ? ' variant-pill--active' : ''}"
                     data-vid="${vr.id}"
-                    onclick="event.stopPropagation();selectVariant(${p.id},${vr.id})">${vr.label}</button>`
+                    onclick="event.stopPropagation();selectVariant(${p.id},${vr.id})">${escHtml(vr.label)}</button>`
               ).join('')}</div>`
             : '';
 
@@ -1905,9 +1905,9 @@ function productCardHTML(p) {
                 <div class="product-card__accent"></div>
                 <div class="product-card__img ${imgBg}">${imgIcon}${favBtn}</div>
                 <div class="product-card__body">
-                    <div class="product-card__name">${p.name}</div>
+                    <div class="product-card__name">${escHtml(p.name)}</div>
                     <div class="product-card__footer">
-                        <span class="product-card__price product-card__price--service">${p.priceLabel || fmt(p.price)}</span>
+                        <span class="product-card__price product-card__price--service">${escHtml(p.priceLabel || fmt(p.price))}</span>
                         <button class="add-btn add-btn--service" onclick="event.stopPropagation();addToCart(${p.id})">Записаться</button>
                     </div>
                 </div>
@@ -1933,7 +1933,7 @@ function productCardHTML(p) {
             <div class="product-card__accent"></div>
             <div class="product-card__img ${imgBg}">${imgIcon}${outBadge}${favBtn}</div>
             <div class="product-card__body">
-                <div class="product-card__name">${p.name}</div>
+                <div class="product-card__name">${escHtml(p.name)}</div>
                 ${variantPills}
                 <div class="product-card__footer">
                     <span class="product-card__price">${unavailableHere ? '—' : fmtPrice(displayPrice, displaySale)}</span>

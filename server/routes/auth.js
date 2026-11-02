@@ -33,6 +33,9 @@ function recordFailedLogin(ip) {
 // продакшен-логи, UA больше не влияет на допуск (см. комментарий ниже),
 // это чисто диагностика. Включается явно через AUTH_DEBUG=true.
 const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true';
+setInterval(() => {
+    for (const [ip,entry] of _loginAttempts) if (Date.now()-entry.windowStart > LOGIN_RATE_WINDOW_MS) _loginAttempts.delete(ip);
+}, LOGIN_RATE_WINDOW_MS).unref();
 
 router.post('/login', (req, res) => {
     const ip = req.ip;

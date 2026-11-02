@@ -40,10 +40,10 @@ function verifyInitData(rawInitData, botToken) {
     const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
     const computedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
-    if (computedHash !== hash) return null;
+    if (!/^[a-f0-9]{64}$/i.test(hash) || !crypto.timingSafeEqual(Buffer.from(computedHash,'hex'), Buffer.from(hash,'hex'))) return null;
 
     const authDate = Number(params.get('auth_date') || 0);
-    if (!authDate || Date.now() / 1000 - authDate > MAX_INIT_DATA_AGE_SECONDS) return null;
+    if (!Number.isFinite(authDate) || !authDate || authDate > Date.now()/1000+60 || Date.now() / 1000 - authDate > MAX_INIT_DATA_AGE_SECONDS) return null;
 
     let user = null;
     try {

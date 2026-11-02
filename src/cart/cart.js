@@ -179,20 +179,20 @@ function render() {
     }
 
     list.innerHTML = priced.map(({ item, ep }) => {
-        const safeKey = item.key.replace(/'/g, "\\'");
+        const safeKey = escHtml(JSON.stringify(String(item.key)));
 
         if (ep === null) {
             return `
-            <div class="cart-item cart-item--unavailable" id="item-${item.key}">
+            <div class="cart-item cart-item--unavailable" id="item-${escHtml(item.key)}">
                 ${item.image
-                    ? `<div class="cart-item__img"><img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;opacity:.4"></div>`
+                    ? `<div class="cart-item__img"><img src="${escHtml(safeImageUrl(item.image))}" alt="${escHtml(item.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;opacity:.4"></div>`
                     : `<div class="cart-item__img img-bg--default" style="opacity:.4">${iconSvg('image', 26)}</div>`}
                 <div class="cart-item__info">
-                    <div class="cart-item__name">${item.name}</div>
-                    ${item.variantLabel ? `<div class="cart-item__variant">${item.variantLabel}</div>` : ''}
+                    <div class="cart-item__name">${escHtml(item.name)}</div>
+                    ${item.variantLabel ? `<div class="cart-item__variant">${escHtml(item.variantLabel)}</div>` : ''}
                     <div class="cart-item__unit" style="color:#FF3B30;font-size:12px">Недоступен в выбранном городе</div>
                 </div>
-                <button class="remove-btn" onclick="removeItem('${safeKey}')" aria-label="Удалить">
+                <button class="remove-btn" onclick="removeItem(${safeKey})" aria-label="Удалить">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                         <polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -217,23 +217,23 @@ function render() {
             : '';
 
         return `
-        <div class="cart-item" id="item-${item.key}">
+        <div class="cart-item" id="item-${escHtml(item.key)}">
             ${item.image
-                ? `<div class="cart-item__img"><img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px"></div>`
+                ? `<div class="cart-item__img"><img src="${escHtml(safeImageUrl(item.image))}" alt="${escHtml(item.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px"></div>`
                 : `<div class="cart-item__img img-bg--default">${iconSvg('image', 26)}</div>`}
             <div class="cart-item__info">
-                <div class="cart-item__name">${item.name}</div>
-                ${item.variantLabel ? `<div class="cart-item__variant">${item.variantLabel}</div>` : ''}
+                <div class="cart-item__name">${escHtml(item.name)}</div>
+                ${item.variantLabel ? `<div class="cart-item__variant">${escHtml(item.variantLabel)}</div>` : ''}
                 <div class="cart-item__unit">${unitHtml}&nbsp;/ шт</div>
                 ${noticeHtml}
                 <div class="cart-item__controls">
-                    <button class="qty-btn qty-btn--dec" onclick="updateQty('${safeKey}', -1)" aria-label="Уменьшить">−</button>
+                    <button class="qty-btn qty-btn--dec" onclick="updateQty(${safeKey}, -1)" aria-label="Уменьшить">−</button>
                     <span class="qty-value">${item.qty}</span>
-                    <button class="qty-btn" onclick="updateQty('${safeKey}', 1)" aria-label="Увеличить">+</button>
+                    <button class="qty-btn" onclick="updateQty(${safeKey}, 1)" aria-label="Увеличить">+</button>
                     <span class="cart-item__line-total">${lineTotal}</span>
                 </div>
             </div>
-            <button class="remove-btn" onclick="removeItem('${safeKey}')" aria-label="Удалить">
+            <button class="remove-btn" onclick="removeItem(${safeKey})" aria-label="Удалить">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                     <polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

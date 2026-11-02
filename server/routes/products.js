@@ -129,25 +129,29 @@ router.get('/', async (req, res) => {
         if (hasQuery) { sql += ` LIMIT $${i++}`; params.push(MAX_SEARCH_RESULTS); }
         const products = (await db.query(sql, params)).map(normalize);
         res.json(await attachVariants(products, { includeUsdRaw: isAdminRequest(req) }));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* POST /api/products/import */
 router.post('/import', requireAdmin, async (req, res) => {
     const rows = req.body;
-    if (!Array.isArray(rows) || !rows.length) return res.status(400).json({ error: 'Expected array of rows' });
+    if (!Array.isArray(rows) || !rows.length || rows.length > 5000) return res.status(400).json({ error: 'В файле должно быть от 1 до 5000 строк' });
+    const preview = req.query.preview === '1';
+    if (rows.some(r => !r || typeof r !== 'object' || Array.isArray(r))) return res.status(400).json({ error: 'Некорректная строка файла' });
+    const previewProducts = [];
+    const fileIdentities = new Set();
 
     const categories   = await db.query('SELECT id, name FROM categories');
     const subcategories = await db.query('SELECT id, name, category_id FROM subcategories');
-    const catByName    = Object.fromEntries(categories.map(c => [c.name.trim().toLowerCase(), c.id]));
-    const subByName    = {};
+    const catByName    = Object.assign(Object.create(null), Object.fromEntries(categories.map(c => [c.name.trim().toLowerCase(), c.id])));
+    const subByName    = Object.create(null);
     subcategories.forEach(s => {
         subByName[`${s.category_id}::${s.name.trim().toLowerCase()}`] = s.id;
     });
 
     // Group rows by (name + category) preserving insertion order
     const groups = [];
-    const groupMap = {};
+    const groupMap = Object.create(null);
     rows.forEach((row, idx) => {
         const key = `${String(row.name || '').trim()}::${String(row.category || '').trim().toLowerCase()}`;
         if (!groupMap[key]) { groupMap[key] = []; groups.push({ key, rows: groupMap[key] }); }
@@ -169,6 +173,14 @@ router.post('/import', requireAdmin, async (req, res) => {
         if (!name) {
             grp.forEach(r => errors.push({ row: r._idx, reason: 'Пустое название товара' }));
             skipped++; continue;
+        }
+        const invalid = grp.find(r => Object.entries(r).some(([k,v]) =>
+            (typeof v === 'string' && v.length > (k === 'desc' ? 12000 : 500)) ||
+            (/^(price|salePrice|deliverySurcharge)/.test(k) && (!Number.isFinite(Number(v)) || Number(v) < 0 || Number(v) > 100000000)) ||
+            (['priceKrdPickup','priceMskPickup','priceMskDelivery','deliverySurchargeRub'].includes(k) && !Number.isInteger(Number(v))) ||
+            (['inStock','isDefault'].includes(k) && v !== '' && v != null && ![0,1].includes(Number(v)))));
+        if (name.length > 300 || invalid) {
+            grp.forEach(r => errors.push({ row:r._idx, reason:'Проверьте длины полей и числовые цены' })); skipped++; continue;
         }
         const categoryId = catByName[catName];
         if (!categoryId) {
@@ -213,8 +225,26 @@ router.post('/import', requireAdmin, async (req, res) => {
         const brand   = sanitizeShortText(first.brand)   || null;
         const article = sanitizeShortText(first.article) || null;
 
+        const duplicateQuery = `SELECT id FROM products WHERE
+            (LOWER(COALESCE(brand,''))=LOWER($1) AND LOWER(COALESCE(article,''))=LOWER($2) AND $2 <> '')
+            OR (LOWER(TRIM(name))=LOWER($3) AND category_id=$4) LIMIT 1`;
+        const duplicateParams = [brand || '',article || '',name,categoryId];
+        const identity = article ? `sku:${(brand || '').toLowerCase()}:${article.toLowerCase()}` : `name:${name.toLowerCase()}:${categoryId}`;
+        if (fileIdentities.has(identity)) { grp.forEach(r=>errors.push({row:r._idx,reason:'Повтор товара внутри файла'})); skipped++; continue; }
+        fileIdentities.add(identity);
+        if (preview) {
+            const duplicate = await db.queryOne(duplicateQuery, duplicateParams);
+            if (duplicate) { grp.forEach(r=>errors.push({row:r._idx,reason:'Товар уже существует, ID ' + duplicate.id})); skipped++; continue; }
+            previewProducts.push({ name, category:first.category, variants:validRows.length });
+            created++;
+            continue;
+        }
         try {
             await db.inTransaction(async (client) => {
+                // Serializes overlapping imports, including identical names across groups.
+                await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', ['catalog-import']);
+                const duplicate = await client.query(duplicateQuery,duplicateParams);
+                if (duplicate.rows.length) throw new Error('Товар уже существует, ID ' + duplicate.rows[0].id);
                 globalOrder++;
                 const catMaxRes = await client.query(
                     'SELECT COALESCE(MAX(sort_order_in_category), 0) AS m FROM products WHERE category_id=$1',
@@ -309,7 +339,7 @@ router.post('/import', requireAdmin, async (req, res) => {
         }
     }
 
-    res.json({ created, skipped, errors });
+    res.json({ created, skipped, errors, ...(preview ? { preview:true, products:previewProducts } : {}) });
 });
 
 /* PUT /api/products/reorder */
@@ -323,7 +353,7 @@ router.put('/reorder', requireAdmin, async (req, res) => {
             }
         });
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* PUT /api/products/reorder-category */
@@ -340,7 +370,7 @@ router.put('/reorder-category', requireAdmin, async (req, res) => {
             }
         });
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /api/products/export — admin-only, п.13: выгрузка каталога в том же
@@ -402,7 +432,7 @@ router.get('/export', requireAdmin, async (req, res) => {
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', 'attachment; filename="catalog-export.xlsx"');
         res.send(buf);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /api/products/:id */
@@ -413,7 +443,7 @@ router.get('/:id', async (req, res) => {
         const product = normalize(p);
         await attachVariants([product], { includeUsdRaw: isAdminRequest(req) });
         res.json(product);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /api/products/:id/variants */
@@ -426,7 +456,7 @@ router.get('/:id/variants', async (req, res) => {
         const rate = vars.some(v => Number(v.is_usd) === 1) ? await usdPrice.getCurrentRate() : null;
         const includeUsdRaw = isAdminRequest(req);
         res.json(vars.map(v => normalizeVariant(v, { rate, includeUsdRaw })));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* PUT /api/products/:id/variants — replace all variants */
@@ -529,7 +559,7 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
             db.execute('UPDATE products SET sale_notified=0 WHERE id=$1', [productId])
               .catch(e => console.error('[promo] Reset sale_notified error:', e.message));
         }
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* POST /api/products */
@@ -559,7 +589,7 @@ router.post('/', requireAdmin, async (req, res) => {
         const product = normalize(await db.queryOne('SELECT * FROM products WHERE id=$1', [row.id]));
         await attachVariants([product], { includeUsdRaw: true });
         res.status(201).json(product);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* PUT /api/products/:id */
@@ -654,7 +684,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
                 [+req.params.id]
             ).catch(e => console.error('[stock-notify] Cleanup error:', e.message));
         }
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /api/products/:id/images */
@@ -665,7 +695,7 @@ router.get('/:id/images', async (req, res) => {
             [+req.params.id]
         );
         res.json(rows.map(r => ({ id: r.id, productId: r.product_id, url: r.url, sortOrder: r.sort_order })));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* POST /api/products/:id/images */
@@ -678,7 +708,7 @@ router.post('/:id/images', requireAdmin, async (req, res) => {
             [+req.params.id, url, sort_order ?? 0]
         );
         res.status(201).json({ id: row.id, productId: row.product_id, url: row.url, sortOrder: row.sort_order });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* DELETE /api/products/:id/images/:imageId */
@@ -690,7 +720,7 @@ router.delete('/:id/images/:imageId', requireAdmin, async (req, res) => {
         );
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* DELETE /api/products/:id */
@@ -699,7 +729,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
         const changed = await db.execute('DELETE FROM products WHERE id=$1', [+req.params.id]);
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 module.exports = router;

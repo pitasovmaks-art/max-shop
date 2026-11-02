@@ -484,7 +484,7 @@ router.get('/history', requireAdmin, async (req, res) => {
     try {
         const rows = await db.query('SELECT * FROM upload_history ORDER BY uploaded_at DESC LIMIT 200');
         res.json(rows);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* ─── Очистка всех загруженных данных ────────────────────── */

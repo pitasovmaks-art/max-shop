@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
         if (req.query.categoryId) { sql += ' WHERE category_id=$1'; params.push(+req.query.categoryId); }
         sql += ' ORDER BY id';
         res.json((await db.query(sql, params)).map(normalize));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* POST /api/subcategories */
@@ -36,7 +36,7 @@ router.post('/', requireAdmin, async (req, res) => {
             );
         });
         res.status(201).json(normalize(await db.queryOne('SELECT * FROM subcategories WHERE id=$1', [id])));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* PUT /api/subcategories/:id */
@@ -49,7 +49,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
         );
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         res.json(normalize(await db.queryOne('SELECT * FROM subcategories WHERE id=$1', [+req.params.id])));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* DELETE /api/subcategories/:id */
@@ -61,7 +61,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
             await client.query('DELETE FROM subcategories WHERE id=$1', [id]);
         });
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 module.exports = router;

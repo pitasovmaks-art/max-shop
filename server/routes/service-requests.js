@@ -1,5 +1,6 @@
 const router           = require('express').Router();
 const db               = require('../db');
+const { enqueue } = require('../utils/notificationOutbox');
 const { requireUser }  = require('../middleware/requireUser');
 const { requireAdmin } = require('../middleware/auth');
 const { notifyServiceRequest, notifyServiceRequestStatus } = require('../../bot');
@@ -142,46 +143,33 @@ router.post('/', requireUser, async (req, res) => {
     if (error) return res.status(400).json({ error });
 
     try {
-        const countRow = await db.queryOne(
-            `SELECT COUNT(*)::int AS c FROM service_requests
-             WHERE tg_id = $1
-               AND created_at > TO_CHAR((NOW() AT TIME ZONE 'UTC') - INTERVAL '1 hour', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
-            [req.tgId]
-        );
-        if ((countRow?.c || 0) >= RATE_LIMIT_PER_HOUR) {
-            return res.status(429).json({ error: 'Слишком много заявок за последний час, попробуйте позже' });
-        }
+        let requestId;
+        await db.inTransaction(async client => {
+            // Serialize per user so concurrent submissions cannot bypass the limit.
+            await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', ['service:' + req.tgId]);
+            const count = await client.query(
+                `SELECT COUNT(*)::int AS c FROM service_requests WHERE tg_id=$1
+                 AND created_at > TO_CHAR((NOW() AT TIME ZONE 'UTC')-INTERVAL '1 hour','YYYY-MM-DD"T"HH24:MI:SS"Z"')`, [req.tgId]);
+            if (count.rows[0].c >= RATE_LIMIT_PER_HOUR) {
+                const e = new Error('Слишком много заявок за последний час, попробуйте позже'); e.status = 429; throw e;
+            }
+            const row = await client.query(
+                `INSERT INTO service_requests (tg_id,name,phone,store,delivery_needed,address,comment)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+                [req.tgId,data.name,data.phone,null,data.deliveryNeeded ? 1 : 0,data.address,data.comment]);
+            requestId = row.rows[0].id;
+            for (const item of data.items) await client.query(
+                'INSERT INTO service_request_items (request_id,tool_name,problem) VALUES ($1,$2,$3)',
+                [requestId,item.toolName,item.problem]);
+            await client.query("INSERT INTO service_request_events (request_id,status,changed_by) VALUES ($1,'accepted','system')", [requestId]);
+            await enqueue(client, 'service', requestId);
+        });
 
-        const row = await db.queryOne(
-            `INSERT INTO service_requests (tg_id, name, phone, store, delivery_needed, address, comment)
-             VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-            [req.tgId, data.name, data.phone, null, data.deliveryNeeded ? 1 : 0, data.address, data.comment]
-        );
-        const requestId = row.id;
-
-        for (const item of data.items) {
-            await db.execute(
-                `INSERT INTO service_request_items (request_id, tool_name, problem) VALUES ($1,$2,$3)`,
-                [requestId, item.toolName, item.problem]
-            );
-        }
-        await db.execute(
-            `INSERT INTO service_request_events (request_id, status, changed_by) VALUES ($1,'accepted','system')`,
-            [requestId]
-        );
-
-        const full  = await db.queryOne('SELECT * FROM service_requests WHERE id=$1', [requestId]);
-        const items = await db.query('SELECT * FROM service_request_items WHERE request_id=$1 ORDER BY id', [requestId]);
-        const normalized = normalizeRequest(full, items);
-
-        // Не блокируем ответ покупателю отправкой уведомления; ошибка
-        // отправки не должна «отменять» уже сохранённую заявку.
-        notifyServiceRequest(normalized).catch(e => console.error('[bot] notifyServiceRequest:', e.message));
-
-        res.status(201).json({ ok: true, id: requestId, number: normalized.number });
+        require('../utils/notificationOutbox').wake();
+        res.status(201).json({ ok: true, id: requestId, number: 'Р-' + requestId });
     } catch (e) {
-        console.error('[service-requests] create error:', e.message);
-        res.status(500).json({ error: e.message });
+        console.error('[service-requests] create_failed');
+        res.status(e.status || 500).json({ error: e.status ? e.message : 'Не удалось сохранить заявку' });
     }
 });
 
@@ -194,7 +182,7 @@ router.get('/my', requireUser, async (req, res) => {
         );
         const itemsByRequest = await loadItems(rows.map(r => r.id));
         res.json(rows.map(r => normalizeRequest(r, itemsByRequest[r.id])));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /api/service-requests/admin — admin only, все заявки, новые сверху.
@@ -208,7 +196,7 @@ router.get('/admin', requireAdmin, async (req, res) => {
         const rows = await db.query('SELECT * FROM service_requests ORDER BY id DESC');
         const itemsByRequest = await loadItems(rows.map(r => r.id));
         res.json(rows.map(r => normalizeRequest(r, itemsByRequest[r.id])));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /api/service-requests/admin/:id — admin only, с полной историей
@@ -227,7 +215,7 @@ router.get('/admin/:id', requireAdmin, async (req, res) => {
             [id]
         );
         res.json({ ...normalizeRequest(row, items), events });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* PUT /api/service-requests/admin/:id — admin only: статус, стоимость,
@@ -312,7 +300,7 @@ router.put('/admin/:id', requireAdmin, async (req, res) => {
         }
 
         res.json(normalized);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /api/service-requests/:id — своя заявка. tg_id проверяется прямо в
@@ -332,7 +320,7 @@ router.get('/:id', requireUser, async (req, res) => {
         if (!row) return res.status(404).json({ error: 'Not found' });
         const items = await db.query('SELECT * FROM service_request_items WHERE request_id=$1 ORDER BY id', [id]);
         res.json(normalizeRequest(row, items));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 module.exports = router;

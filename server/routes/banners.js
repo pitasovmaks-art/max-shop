@@ -169,7 +169,7 @@ router.get('/', async (req, res) => {
              ORDER BY sort_order, id`
         );
         res.json(rows.map(normalize));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /api/banners/all — админский: ВСЕ баннеры без фильтра по
@@ -180,7 +180,7 @@ router.get('/all', requireAdmin, async (req, res) => {
     try {
         const rows = await db.query('SELECT * FROM banners ORDER BY sort_order, id');
         res.json(rows.map(normalize));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* ─── Маршруты ниже объявлены ДО /:id и /:id-зависимых — иначе Express
@@ -214,7 +214,7 @@ router.put('/reorder', requireAdmin, async (req, res) => {
             }
         });
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 const upload = multer({
@@ -274,7 +274,7 @@ router.post('/', requireAdmin, async (req, res) => {
             ]
         );
         res.status(201).json(normalize(await db.queryOne('SELECT * FROM banners WHERE id=$1', [row.id])));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* PUT /api/banners/:id — полная замена полей (включая isActive — этим же
@@ -308,7 +308,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
         );
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         res.json(normalize(await db.queryOne('SELECT * FROM banners WHERE id=$1', [+req.params.id])));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* DELETE /api/banners/:id */
@@ -317,7 +317,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
         const changed = await db.execute('DELETE FROM banners WHERE id=$1', [+req.params.id]);
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 module.exports = router;

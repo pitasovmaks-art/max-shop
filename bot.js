@@ -2,6 +2,7 @@
    Max Messenger Bot — Точка Монтажа
    ───────────────────────────────────────────────────────── */
 const https = require('https');
+const { webhookSecret } = require('./server/middleware/webhook');
 const { SELLER_NAME, SELLER_INN } = require('./server/config');
 
 const API_BASE     = 'platform-api2.max.ru';
@@ -86,13 +87,13 @@ function request(method, endpoint, body = null, query = {}) {
                 try {
                     const parsed = JSON.parse(raw);
                     if (res.statusCode >= 400) {
-                        reject(new Error(`API ${res.statusCode}: ${JSON.stringify(parsed)}`));
+                        reject(new Error(`Max API ${res.statusCode}`));
                     } else {
                         resolve(parsed);
                     }
                 } catch {
                     if (res.statusCode >= 400) {
-                        reject(new Error(`API ${res.statusCode}: ${raw}`));
+                        reject(new Error(`Max API ${res.statusCode}`));
                     } else {
                         resolve(raw);
                     }
@@ -285,9 +286,11 @@ async function registerWebhook() {
         console.error('[bot] WEBHOOK_URL не задан, вебхук не зарегистрирован');
         return;
     }
+    const retry = () => { const timer = setTimeout(registerWebhook, 60000); timer.unref(); };
     const data = JSON.stringify({
         url:          WEBHOOK_URL,
         update_types: ['message_created', 'bot_started'],
+        secret: webhookSecret('main'),
     });
 
     return new Promise((resolve) => {
@@ -306,15 +309,20 @@ async function registerWebhook() {
             let raw = '';
             res.on('data', chunk => raw += chunk);
             res.on('end', () => {
-                console.log('[bot] Webhook зарегистрирован, статус:', res.statusCode, raw);
+                console.log('[bot] Webhook registration status:', res.statusCode);
+                let success = res.statusCode >= 200 && res.statusCode < 300;
+                try { if (JSON.parse(raw).success === false) success = false; } catch { success = false; }
+                if (!success) retry();
                 resolve();
             });
         });
 
         req.on('error', e => {
             console.error('[bot] Ошибка регистрации webhook:', e.message);
+            retry();
             resolve();
         });
+        req.setTimeout(25000, () => req.destroy(new Error('Webhook registration timeout')));
 
         req.write(data);
         req.end();
@@ -414,15 +422,18 @@ async function notifyStore(order) {
     console.log('[bot] notifyStore вызван, city:', order.city, 'delivery:', delivery, 'store:', order.store);
     console.log('[bot] получатели:', recipients);
 
+    let failed = false;
     for (const chatId of recipients) {
         try {
             const result = await sendMessage(chatId, text);
             console.log('[bot] уведомление отправлено:', chatId);
-            console.log('[bot] ответ API:', JSON.stringify(result));
+
         } catch (e) {
+            failed = true;
             console.error(`[bot] Не удалось отправить уведомление chat_id=${chatId}:`, e.message);
         }
     }
+    if (failed) throw new Error('Manager notification delivery failed');
 }
 
 /* ─── Notify store manager about new service request ────── */
@@ -450,15 +461,18 @@ async function notifyServiceRequest(request) {
 
     console.log('[bot] notifyServiceRequest вызван, store:', request.store, 'получатели:', recipients);
 
+    let failed = false;
     for (const chatId of recipients) {
         try {
             const result = await sendMessage(chatId, text);
             console.log('[bot] уведомление о заявке на ремонт отправлено:', chatId);
-            console.log('[bot] ответ API:', JSON.stringify(result));
+
         } catch (e) {
+            failed = true;
             console.error(`[bot] Не удалось отправить уведомление о заявке на ремонт chat_id=${chatId}:`, e.message);
         }
     }
+    if (failed) throw new Error('Manager notification delivery failed');
 }
 
 /* ─── Notify customer about order status change ─────────── */

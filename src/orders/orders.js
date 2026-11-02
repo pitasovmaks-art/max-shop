@@ -72,10 +72,12 @@ function buildServiceRequestCard(r) {
     });
     card.appendChild(tools);
 
-    const store = document.createElement('div');
-    store.className = 'order-card__store';
-    store.textContent = '📍 ' + r.storeLabel;
-    card.appendChild(store);
+    if (r.storeLabel) {
+        const store = document.createElement('div');
+        store.className = 'order-card__store';
+        store.textContent = '📍 ' + r.storeLabel;
+        card.appendChild(store);
+    }
 
     if (r.deliveryNeeded && r.address) {
         const addr = document.createElement('div');

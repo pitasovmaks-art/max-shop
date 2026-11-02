@@ -14,7 +14,7 @@ router.post('/', requireUser, async (req, res) => {
             [+req.tgId, +productId]
         );
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /check?product_id=... — tg_id из req.tgId */
@@ -27,7 +27,7 @@ router.get('/check', requireUser, async (req, res) => {
             [+req.tgId, +product_id]
         );
         res.json({ subscribed: !!row });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /list — active (unnotified) subscriptions for the signed-in user */
@@ -38,7 +38,7 @@ router.get('/list', requireUser, async (req, res) => {
             [+req.tgId]
         );
         res.json(rows.map(r => Number(r.product_id)));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 module.exports = router;

@@ -415,3 +415,20 @@ CREATE TABLE IF NOT EXISTS ozon_transactions (
     raw                 JSONB,
     synced_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
+
+-- Additive security/reliability migration; old orders remain unchanged.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_request_id TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS orders_client_request ON orders(tg_id,client_request_id) WHERE client_request_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS notification_outbox (
+    id BIGSERIAL PRIMARY KEY,
+    kind TEXT NOT NULL,
+    entity_id INTEGER NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    available_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    locked_until TIMESTAMPTZ,
+    delivered_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (kind, entity_id)
+);
+CREATE INDEX IF NOT EXISTS notification_outbox_pending ON notification_outbox (available_at) WHERE delivered_at IS NULL;

@@ -510,11 +510,11 @@ async function renderExports() {
                 <tbody>
                     ${files.map(f => `
                     <tr>
-                        <td class="exports-table__name">${f.name}</td>
+                        <td class="exports-table__name">${escHtml(f.name)}</td>
                         <td class="exports-table__size">${_fmtSize(f.size)}</td>
                         <td class="exports-table__date">${_fmtDate(f.modifiedAt)}</td>
                         <td class="exports-table__action">
-                            <a href="${f.url}" target="_blank" download class="exports-dl-btn">Скачать</a>
+                            <a href="${escHtml(safeImageUrl(f.url))}" target="_blank" download class="exports-dl-btn">Скачать</a>
                         </td>
                     </tr>`).join('')}
                 </tbody>
@@ -570,7 +570,7 @@ function renderFilters() {
     if (!filtersEl) return;
     filtersEl.innerHTML = `<button class="filter-btn ${state.filter === 'all' ? 'active' : ''}" onclick="setFilter('all',this)">Все</button>`
         + _categories.map(c =>
-            `<button class="filter-btn ${state.filter === c.id ? 'active' : ''}" onclick="setFilter(${c.id},this)">${c.icon} ${c.name}</button>`
+            `<button class="filter-btn ${state.filter === c.id ? 'active' : ''}" onclick="setFilter(${c.id},this)">${escHtml(c.icon)} ${escHtml(c.name)}</button>`
         ).join('');
 }
 
@@ -626,8 +626,8 @@ function renderList() {
     el.innerHTML = list.map(p => {
         const cat = catById(p.categoryId);
         const sub = subById(p.subId);
-        const metaParts = [cat.name];
-        if (sub) metaParts.push(sub.name);
+        const metaParts = [escHtml(cat.name)];
+        if (sub) metaParts.push(escHtml(sub.name));
 
         const stockHtml = p.inStock
             ? `<button class="product-row__stock product-row__stock--in" onclick="quickToggleStock(${p.id})" title="Нажмите чтобы снять с продажи">● В наличии</button>`
@@ -642,7 +642,7 @@ function renderList() {
             : '';
 
         const priceHtml = (() => {
-            if (p.isService) return `<span class="product-row__price">${p.priceLabel || fmt(p.price)}</span>`;
+            if (p.isService) return `<span class="product-row__price">${escHtml(p.priceLabel || fmt(p.price))}</span>`;
             if (p.price > 0) return `<span class="product-row__price">${fmt(p.price)}</span>`;
             if (p.variants && p.variants.length) {
                 const prices = p.variants
@@ -672,10 +672,10 @@ function renderList() {
         <div class="product-row${isDragEnabled ? ' product-row--draggable' : ''}" id="row-${p.id}" data-id="${p.id}"${isDragEnabled ? ' draggable="true"' : ''}>
             ${dragHandle}
             ${p.image
-                ? `<div class="product-row__img product-row__img--photo"><img src="${p.image}" alt=""></div>`
-                : `<div class="product-row__img cat-bg-${cat.color}">${cat.icon}</div>`}
+                ? `<div class="product-row__img product-row__img--photo"><img src="${escHtml(safeImageUrl(p.image))}" alt=""></div>`
+                : `<div class="product-row__img cat-bg-${cat.color}">${escHtml(cat.icon)}</div>`}
             <div class="product-row__info">
-                <div class="product-row__name">${p.name}</div>
+                <div class="product-row__name">${escHtml(p.name)}</div>
                 <div class="product-row__meta">${metaParts.join(' · ')}</div>
                 <div class="product-row__bottom">${priceHtml}${varHtml}${stockHtml}${hitHtml}</div>
             </div>
@@ -844,7 +844,7 @@ function renderExtraImages() {
     if (!grid) return;
     grid.innerHTML = _extraImages.map(img => `
         <div class="extra-photo-item" id="extra-${img.id}">
-            <img src="${img.url}" alt="">
+            <img src="${escHtml(safeImageUrl(img.url))}" alt="">
             <button type="button" class="extra-photo-item__del"
                 onclick="deleteExtraImage(${img.id})" aria-label="Удалить">✕</button>
         </div>`).join('');
@@ -903,7 +903,7 @@ async function deleteExtraImage(imageId) {
 function populateCategorySelect() {
     const sel = document.getElementById('f-cat');
     sel.innerHTML = '<option value="">— выберите —</option>'
-        + _categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+        + _categories.map(c => `<option value="${c.id}">${escHtml(c.icon)} ${escHtml(c.name)}</option>`).join('');
 }
 
 function handleCatChange() {
@@ -913,7 +913,7 @@ function handleCatChange() {
     const fSub  = document.getElementById('f-sub');
     if (subs.length) {
         fSub.innerHTML = '<option value="">Не указана</option>'
-            + subs.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            + subs.map(s => `<option value="${s.id}">${escHtml(s.name)}</option>`).join('');
         ffSub.classList.remove('hidden');
     } else {
         fSub.innerHTML = '';
@@ -1162,6 +1162,7 @@ function triggerImport() {
 function handleImportFile(input) {
     const file = input.files[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { alert('Файл слишком большой (максимум 10 МБ)'); return; }
     const reader = new FileReader();
     reader.onload = async (e) => {
         let rows;
@@ -1183,7 +1184,7 @@ function handleImportFile(input) {
                 row.some(cell => cell !== '' && cell !== null && cell !== undefined)
             );
             rows = dataRows.map(row => {
-                const r = {};
+                const r = Object.create(null);
                 headers.forEach((h, i) => { r[h] = row[i] ?? ''; });
                 return {
                     name:             String(r['name']             || r['Название']        || '').trim(),
@@ -1214,6 +1215,11 @@ function handleImportFile(input) {
         if (!rows.length) { alert('Файл пустой или не содержит данных.'); return; }
         showToast('⏳ Импортируем...');
         try {
+            const preview = await apiAdmin('/api/products/import?preview=1', 'POST', rows);
+            if (!preview.created) { showImportResult({ ...preview, created:0 }); return; }
+            const sample = (preview.products || []).slice(0,10).map(p=>p.name).join('\n');
+            const warnings = (preview.errors || []).slice(0,5).map(e=>'Строка ' + e.row + ': ' + e.reason).join('\n');
+            if (!confirm(`Будет добавлено товаров: ${preview.created}. Пропущено: ${preview.skipped}.\n\n${sample}\n\n${warnings}\n\nПодтвердить импорт? Существующие товары не обновляются.`)) return;
             const result = await apiAdmin('/api/products/import', 'POST', rows);
             await refreshData();
             render();
@@ -1254,7 +1260,7 @@ function confirmDelete(id) {
     overlay.innerHTML = `
         <div class="dialog">
             <p class="dialog__title">Удалить товар?</p>
-            <p class="dialog__sub">«${p.name}»</p>
+            <p class="dialog__sub">«${escHtml(p.name)}»</p>
             <div class="dialog__actions">
                 <button class="dialog__btn dialog__btn--danger" onclick="deleteProduct(${id})">Удалить</button>
                 <button class="dialog__btn dialog__btn--cancel" onclick="closeDeleteDialog()">Отмена</button>
@@ -1343,7 +1349,7 @@ function renderOrderFilters() {
             <select class="order-filter-sel" onchange="_oFilter('status',this.value)">
                 <option value="">Все статусы</option>
                 ${Object.entries(ORDER_STATUSES).map(([k,v]) =>
-                    `<option value="${k}" ${_orderFilter.status===k?'selected':''}>${v.label}</option>`
+                    `<option value="${k}" ${_orderFilter.status===k?'selected':''}>${escHtml(v.label)}</option>`
                 ).join('')}
             </select>
             <select class="order-filter-sel" onchange="_oFilter('delivery',this.value)">

@@ -153,7 +153,7 @@ function renderGallery() {
         stripEl.innerHTML = _allImages.map((img, i) => `
             <div class="gallery__thumb${i === 0 ? ' gallery__thumb--active' : ''}"
                  id="thumb-${i}" onclick="setMainImage(${i})">
-                <img src="${img.url}" alt="">
+                <img src="${escHtml(safeImageUrl(img.url))}" alt="">
             </div>`).join('');
         wrapEl.classList.remove('hidden');
     } else {
@@ -166,7 +166,7 @@ function setMainImage(idx) {
     _currentImgIdx = idx;
     const mainEl = document.getElementById('galleryMain');
     mainEl.className = 'gallery__main';
-    mainEl.innerHTML = `<img src="${_allImages[idx].url}" alt="${_product.name}" onclick="openLightbox(${idx})">`;
+    mainEl.innerHTML = `<img src="${escHtml(safeImageUrl(_allImages[idx].url))}" alt="${escHtml(_product.name)}" onclick="openLightbox(${idx})">`;
     if (!_product.inStock) {
         mainEl.innerHTML += '<span class="badge-out">Нет в наличии</span>';
     }
@@ -225,7 +225,7 @@ function applyLightboxTransform() {
 
 function renderLightboxImage() {
     const img = document.getElementById('lightboxImg');
-    img.src = _allImages[_lbIdx].url;
+    img.src = safeImageUrl(_allImages[_lbIdx].url);
     document.getElementById('lightboxCounter').textContent = `${_lbIdx + 1} / ${_allImages.length}`;
     resetLightboxTransform();
     updateLightboxArrows();
@@ -352,7 +352,8 @@ function renderInfo() {
 
     const descEl = document.getElementById('productDesc');
     if (_product.desc) {
-        descEl.innerHTML = (_product.desc || '').replace(/\n/g, '<br>');
+        descEl.textContent = _product.desc || '';
+        descEl.style.whiteSpace = 'pre-line';
         descEl.classList.remove('hidden');
     }
 
@@ -365,7 +366,7 @@ function renderInfo() {
         pillsEl.innerHTML = cityVars.map(v => `
             <button class="variant-pill${v.id === _selectedVariantId ? ' variant-pill--active' : ''}"
                     data-vid="${v.id}"
-                    onclick="selectVariant(${v.id})">${v.label}</button>`
+                    onclick="selectVariant(${v.id})">${escHtml(v.label)}</button>`
         ).join('');
         varSection.classList.remove('hidden');
     }

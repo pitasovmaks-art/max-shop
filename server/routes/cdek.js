@@ -2,6 +2,9 @@ const router            = require('express').Router();
 const https             = require('https');
 const { requireAdmin }  = require('../middleware/auth');
 
+const { requestLimit } = require('../middleware/requestLimit');
+const officesCache = new Map();
+
 const CDEK_CLIENT_ID     = process.env.CDEK_CLIENT_ID     || '';
 const CDEK_CLIENT_SECRET = process.env.CDEK_CLIENT_SECRET || '';
 
@@ -57,15 +60,18 @@ router.post('/token', requireAdmin, async (req, res) => {
         const token = await getToken();
         res.json({ ok: true, token: token.slice(0, 8) + '...' });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' });
     }
 });
 
 /* GET /api/cdek/offices?city=Москва */
-router.get('/offices', async (req, res) => {
+router.get('/offices', requestLimit({max:60}), async (req, res) => {
     const cityName = req.query.city;
     if (typeof cityName !== 'string' || !cityName.trim() || cityName.length > 100) return res.status(400).json({ error: 'city required' });
 
+    const cacheKey = cityName.trim().toLocaleLowerCase('ru');
+    const cached = officesCache.get(cacheKey);
+    if (cached && cached.until > Date.now()) return res.json(cached.result);
     try {
         const token = await getToken();
 
@@ -91,10 +97,12 @@ router.get('/offices', async (req, res) => {
             phone:     (p.phones?.[0]?.number) || '',
         }));
 
+        if (officesCache.size >= 100) officesCache.delete(officesCache.keys().next().value);
+        officesCache.set(cacheKey,{result,until:Date.now()+5*60*1000});
         res.json(result);
     } catch (e) {
         console.error('[CDEK] offices error:', e.message);
-        res.status(500).json({ error: e.message });
+        console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' });
     }
 });
 

@@ -1,5 +1,7 @@
 const router = require('express').Router();
 const https  = require('https');
+const { requireUser } = require('../middleware/requireUser');
+const { requestLimit } = require('../middleware/requestLimit');
 
 const API_BASE = 'platform-api2.max.ru';
 
@@ -61,8 +63,8 @@ async function checkChannelMembership(userId) {
 }
 
 /* GET /api/check-subscription?user_id=... */
-router.get('/', async (req, res) => {
-    const userId = req.query.user_id;
+router.get('/', requireUser, requestLimit({max:60}), async (req, res) => {
+    const userId = req.tgId;
     if (!userId) {
         return res.json({ subscribed: true }); // fail-open: no user_id
     }

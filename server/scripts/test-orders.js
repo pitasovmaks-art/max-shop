@@ -144,6 +144,10 @@ db.queryOne = async (sql, params = []) => {
 
 db.execute = async () => { throw new Error('test-orders: execute() не ожидался в этих проверках'); };
 
+require('./helpers/transactionStub')(db, async ([kind,id]) => {
+    const row = await db.queryOne('SELECT * FROM orders WHERE id=$1',[id]);
+    lastNotifyStoreCall = { ...row, deliveryCarrier:row.delivery_carrier, items:JSON.parse(row.items) };
+});
 const ordersRouter = require('../routes/orders');
 
 async function main() {
@@ -222,14 +226,14 @@ async function main() {
         check('цена позиции в созданном заказе — из БД (900₽), а не из тела', itemsOk[0].price === 900);
         check('название позиции — из БД, а не "ЛОЖЬ"', itemsOk[0].name === 'Пистолет Toua NTC57');
         check('итог сохранён верно (2700)', savedOk.total === 2700);
-        check('notifyStore получил реальную сумму', lastNotifyStoreCall && lastNotifyStoreCall.total === 2700);
+        check('очередь уведомления связана с реальной суммой', lastNotifyStoreCall && lastNotifyStoreCall.total === 2700);
     }
 
     /* ── Нулевая/произвольная total — тоже 409, не создаёт заказ ─────── */
     resetDb();
     {
         const r = await post(baseBody({
-            city: 'msk', delivery: 'pickup',
+            city: 'msk', store:'Москва, Тестовая, 1', delivery: 'pickup',
             items: [{ id: 1, name: 'x', price: 0, qty: 1 }],
             total: 0,
         }), initA);
@@ -237,7 +241,7 @@ async function main() {
         check('заказ не создан', orders.length === 0);
 
         const rOk = await post(baseBody({
-            city: 'msk', delivery: 'pickup',
+            city: 'msk', store:'Москва, Тестовая, 1', delivery: 'pickup',
             items: [{ id: 1, name: 'x', price: 0, qty: 1 }],
             total: 1000,
         }), initA);
@@ -256,7 +260,7 @@ async function main() {
         check('вариант КРД -> 201, цена 500₽ (price_krd_pickup)', rKrd.status === 201 && JSON.parse(orders[orders.length - 1].items)[0].price === 500);
 
         const rMsk = await post(baseBody({
-            city: 'msk', delivery: 'pickup',
+            city: 'msk', store:'Москва, Тестовая, 1', delivery: 'pickup',
             items: [{ id: 2, variantLabel: 'M', price: 1, qty: 1 }],
             total: 600,
         }), initA);

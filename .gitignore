@@ -9,3 +9,10 @@ ozon-data/
 exports/
 tmp/
 .claude/
+
+# Local configuration and database archives must never enter Git.
+.env.*
+!.env.example
+*.dump
+*.dump.enc
+*.sql.gz

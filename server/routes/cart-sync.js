@@ -87,7 +87,7 @@ router.post('/', requireUser, async (req, res) => {
         });
 
         res.json({ ok: true, count: rows.length });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 module.exports = router;

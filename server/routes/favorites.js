@@ -74,7 +74,7 @@ router.get('/', requireUser, async (req, res) => {
         );
         const products = await withVariants(rows.map(normalizeProduct));
         res.json(products);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* POST /api/favorites — tgId из req.tgId, не из тела запроса. */
@@ -87,7 +87,7 @@ router.post('/', requireUser, async (req, res) => {
             [req.tgId, String(productId)]
         );
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* DELETE /api/favorites — tgId из req.tgId, не из тела запроса. */
@@ -100,7 +100,7 @@ router.delete('/', requireUser, async (req, res) => {
             [req.tgId, String(productId)]
         );
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 module.exports = router;

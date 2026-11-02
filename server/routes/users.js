@@ -17,7 +17,7 @@ router.post('/map', requireInternal, async (req, res) => {
             [BigInt(userId).toString(), BigInt(chatId).toString()]
         );
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /api/users/chat?user_id=... — resolve userId to chatId. Тот же
@@ -33,7 +33,7 @@ router.get('/chat', requireInternal, async (req, res) => {
         );
         if (!row) return res.status(404).json({ error: 'Not found' });
         res.json({ chatId: row.chat_id.toString() });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* DELETE /api/users/map/:userId — remove mapping (admin only) */
@@ -42,7 +42,7 @@ router.delete('/map/:userId', require('../middleware/auth').requireAdmin, async 
         await db.execute('DELETE FROM user_map WHERE user_id=$1', [+req.params.userId]);
         res.json({ ok: true });
     } catch(e) {
-        res.status(500).json({ error: e.message });
+        console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' });
     }
 });
 

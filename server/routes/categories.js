@@ -6,7 +6,7 @@ const { requireAdmin } = require('../middleware/auth');
 router.get('/', async (req, res) => {
     try {
         res.json(await db.query('SELECT * FROM categories ORDER BY id'));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* POST /api/categories */
@@ -28,7 +28,7 @@ router.post('/', requireAdmin, async (req, res) => {
             );
         });
         res.status(201).json(await db.queryOne('SELECT * FROM categories WHERE id=$1', [id]));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* PUT /api/categories/:id */
@@ -41,7 +41,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
         );
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         res.json(await db.queryOne('SELECT * FROM categories WHERE id=$1', [+req.params.id]));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* DELETE /api/categories/:id */
@@ -56,7 +56,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
             await client.query('DELETE FROM categories WHERE id=$1', [id]);
         });
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 module.exports = router;

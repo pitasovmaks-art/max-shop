@@ -6,6 +6,9 @@ const fs         = require('fs');
 const compression = require('compression');
 
 const app = express();
+let databaseReady = false;
+let readinessCheckAt = 0;
+let readinessOk = false;
 
 /* Timeweb App Platform стоит перед приложением как обратный прокси —
    без этого req.ip был бы адресом самого балансировщика (один и тот же
@@ -46,11 +49,8 @@ async function applySchema() {
 
 app.use(express.json({ limit: '15mb' }));
 
-app.use((req, res, next) => {
-    res.setHeader('X-Frame-Options', 'ALLOWALL');
-    res.setHeader('Content-Security-Policy', "frame-ancestors *");
-    next();
-});
+app.disable('x-powered-by');
+app.use(require('./middleware/securityHeaders').securityHeaders);
 
 /* Кэш статики и API. HTML — всегда свежий (no-cache = обязательная
    ревалидация по ETag, но без запрета хранить тело — в отличие от
@@ -67,7 +67,7 @@ app.use((req, res, next) => {
         res.setHeader('Cache-Control', 'no-cache');
     } else if ((req.path.endsWith('.js') || req.path.endsWith('.css')) && isVersioned) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    } else if (req.path.startsWith('/api/') && req.method === 'GET') {
+    } else if (req.path.startsWith('/api/') && req.method === 'GET' && !res.getHeader('Cache-Control')) {
         res.setHeader('Cache-Control', 'no-cache');
     }
     next();
@@ -83,6 +83,7 @@ app.use((req, res, next) => {
     if (
         p === '/health'    ||
         p === '/healthz'   ||
+        p === '/readyz'    ||
         p === '/robots.txt'||
         p.startsWith('/webhook') ||
         p.startsWith('/api/')    ||
@@ -103,6 +104,27 @@ app.use((req, res, next) => {
 
 app.get('/health',  (req, res) => res.status(200).send('OK'));
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
+app.get('/readyz', async (req,res) => {
+    if (databaseReady && Date.now()-readinessCheckAt > 10000) {
+        readinessCheckAt = Date.now();
+        try { await require('./db').query('SELECT 1'); readinessOk=true; }
+        catch { readinessOk=false; }
+    }
+    res.setHeader('Cache-Control','no-store');
+    res.status(databaseReady && readinessOk ? 200 : 503).send(databaseReady && readinessOk ? 'OK' : 'Not ready');
+});
+app.get('/api/admin/health', require('./middleware/auth').requireAdmin, async (req,res) => {
+    try {
+        const row=await require('./db').queryOne(`SELECT
+            COUNT(*) FILTER (WHERE delivered_at IS NULL)::int AS pending,
+            COUNT(*) FILTER (WHERE delivered_at IS NULL AND attempts >= 12)::int AS failed,
+            MIN(created_at) FILTER (WHERE delivered_at IS NULL) AS oldest_pending
+            FROM notification_outbox`);
+        res.setHeader('Cache-Control','no-store');
+        res.json({ok:true,notifications:row});
+    } catch { res.status(503).json({ok:false}); }
+});
+
 
 /* Белый список статики — раньше express.static раздавал ВЕСЬ корень
    репозитория (server/**, bot.js, PROGRESS.md, package.json, тесты и
@@ -135,13 +157,12 @@ app.get('/api/config', (req, res) => {
     });
 });
 
-app.post('/webhook', express.json(), (req, res) => {
+app.post('/webhook', require('./middleware/webhook').requireWebhook('main'), (req, res) => {
     res.sendStatus(200);
     require('../bot').processUpdate(req.body).catch(console.error);
 });
 
-app.post('/webhook-support', express.json(), (req, res) => {
-    console.log('[support] webhook получил запрос:', JSON.stringify(req.body).slice(0, 200));
+app.post('/webhook-support', require('./middleware/webhook').requireWebhook('support'), (req, res) => {
     res.sendStatus(200);
     try {
         require('../bot-support').processUpdate(req.body).catch(e => console.error('[support] processUpdate:', e.message));
@@ -191,6 +212,13 @@ app.post('/api/admin/seed', require('./middleware/auth').requireAdmin, async (re
     }
 });
 
+app.use((err, req, res, next) => {
+    if (res.headersSent) return next(err);
+    const status = err.type === 'entity.too.large' ? 413 : (err.status >= 400 && err.status < 500 ? err.status : 500);
+    console.error('[http] request_failed', req.method, req.path, 'status=' + status);
+    res.status(status).json({ error: status === 413 ? 'Слишком большой запрос' : status === 400 ? 'Некорректный запрос' : 'Не удалось выполнить запрос' });
+});
+
 const PORT = process.env.PORT || 3000;
 const db = require('./db');
 
@@ -202,7 +230,9 @@ const db = require('./db');
 
         db.init()
             .then(() => {
+                databaseReady = true;
                 require('../bot').startBot();
+                require('./utils/notificationOutbox').start();
                 try {
                     require('../bot-support').startSupportBot();
                 } catch (e) {

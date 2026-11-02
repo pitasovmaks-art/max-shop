@@ -171,6 +171,7 @@ async function main() {
     };
     db.execute = async () => { throw new Error('test-pricing-match: execute() не ожидался'); };
 
+    require('./helpers/transactionStub')(db);
     const ordersRouter = require('../routes/orders');
     const app = express();
     app.use(express.json());
@@ -197,7 +198,7 @@ async function main() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Init-Data': initUser },
         body: JSON.stringify({
-            name: 'Покупатель', phone: '+79990001122', store: 'Краснодар',
+            name: 'Покупатель', phone: '+79990001122', store: 'Москва, Тестовая, 1',
             delivery: 'pickup', city: 'msk', items: [{ id: PRODUCT_ID, variantLabel: 'Стандарт', price: 1, qty: 1 }],
             total: 1, // клиент присылает заведомо неверную цену
         }),
@@ -212,7 +213,7 @@ async function main() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Init-Data': initUser },
         body: JSON.stringify({
-            name: 'Покупатель', phone: '+79990001122', store: 'Краснодар',
+            name: 'Покупатель', phone: '+79990001122', store: 'Москва, Тестовая, 1',
             delivery: 'pickup', city: 'msk', items: [{ id: PRODUCT_ID, variantLabel: 'Стандарт', price: 1, qty: 1 }],
             total: 800, // правильная total (как из тела 409 выше)
         }),

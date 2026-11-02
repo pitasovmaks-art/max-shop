@@ -176,6 +176,10 @@ async function fakeQuery(sql, params = []) {
         return p ? [{ name: p.name, sale_notified: p.sale_notified || 0 }] : [];
     }
 
+    if(s.startsWith('SELECT id,city,address FROM stores')){ const [city,address]=String(params[0]).split(', '); return {rows:[{id:1,city,address:'Тестовая, 1'}]}; }
+    if (s.startsWith('SELECT pg_advisory_xact_lock')) return {rows:[]};
+    if (s.startsWith('SELECT COUNT(*)::int AS c FROM orders')) return {rows:[{c:0}]};
+    if (s.startsWith('INSERT INTO notification_outbox')) return {rows:[]};
     // ── orders ───────────────────────────────────────────────────────
     if (s.startsWith('INSERT INTO orders')) {
         const [name, phone, store, delivery, address, city, tgId, comment, items, total] = params;
@@ -248,7 +252,7 @@ db.execute = async (sql, params = []) => {
     return r.rowCount ?? 0;
 };
 db.inTransaction = async (fn) => {
-    const client = { query: (sql, params) => fakeQuery(sql, params) };
+    const client = { query: async (sql, params) => { const r = await fakeQuery(sql,params); return Array.isArray(r) ? {rows:r} : r; } };
     return fn(client);
 };
 
@@ -377,7 +381,7 @@ async function main() {
         check('GET /api/products: МСК $12 при курсе 90 -> 1080₽ округляется вверх до 1100₽', mskVariant.priceMskPickup === 1100);
 
         const orderKrd = await post('/api/orders', {
-            name: 'Т', phone: '+7', store: 'Краснодар', delivery: 'pickup', city: 'krd',
+            name: 'Т', phone: '+79990001122', store: 'Краснодар, Тестовая, 1', delivery: 'pickup', city: 'krd',
             items: [{ id: p.id, variantLabel: 'Стандарт', price: 1, qty: 1 }], total: 900,
         }, { 'X-Init-Data': initA });
         check('POST /api/orders (КРД) заряжает ровно ту же цену, что отдал GET /api/products (900₽)',
@@ -385,7 +389,7 @@ async function main() {
         check('сохранённая в заказе цена позиции = 900₽', JSON.parse(orders[orders.length - 1].items)[0].price === 900);
 
         const orderMsk = await post('/api/orders', {
-            name: 'Т', phone: '+7', store: 'Москва', delivery: 'pickup', city: 'msk',
+            name: 'Т', phone: '+79990001122', store: 'Москва, Тестовая, 1', delivery: 'pickup', city: 'msk',
             items: [{ id: p.id, variantLabel: 'Стандарт', price: 1, qty: 1 }], total: 1100,
         }, { 'X-Init-Data': initA });
         check('POST /api/orders (МСК) заряжает ровно ту же цену, что отдал GET /api/products (1100₽)',
@@ -406,7 +410,7 @@ async function main() {
         await fakeQuery('INSERT INTO usd_rate_history', [1000000, 900000]); // курс стал 100.0000
 
         const r = await post('/api/orders', {
-            name: 'Т', phone: '+7', store: 'Краснодар', delivery: 'pickup', city: 'krd',
+            name: 'Т', phone: '+79990001122', store: 'Краснодар, Тестовая, 1', delivery: 'pickup', city: 'krd',
             items: [{ id: p.id, variantLabel: '', price: 1, qty: 1 }], total: 900, // старая, уже неактуальная сумма
         }, { 'X-Init-Data': initA });
         check('курс изменился между пред-проверкой и отправкой -> 409 price_changed', r.status === 409 && r.body.error === 'price_changed');
@@ -422,7 +426,7 @@ async function main() {
         addVariant({ product_id: p.id, label: '', is_krd: 1, is_default: 1, is_usd: 1, usd_price_krd_pickup: 1000 });
 
         await post('/api/orders', {
-            name: 'Т', phone: '+7', store: 'Краснодар', delivery: 'pickup', city: 'krd',
+            name: 'Т', phone: '+79990001122', store: 'Краснодар, Тестовая, 1', delivery: 'pickup', city: 'krd',
             items: [{ id: p.id, variantLabel: '', price: 1, qty: 1 }], total: 900,
         }, { 'X-Init-Data': initA });
         const savedBefore = JSON.stringify(orders[orders.length - 1]);
@@ -442,14 +446,14 @@ async function main() {
         addVariant({ product_id: p.id, label: 'M', is_krd: 0, is_default: 0, price_msk_pickup: 550, price_msk_delivery: 700, sale_price: 600 });
 
         const rKrd = await post('/api/orders', {
-            name: 'Т', phone: '+7', store: 'Краснодар', delivery: 'pickup', city: 'krd',
+            name: 'Т', phone: '+79990001122', store: 'Краснодар, Тестовая, 1', delivery: 'pickup', city: 'krd',
             items: [{ id: p.id, variantLabel: 'M', price: 1, qty: 1 }], total: 500,
         }, { 'X-Init-Data': initA });
         check('рублёвый товар КРД: 201, цена 500₽ (как и до usd-pricing)', rKrd.status === 201 && JSON.parse(orders[orders.length - 1].items)[0].price === 500);
         check('рублёвый товар: $ и курс в заказе не пишутся (не было $)', JSON.parse(orders[orders.length - 1].items)[0].priceUsdCents === undefined);
 
         const rMsk = await post('/api/orders', {
-            name: 'Т', phone: '+7', store: 'Москва', delivery: 'russia', city: 'msk', address: 'Москва, Тестовая, 1',
+            name: 'Т', phone: '+79990001122', store: 'Москва, Тестовая, 1', delivery: 'russia', city: 'msk', address: 'Москва, Тестовая, 1',
             items: [{ id: p.id, variantLabel: 'M', price: 1, qty: 1 }], total: 600,
         }, { 'X-Init-Data': initA });
         check('рублёвый товар доставка по России: 201, городская цена 600₽',
@@ -539,7 +543,7 @@ async function main() {
             apiProduct.variants[0].priceKrdPickup === 0);
 
         const orderRes = await post('/api/orders', {
-            name: 'Т', phone: '+7', store: 'Краснодар', delivery: 'pickup', city: 'krd',
+            name: 'Т', phone: '+79990001122', store: 'Краснодар, Тестовая, 1', delivery: 'pickup', city: 'krd',
             items: [{ id: p.id, variantLabel: '', price: 1, qty: 1 }], total: 1,
         }, { 'X-Init-Data': initA });
         check('курс не задан: POST /api/orders -> 400 (заказ отклонён, не создан по цене 0)',

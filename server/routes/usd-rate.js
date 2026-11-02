@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
             `SELECT id, rate FROM usd_rate_history ORDER BY created_at DESC, id DESC LIMIT 1`
         );
         res.json({ rate: row ? row.rate : null, rateVersion: row ? row.id : null });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /api/usd-rate/admin/history — admin-only, п.7: "курс, прошлый
@@ -29,7 +29,7 @@ router.get('/admin/history', requireAdmin, async (req, res) => {
             prevRate: r.prev_rate != null ? r.prev_rate / 10000 : null,
             createdAt: r.created_at,
         })));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* POST /api/usd-rate/admin — admin-only: задать новый курс. После ответа
@@ -51,7 +51,7 @@ router.post('/admin', requireAdmin, async (req, res) => {
         setImmediate(() => {
             notifyCartPriceChanges().catch(e => console.error('[usd-rate] notifyCartPriceChanges error:', e.message));
         });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 const NOTIFY_COOLDOWN_MS = 24 * 60 * 60 * 1000;

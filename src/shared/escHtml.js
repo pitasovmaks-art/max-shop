@@ -25,3 +25,12 @@ function escHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 }
+
+// Only network/relative image URLs; callers must still escape the HTML attribute.
+function safeImageUrl(value) {
+    if (typeof value !== 'string' || !value || /[\u0000-\u0020\u007f<>"']/.test(value)) return '';
+    try {
+        const url = new URL(value, 'https://shop.invalid/');
+        return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password ? value : '';
+    } catch { return ''; }
+}

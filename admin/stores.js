@@ -25,16 +25,16 @@ function renderStores() {
     el.innerHTML = _stores.map(s => `
         <div class="store-row">
             <div class="store-row__info">
-                <div class="store-row__name">${s.name}</div>
+                <div class="store-row__name">${escHtml(s.name)}</div>
                 <div class="store-row__addr">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="flex-shrink:0">
                         <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
                         <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
                     </svg>
-                    ${s.city}, ${s.address}
+                    ${escHtml(s.city)}, ${escHtml(s.address)}
                 </div>
-                ${s.hours ? `<div class="store-row__hours">🕐 ${s.hours}</div>` : ''}
-                ${s.phone ? `<div class="store-row__hours">📞 ${s.phone}</div>` : ''}
+                ${s.hours ? `<div class="store-row__hours">🕐 ${escHtml(s.hours)}</div>` : ''}
+                ${s.phone ? `<div class="store-row__hours">📞 ${escHtml(s.phone)}</div>` : ''}
             </div>
             <div class="product-row__actions">
                 <button class="action-btn action-btn--edit" onclick="openStoreForm(${s.id})" aria-label="Редактировать">
@@ -173,7 +173,7 @@ function confirmStoreDelete(id) {
     overlay.innerHTML = `
         <div class="dialog">
             <p class="dialog__title">Удалить магазин?</p>
-            <p class="dialog__sub">«${s.name}»</p>
+            <p class="dialog__sub">«${escHtml(s.name)}»</p>
             <div class="dialog__actions">
                 <button class="dialog__btn dialog__btn--danger" onclick="deleteStore(${id})">Удалить</button>
                 <button class="dialog__btn dialog__btn--cancel" onclick="closeStoreDeleteDialog()">Отмена</button>

@@ -118,7 +118,7 @@ function renderFavorites(products) {
 
         const price    = unavailable ? 0 : getPrice(p);
         const imgBg    = p.image ? '' : 'img-bg--default';
-        const imgIcon  = p.image ? `<img class="product-card__photo" src="${p.image}" alt="${p.name}">` : iconSvg('image', 28);
+        const imgIcon  = p.image ? `<img class="product-card__photo" src="${escHtml(safeImageUrl(p.image))}" alt="${escHtml(p.name)}">` : iconSvg('image', 28);
         const basePrice = effectiveVar ? (_city === 'krd' ? effectiveVar.priceKrdPickup : effectiveVar.priceMskPickup) : price;
         const priceStr = unavailable
             ? `<span style="display:flex;flex-direction:column;gap:2px">
@@ -143,7 +143,7 @@ function renderFavorites(products) {
                 </button>
             </div>
             <div class="product-card__body">
-                <div class="product-card__name">${p.name}</div>
+                <div class="product-card__name">${escHtml(p.name)}</div>
                 <div class="product-card__footer">
                     <span class="product-card__price">${priceStr}</span>
                     ${addBtn}

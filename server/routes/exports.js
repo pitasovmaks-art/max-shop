@@ -40,7 +40,7 @@ router.get('/list', requireAdmin, async (req, res) => {
         files.sort((a, b) => new Date(b.modifiedAt) - new Date(a.modifiedAt));
         res.json(files);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' });
     }
 });
 

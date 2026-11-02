@@ -45,7 +45,7 @@ function renderCategories() {
                 const subCount = prods.filter(p => p.subId === sub.id).length;
                 return `
                 <div class="subcat-item">
-                    <span class="subcat-name">${sub.name} <span style="color:var(--gray);font-size:12px;">(${subCount})</span></span>
+                    <span class="subcat-name">${escHtml(sub.name)} <span style="color:var(--gray);font-size:12px;">(${subCount})</span></span>
                     <div class="subcat-actions">
                         <button class="action-btn action-btn--edit" onclick="openSubcategoryForm(${sub.id},${cat.id})" aria-label="Редактировать">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -71,9 +71,9 @@ function renderCategories() {
         <div class="category-card" id="cat-card-${cat.id}">
             <div class="category-card__header" onclick="toggleCat(${cat.id})">
                 <div class="cat-dot cat-bg-${cat.color}"></div>
-                <span class="cat-icon">${cat.icon}</span>
+                <span class="cat-icon">${escHtml(cat.icon)}</span>
                 <div class="cat-info">
-                    <span class="cat-name">${cat.name}</span>
+                    <span class="cat-name">${escHtml(cat.name)}</span>
                     <span class="cat-meta">${metaText}</span>
                 </div>
                 <div class="cat-row-actions" onclick="event.stopPropagation()">
@@ -186,7 +186,7 @@ function confirmDeleteCategory(id) {
     overlay.innerHTML = `
         <div class="dialog">
             <p class="dialog__title">Удалить категорию?</p>
-            <p class="dialog__sub">${warnText}</p>
+            <p class="dialog__sub">${escHtml(warnText)}</p>
             <div class="dialog__actions">
                 <button class="dialog__btn dialog__btn--danger" onclick="_doDeleteCategory(${id})">Удалить</button>
                 <button class="dialog__btn dialog__btn--cancel" onclick="this.closest('.dialog-overlay').remove()">Отмена</button>
@@ -275,7 +275,7 @@ function confirmDeleteSubcategory(id) {
     overlay.innerHTML = `
         <div class="dialog">
             <p class="dialog__title">Удалить подкатегорию?</p>
-            <p class="dialog__sub">${warnText}</p>
+            <p class="dialog__sub">${escHtml(warnText)}</p>
             <div class="dialog__actions">
                 <button class="dialog__btn dialog__btn--danger" onclick="_doDeleteSubcategory(${id})">Удалить</button>
                 <button class="dialog__btn dialog__btn--cancel" onclick="this.closest('.dialog-overlay').remove()">Отмена</button>

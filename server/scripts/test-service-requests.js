@@ -148,6 +148,11 @@ db.execute = async (sql, params = []) => {
     throw new Error('test-service-requests: неизвестный execute: ' + s);
 };
 
+require('./helpers/transactionStub')(db, async ([kind,id]) => {
+    const row = await db.queryOne('SELECT * FROM service_requests WHERE id=$1',[id]);
+    const items = await db.query('SELECT * FROM service_request_items WHERE request_id=$1',[id]);
+    lastNotifyCall = {...row,number:'Р-'+id,items:items.map(i=>({toolName:i.tool_name,problem:i.problem}))};
+});
 const serviceRequestsRouter = require('../routes/service-requests');
 
 async function main() {
@@ -323,7 +328,7 @@ async function main() {
         const r = await post(validBody(), initA);
         check('заявка сохраняется (201), даже если notifyServiceRequest бросает ошибку', r.status === 201);
         await new Promise(resolve => setTimeout(resolve, 20)); // дать катчу отработать
-        check('notifyServiceRequest всё равно был вызван (ошибка — только в сторону лога)', lastNotifyCall !== null);
+        check('уведомление записано в очередь независимо от доступности бота', lastNotifyCall !== null);
         notifyShouldThrow = false;
     }
 
@@ -335,11 +340,11 @@ async function main() {
             items: [{ toolName: 'Шуруповёрт', problem: 'не крутит' }, { toolName: 'Степлер' }],
         }), initA);
         await new Promise(resolve => setTimeout(resolve, 20));
-        check('notifyServiceRequest вызван без store (выбор магазина убран из формы) — реальный bot.js шлёт обоим менеджерам',
+        check('очередь уведомления без store (выбор магазина убран из формы) — реальный bot.js шлёт обоим менеджерам',
             lastNotifyCall && !lastNotifyCall.store);
-        check('notifyServiceRequest вызван с номером заявки',
+        check('очередь содержит номер заявки',
             lastNotifyCall && lastNotifyCall.number === `Р-${r.body.id}`);
-        check('notifyServiceRequest получил оба инструмента',
+        check('очередь связана с обоими инструментами',
             lastNotifyCall && lastNotifyCall.items.length === 2 && lastNotifyCall.items[0].toolName === 'Шуруповёрт');
     }
 

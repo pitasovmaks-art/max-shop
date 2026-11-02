@@ -66,7 +66,7 @@ router.post('/subscribe', requireUser, async (req, res) => {
         );
         await logConsent(req.tgId, 'subscribe', source, consentTextVersion);
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* POST /api/promo/unsubscribe — БЕЗ requireUser: вызывается не из браузера,
@@ -94,7 +94,7 @@ router.post('/unsubscribe', requireInternal, async (req, res) => {
         );
         if (changed > 0) await logConsent(tgId, 'unsubscribe', 'bot', null);
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* POST /api/promo/unsubscribe-me — для приложения (переключатель в «Мои
@@ -109,7 +109,7 @@ router.post('/unsubscribe-me', requireUser, async (req, res) => {
         );
         if (changed > 0) await logConsent(req.tgId, 'unsubscribe', 'toggle', null);
         res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 /* GET /api/promo/status — подписан = строка есть И unsubscribed_at IS NULL
@@ -123,7 +123,7 @@ router.get('/status', requireUser, async (req, res) => {
             [BigInt(req.tgId)]
         );
         res.json({ subscribed: !!row });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { console.error('[api] request_failed', req.method, req.path); res.status(500).json({ error: 'Не удалось выполнить запрос' }); }
 });
 
 module.exports = router;

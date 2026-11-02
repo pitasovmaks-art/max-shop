@@ -384,12 +384,21 @@ async function submitOrder() {
     }
 
     try {
+        const fingerprint = JSON.stringify({ name,phone,storeLabel,address,city,comment,items:cart.map(i=>[i.id,i.variantLabel,i.qty]),total });
+        let pendingOrder;
+        try { pendingOrder = JSON.parse(sessionStorage.getItem('pending_order') || 'null'); } catch {}
+        if (!pendingOrder || pendingOrder.fingerprint !== fingerprint) {
+            pendingOrder = { fingerprint, requestId: crypto.randomUUID() };
+            sessionStorage.setItem('pending_order', JSON.stringify(pendingOrder));
+        }
         const r = await authFetch('/api/orders', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 name,
                 phone,
+                requestId: pendingOrder.requestId,
+                storeId: _deliveryMethod === 'pickup' ? Number(getSelectedStore()) : undefined,
                 store:    storeLabel,
                 delivery: _deliveryMethod,
                 deliveryCarrier: _deliveryMethod === 'russia' ? _deliveryCarrier : undefined,
@@ -450,6 +459,7 @@ async function submitOrder() {
 
         document.getElementById('successScreen').classList.remove('hidden');
         localStorage.removeItem('cart');
+        sessionStorage.removeItem('pending_order');
         if (window.syncCartToServer) syncCartToServer([]);
 
         // Subscribe to promo if user opted in. Skip if the checkbox is

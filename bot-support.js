@@ -2,7 +2,10 @@
    Max Messenger Support Bot — Точка Монтажа
    ───────────────────────────────────────────────────────── */
 const https = require('https');
+const { webhookSecret } = require('./server/middleware/webhook');
 const path  = require('path');
+const { verifiedManagerMap } = require('./server/utils/supportRecipients');
+const verifiedManagerChats = new Map();
 
 const API_BASE               = 'platform-api2.max.ru';
 const TOKEN                  = process.env.SUPPORT_BOT_TOKEN || '';
@@ -35,9 +38,7 @@ async function dbLoadAdminMap() {
         const db = getDb();
         if (!db) return {};
         const rows = await db.query('SELECT user_id, chat_id FROM support_admins');
-        const map = {};
-        for (const row of rows) map[row.user_id] = row.chat_id;
-        return map;
+        return await verifiedManagerMap(rows, SUPPORT_ADMIN_USER_IDS, chatId => request('GET', 'chats/' + encodeURIComponent(chatId)), verifiedManagerChats);
     } catch (e) {
         console.error('[support] dbLoadAdminMap ошибка:', e.message);
         return {};
@@ -84,13 +85,13 @@ function request(method, endpoint, body = null, query = {}) {
                 try {
                     const parsed = JSON.parse(raw);
                     if (res.statusCode >= 400) {
-                        reject(new Error(`API ${res.statusCode}: ${JSON.stringify(parsed)}`));
+                        reject(new Error(`Max API ${res.statusCode}`));
                     } else {
                         resolve(parsed);
                     }
                 } catch {
                     if (res.statusCode >= 400) {
-                        reject(new Error(`API ${res.statusCode}: ${raw}`));
+                        reject(new Error(`Max API ${res.statusCode}`));
                     } else {
                         resolve(raw);
                     }
@@ -119,9 +120,11 @@ function registerWebhook() {
         console.error('[support] WEBHOOK_URL не задан, вебхук не зарегистрирован');
         return;
     }
+    const retry = () => { const timer = setTimeout(registerWebhook, 60000); timer.unref(); };
     const data = JSON.stringify({
         url:          SUPPORT_WEBHOOK_URL,
         update_types: ['message_created', 'bot_started'],
+        secret: webhookSecret('support'),
     });
 
     return new Promise((resolve) => {
@@ -140,15 +143,20 @@ function registerWebhook() {
             let raw = '';
             res.on('data', chunk => raw += chunk);
             res.on('end', () => {
-                console.log('[support] Webhook зарегистрирован, статус:', res.statusCode, raw);
+                console.log('[support] Webhook registration status:', res.statusCode);
+                let success = res.statusCode >= 200 && res.statusCode < 300;
+                try { if (JSON.parse(raw).success === false) success = false; } catch { success = false; }
+                if (!success) retry();
                 resolve();
             });
         });
 
         req.on('error', e => {
             console.error('[support] Ошибка регистрации webhook:', e.message);
+            retry();
             resolve();
         });
+        req.setTimeout(25000, () => req.destroy(new Error('Webhook registration timeout')));
 
         req.write(data);
         req.end();
@@ -191,7 +199,6 @@ async function processUpdate(update) {
         const senderName = msg.sender?.name || msg.sender?.username || String(userId);
 
         if (!chatId) return;
-        console.log('[support] message: userId=' + userId + ' chatId=' + chatId + ' isManager=' + SUPPORT_ADMIN_USER_IDS.includes(userId) + ' text=' + text);
         if (msg.sender?.is_bot) return;
 
         /* ── Сообщение от менеджера ── */
