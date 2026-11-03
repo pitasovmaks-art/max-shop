@@ -44,7 +44,7 @@
     "node-cron": "^4.2.1",
     "pg": "^8.21.0",
     "sharp": "^0.35.5",
-    "xlsx": "file:vendor/xlsx-0.20.3.tgz"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "overrides": {
     "qs": "^6.16.1"
