@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="dark">
     <title>Точка Монтажа — Администратор</title>
-    <link rel="stylesheet" href="admin.css?v=20261102logo">
+    <link rel="stylesheet" href="admin.css?v=20261103msk">
 </head>
 <body>
 
@@ -83,6 +83,7 @@
         <button class="tab-btn" id="tabBanners" onclick="switchTab('banners')">Баннеры</button>
         <button class="tab-btn" id="tabService" onclick="switchTab('service')">🔧 Сервис</button>
         <button class="tab-btn" id="tabExports" onclick="switchTab('exports')">📥 Экспорт файлов</button>
+        <button class="tab-btn" id="tabMskPrices" onclick="switchTab('mskprices')">Цены Москвы</button>
         <button class="tab-btn" id="tabUsdRate" onclick="switchTab('usdrate')">💵 Курс доллара</button>
     </div>
 
@@ -225,6 +226,26 @@
             <div id="exportsList"></div>
         </div>
     </div><!-- /sectionExports -->
+
+    <section id="sectionMskPrices" class="hidden">
+        <div class="exports-section">
+            <h2 style="font-size:18px;margin-bottom:12px">Повышение рублёвых цен Москвы</h2>
+            <p style="line-height:1.5;margin-bottom:16px">Округление вверх до 50 ₽. Краснодарские цены, услуги и долларовые варианты не изменяются.</p>
+            <div style="display:flex;flex-direction:column;gap:12px;max-width:640px">
+                <label>Повысить на, %<input class="ff__input" id="mskPercent" type="number" min="0.01" max="100" step="0.01" placeholder="Например, 5" oninput="invalidateMskPreview()"></label>
+                <label>Какие товары<select class="ff__input" id="mskScope" onchange="renderMskScope();invalidateMskPreview()"><option value="all">Все товары</option><option value="categories">Выбранные категории</option><option value="products">Выбранные товары</option></select></label>
+                <div id="mskSelection" class="hidden" style="max-height:260px;overflow:auto;border:1px solid var(--border);padding:10px"></div>
+                <label style="display:flex;gap:8px;align-items:center"><input id="mskSales" type="checkbox" onchange="invalidateMskPreview()"> Также повысить акционные цены Москвы</label>
+                <p>Если флажок выключен, акционные цены останутся прежними.</p>
+                <button type="button" class="exports-refresh-btn" id="mskPreviewBtn" onclick="previewMskPrices()">Рассчитать изменения</button>
+                <div id="mskPriceMessage" role="status" aria-live="polite"></div>
+            </div>
+            <div id="mskPreviewWrap" class="hidden" style="overflow:auto;margin-top:16px">
+                <table class="exports-table"><thead><tr><th>Товар / вариант</th><th>Было, ₽</th><th>Станет, ₽</th><th>Акция: было → станет, ₽</th></tr></thead><tbody id="mskPreviewRows"></tbody></table>
+                <button type="button" class="exports-refresh-btn" id="mskApplyBtn" onclick="applyMskPrices()" style="margin-top:12px">Подтвердить повышение</button>
+            </div>
+        </div>
+    </section>
 
     <!-- USD rate section (usd-pricing) -->
     <div id="sectionUsdRate" class="hidden">
@@ -832,6 +853,7 @@
 <script src="../src/shared/bannerRender.js?v=20261016"></script>
 <script src="banners.js"></script>
 <script src="serviceRequests.js"></script>
-<script src="admin.js?v=20261102security"></script>
+<script src="mskPrices.js?v=20261103msk"></script>
+<script src="admin.js?v=20261103msk"></script>
 </body>
 </html>

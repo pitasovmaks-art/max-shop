@@ -831,8 +831,8 @@ button.product-row__hit:active  { opacity: .7; }
 .dialog__btn--cancel  { background: var(--gray-light); color: var(--dark); }
 
 /* ─── Tab bar ───────────────────────────────────────────── */
-.tab-bar { display:flex; background:var(--white); border-bottom:1px solid var(--border); }
-.tab-btn { flex:1; height:44px; font-size:13px; font-weight:600; color:var(--gray); border-bottom:2px solid transparent; transition:all .15s; }
+.tab-bar { display:flex; overflow-x:auto; background:var(--white); border-bottom:1px solid var(--border); }
+.tab-btn { flex:0 0 auto; padding:0 14px; white-space:nowrap; height:44px; font-size:13px; font-weight:600; color:var(--gray); border-bottom:2px solid transparent; transition:all .15s; }
 .tab-btn.active { color:#FFFFFF; border-bottom-color:#FFFFFF; }
 
 /* ─── Category list ─────────────────────────────────────── */

@@ -528,6 +528,7 @@ async function init() {
     console.log('[DB] Создание схемы (CREATE TABLE IF NOT EXISTS)...');
     try {
         await createSchema();
+        await pool.query(require('./utils/mskPriceAdjustment').SCHEMA);
         for (const statement of `
 -- Additive security/reliability migration; old orders remain unchanged.
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_request_id TEXT;

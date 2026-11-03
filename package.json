@@ -30,7 +30,8 @@
     "test:security-hardening": "node server/scripts/test-security-hardening.js",
     "backup": "node server/scripts/backup.js",
     "backup:verify": "node server/scripts/verify-backup.js",
-    "health:check": "node server/scripts/check-health.js"
+    "health:check": "node server/scripts/check-health.js",
+    "test:msk-prices": "node server/scripts/test-msk-prices.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",

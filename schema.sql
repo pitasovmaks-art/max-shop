@@ -432,3 +432,11 @@ CREATE TABLE IF NOT EXISTS notification_outbox (
     UNIQUE (kind, entity_id)
 );
 CREATE INDEX IF NOT EXISTS notification_outbox_pending ON notification_outbox (available_at) WHERE delivered_at IS NULL;
+
+-- History of approved Moscow-only percentage adjustments.
+CREATE TABLE IF NOT EXISTS msk_price_adjustments (
+    request_id TEXT PRIMARY KEY,
+    options JSONB NOT NULL,
+    changes JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

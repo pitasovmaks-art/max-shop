@@ -190,6 +190,7 @@ app.use('/api/exports',           require('./routes/exports'));
 app.use('/api/uploads',           require('./routes/uploads'));
 app.use('/api/sync',              require('./routes/sync'));
 app.use('/api/cart-sync',         require('./routes/cart-sync'));
+app.use('/api/admin/msk-prices', require('./routes/msk-prices'));
 app.use('/api/usd-rate',          require('./routes/usd-rate'));
 
 /* Reset catalog tables (admin only) — TRUNCATE only, does NOT reseed demo data */

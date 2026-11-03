@@ -413,6 +413,9 @@ function switchTab(tab) {
     const isService    = tab === 'service';
     const isExports    = tab === 'exports';
     const isUsdRate    = tab === 'usdrate';
+    const isMskPrices = tab === 'mskprices';
+    document.getElementById('sectionMskPrices').classList.toggle('hidden', !isMskPrices);
+    document.getElementById('tabMskPrices').classList.toggle('active', isMskPrices);
 
     document.getElementById('sectionProducts').classList.toggle('hidden',   !isProducts);
     document.getElementById('sectionCategories').classList.toggle('hidden', !isCategories);
@@ -446,6 +449,8 @@ function switchTab(tab) {
     if (isService)    renderServiceRequests();
     if (isExports)    renderExports();
     if (isUsdRate)    renderUsdRate();
+    if (isMskPrices)  renderMskScope();
+    document.querySelector('.tab-btn.active')?.scrollIntoView({block:'nearest',inline:'nearest'});
 }
 
 /* ─── USD rate (usd-pricing) ─────────────────────────────── */
