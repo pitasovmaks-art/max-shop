@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="dark">
     <title>Точка Монтажа — Администратор</title>
-    <link rel="stylesheet" href="admin.css?v=20261103workspace">
+    <link rel="stylesheet" href="admin.css?v=20261103controls">
 </head>
 <body>
 
@@ -247,20 +247,30 @@
 
     <section id="sectionMskPrices" class="hidden">
         <div class="exports-section">
-            <h2 style="font-size:18px;margin-bottom:12px">Повышение рублёвых цен Москвы</h2>
-            <p style="line-height:1.5;margin-bottom:16px">Округление вверх до 50 ₽. Краснодарские цены, услуги и долларовые варианты не изменяются.</p>
+            <h2 style="font-size:18px;margin-bottom:12px">Изменение рублёвых цен Москвы</h2>
+            <p style="line-height:1.5;margin-bottom:16px">Повышение — округление вверх до 50 ₽, снижение — вниз до 50 ₽. Нулевая цена не допускается. Краснодарские цены, услуги и долларовые варианты не изменяются.</p>
             <div style="display:flex;flex-direction:column;gap:12px;max-width:640px">
-                <label>Повысить на, %<input class="ff__input" id="mskPercent" type="number" min="0.01" max="100" step="0.01" placeholder="Например, 5" oninput="invalidateMskPreview()"></label>
-                <label>Какие товары<select class="ff__input" id="mskScope" onchange="renderMskScope();invalidateMskPreview()"><option value="all">Все товары</option><option value="categories">Выбранные категории</option><option value="products">Выбранные товары</option></select></label>
+                <label>Действие<select class="ff__input" id="mskDirection" onchange="invalidateMskPreview()"><option value="increase">Повысить цены</option><option value="decrease">Снизить цены</option></select></label>
+                <label>На сколько, %<input class="ff__input" id="mskPercent" type="number" min="0.01" max="100" step="0.01" placeholder="Например, 5" oninput="invalidateMskPreview()"></label>
+                <label>Какие товары<select class="ff__input" id="mskScope" onchange="renderMskScope();invalidateMskPreview()"><option value="filtered">По фильтрам с исключениями</option><option value="all">Все товары</option><option value="categories">Выбранные категории</option><option value="products">Выбранные товары</option></select></label>
+                <div id="mskFilters" class="msk-filters">
+                    <label>Бренд<select class="ff__input" id="mskBrand" onchange="renderMskScope();invalidateMskPreview()"><option value="">Все бренды</option></select></label>
+                    <label>Категория<select class="ff__input" id="mskCategory" onchange="document.getElementById('mskSubcategory').value='';renderMskScope();invalidateMskPreview()"><option value="">Все категории</option></select></label>
+                    <label>Подкатегория<select class="ff__input" id="mskSubcategory" onchange="renderMskScope();invalidateMskPreview()"><option value="">Все подкатегории</option></select></label>
+                    <label>Найти товар в списке<input class="ff__input" id="mskSearch" type="search" placeholder="Название или артикул" oninput="renderMskScope()"></label>
+                    <p>Фильтры применяются вместе. Снимите галочку, чтобы исключить товар. Поиск только помогает найти строку и не меняет выбор.</p>
+                    <div class="msk-selection-actions"><button type="button" class="exports-refresh-btn" onclick="selectMskFiltered(true)">Выбрать все по фильтрам</button><button type="button" class="exports-refresh-btn" onclick="selectMskFiltered(false)">Исключить все по фильтрам</button></div>
+                    <p id="mskSelectionCount" role="status"></p>
+                </div>
                 <div id="mskSelection" class="hidden" style="max-height:260px;overflow:auto;border:1px solid var(--border);padding:10px"></div>
-                <label style="display:flex;gap:8px;align-items:center"><input id="mskSales" type="checkbox" onchange="invalidateMskPreview()"> Также повысить акционные цены Москвы</label>
+                <label style="display:flex;gap:8px;align-items:center"><input id="mskSales" type="checkbox" onchange="invalidateMskPreview()"> Также изменить акционные цены Москвы</label>
                 <p>Если флажок выключен, акционные цены останутся прежними.</p>
                 <button type="button" class="exports-refresh-btn" id="mskPreviewBtn" onclick="previewMskPrices()">Рассчитать изменения</button>
                 <div id="mskPriceMessage" role="status" aria-live="polite"></div>
             </div>
             <div id="mskPreviewWrap" class="hidden" style="overflow:auto;margin-top:16px">
                 <table class="exports-table"><thead><tr><th>Товар / вариант</th><th>Было, ₽</th><th>Станет, ₽</th><th>Акция: было → станет, ₽</th></tr></thead><tbody id="mskPreviewRows"></tbody></table>
-                <button type="button" class="exports-refresh-btn" id="mskApplyBtn" onclick="applyMskPrices()" style="margin-top:12px">Подтвердить повышение</button>
+                <button type="button" class="exports-refresh-btn" id="mskApplyBtn" onclick="applyMskPrices()" style="margin-top:12px">Подтвердить изменение</button>
             </div>
         </div>
     </section>
@@ -871,7 +881,7 @@
 <script src="../src/shared/bannerRender.js?v=20261016"></script>
 <script src="banners.js"></script>
 <script src="serviceRequests.js"></script>
-<script src="mskPrices.js?v=20261103msk"></script>
+<script src="mskPrices.js?v=20261103controls"></script>
 <script src="admin.js?v=20261103workspace"></script>
 </body>
 </html>

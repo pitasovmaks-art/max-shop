@@ -4,10 +4,10 @@ const {issueAdminToken}=require('../middleware/auth');
 const {adjustedPrice,validateOptions}=require('../utils/mskPriceAdjustment');
 let state,failUpdate=false,tail=Promise.resolve(),checks=0;
 function reset(){state={variants:[
-{id:1,product_id:1,name:'Пистолет',category_id:1,label:'14 дней',price:18990,sale:18000,is_krd:0,is_usd:0},
-{id:2,product_id:1,name:'Пистолет',category_id:1,label:'14 дней',price:25000,sale:24000,is_krd:1,is_usd:0},
+{id:1,product_id:1,name:'Пистолет',brand:'Toua',sub_id:10,category_id:1,label:'14 дней',price:18990,sale:18000,is_krd:0,is_usd:0},
+{id:2,product_id:1,name:'Пистолет',brand:'Toua',sub_id:10,category_id:1,label:'14 дней',price:25000,sale:24000,is_krd:1,is_usd:0},
 {id:3,product_id:2,name:'Долларовый',category_id:1,label:'Гарантия',price:10000,sale:9000,is_krd:0,is_usd:1},
-{id:4,product_id:3,name:'Ящик',category_id:2,label:'',price:1000,sale:0,is_krd:0,is_usd:0}],products:[{id:5,name:'Без вариантов',category_id:2,price:501,price_msk:0,price_krd:777}],history:[]}}
+{id:4,product_id:3,name:'Ящик',brand:'ToughBuilt',sub_id:20,category_id:2,label:'',price:1000,sale:0,is_krd:0,is_usd:0}],products:[{id:5,name:'Без вариантов',brand:'Toua',sub_id:21,category_id:2,price:501,price_msk:0,price_krd:777}],history:[]}}
 async function query(sql,p=[],client){const s=sql.replace(/\s+/g,' ').trim();
  if(s==='BEGIN'){client.snapshot=structuredClone(state);return {rows:[]}}
  if(s==='COMMIT'){client.unlock?.();return {rows:[]}}
@@ -40,6 +40,18 @@ try{
  await check('changed selection or percentage cannot reuse old preview',async()=>{reset();const p=await post('preview',all);assert.equal((await post('apply',applyBody({...all,percent:10},p))).status,409);assert.equal(state.history.length,0)});
  await check('failure rolls back the complete adjustment',async()=>{reset();const p=await post('preview',all),before=structuredClone(state);failUpdate=true;assert.equal((await post('apply',applyBody(all,p))).status,500);failUpdate=false;assert.deepEqual(state,before)});
  await check('parallel confirmations apply exactly once',async()=>{reset();const p=await post('preview',all),results=await Promise.all([post('apply',applyBody(all,p)),post('apply',applyBody(all,p))]);assert.ok(results.every(r=>r.status===200));assert.equal(state.history.length,1);assert.equal(state.variants[0].price,19950)});
+ await check('decrease rounds downward to 50 and rejects zero results',()=>{assert.equal(adjustedPrice(18990,-500),18000);assert.equal(adjustedPrice(1000,-1000),900);assert.throws(()=>adjustedPrice(50,-1));assert.throws(()=>validateOptions({...all,direction:'decrease',percent:100}));assert.throws(()=>validateOptions({...all,direction:'bad'}))});
+ await check('decrease preserves Krasnodar and dollar variants, and changes optional sale',async()=>{reset();const options={...all,direction:'decrease',includeSales:true},p=await post('preview',options);assert.equal(p.status,200);assert.equal((await post('apply',applyBody(options,p))).status,200);assert.equal(state.variants[0].price,18000);assert.equal(state.variants[0].sale,17100);assert.equal(state.variants[1].price,25000);assert.equal(state.variants[2].price,10000);assert.equal(state.products[0].price_msk,450);assert.equal(state.products[0].price_krd,777)});
+ const filtered={...all,scope:'filtered',filters:{brand:' TOUA ',categoryId:1,subId:10},excludedIds:[]};
+ await check('brand category and subcategory intersect on server',async()=>{reset();const p=await post('preview',filtered);assert.equal(p.status,200);assert.deepEqual(p.body.changes.map(c=>c.productId),[1]);const empty=await post('preview',{...filtered,filters:{...filtered.filters,subId:20}});assert.equal(empty.body.changes.length,0)});
+ await check('brand spans categories including legacy products',async()=>{reset();const p=await post('preview',{...filtered,filters:{brand:'toua'}});assert.deepEqual(p.body.changes.map(c=>c.productId).sort(),[1,5])});
+ await check('exclusions remove every Moscow variant of a product',async()=>{reset();state.variants.push({...state.variants[0],id:6,label:'12 месяцев'});const p=await post('preview',{...filtered,excludedIds:[1]});assert.equal(p.body.changes.length,0)});
+ await check('filtered apply changes only selected product',async()=>{reset();const options={...filtered,direction:'decrease'},p=await post('preview',options);await post('apply',applyBody(options,p));assert.equal(state.variants[0].price,18000);assert.equal(state.variants[3].price,1000);assert.equal(state.products[0].price_msk,0)});
+ await check('changed direction filters or exclusions require new preview',async()=>{reset();const p=await post('preview',filtered);for(const options of [{...filtered,direction:'decrease'},{...filtered,excludedIds:[1]},{...filtered,filters:{brand:'toughbuilt'}}])assert.equal((await post('apply',applyBody(options,p))).status,409);assert.equal(state.history.length,0)});
+ await check('decrease with all exclusions leaves prices untouched',async()=>{reset();const before=structuredClone(state),options={...filtered,direction:'decrease',excludedIds:[1]},p=await post('preview',options);assert.equal(p.body.changes.length,0);await post('apply',applyBody(options,p));assert.deepEqual(state.variants,before.variants);assert.deepEqual(state.products,before.products)});
+ await check('filtered repeat tolerates JSONB reordered nested filters',async()=>{reset();const p=await post('preview',filtered);await post('apply',applyBody(filtered,p));state.history[0].options.filters=Object.fromEntries(Object.entries(state.history[0].options.filters).reverse());const before=structuredClone(state),r=await post('apply',applyBody(filtered,p));assert.equal(r.status,200);assert.equal(r.body.repeated,true);assert.deepEqual(state,before)});
+ await check('invalid filters and exclusion IDs rejected',async()=>{for(const extra of [{filters:{brand:[]}},{filters:{categoryId:'1'}},{filters:[]},{excludedIds:[-1]},{excludedIds:['1']},{excludedIds:[1.5]}])assert.equal((await post('preview',{...filtered,...extra})).status,400)});
+ await check('zero-priced decrease rejects entire preview',async()=>{reset();state.variants[3].price=50;const before=structuredClone(state);assert.equal((await post('preview',{...all,direction:'decrease',percent:1})).status,400);assert.deepEqual(state,before)});
  console.log('Passed '+checks+' Moscow pricing checks');
 }finally{server.close();await db.pool.end()}}
 main().catch(e=>{console.error(e);process.exitCode=1});

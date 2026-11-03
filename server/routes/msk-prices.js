@@ -3,12 +3,12 @@ const crypto=require('crypto'),db=require('../db');
 const {requireAdmin}=require('../middleware/auth');
 const {validateOptions,buildPlan,fingerprint}=require('../utils/mskPriceAdjustment');
 async function loadRows(query,lock=false) {
-    const variants=await query(`SELECT 'variant' AS kind,v.id,v.product_id,p.name,p.category_id,v.label,
+    const variants=await query(`SELECT 'variant' AS kind,v.id,v.product_id,p.name,p.category_id,p.sub_id,p.brand,v.label,
         v.price_msk_pickup AS base_price,v.sale_price
         FROM product_variants v JOIN products p ON p.id=v.product_id
         WHERE COALESCE(v.is_krd,0)<>1 AND COALESCE(v.is_usd,0)=0 AND v.price_msk_pickup>0 AND p.is_service=0
         ORDER BY v.id${lock?' FOR UPDATE OF v':''}`);
-    const products=await query(`SELECT 'product' AS kind,p.id,p.id AS product_id,p.name,p.category_id,'' AS label,
+    const products=await query(`SELECT 'product' AS kind,p.id,p.id AS product_id,p.name,p.category_id,p.sub_id,p.brand,'' AS label,
         COALESCE(NULLIF(p.price_msk,0),p.price) AS base_price,0 AS sale_price
         FROM products p WHERE p.is_service=0 AND COALESCE(NULLIF(p.price_msk,0),p.price)>0
         AND NOT EXISTS (SELECT 1 FROM product_variants v WHERE v.product_id=p.id)
@@ -21,7 +21,7 @@ router.post('/preview',async(req,res)=>{
     try{
         const plan=buildPlan(await loadRows((sql)=>db.query(sql)),options);
         res.json({requestId:crypto.randomUUID(),fingerprint:fingerprint(options,plan),changes:plan,products:new Set(plan.map(p=>p.productId)).size,options});
-    }catch{res.status(500).json({error:'Не удалось рассчитать цены. Проверьте исходные значения.'})}
+    }catch(e){res.status(e.status||500).json({error:e.status===400?e.message:'Не удалось рассчитать цены. Попробуйте позже.'})}
 });
 router.post('/apply',async(req,res)=>{
     let options;

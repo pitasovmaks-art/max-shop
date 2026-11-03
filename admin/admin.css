@@ -1791,3 +1791,9 @@ button:focus-visible,a:focus-visible { outline:2px solid var(--brand-accent); ou
     .main { padding-bottom:32px; }
 }
 @media(prefers-reduced-motion:reduce) { .sheet,.dialog,.toast { animation:none; } }
+
+/* Moscow price selection */
+.msk-filters { display:grid; gap:12px; padding:16px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; }
+.msk-selection-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.msk-selection-row { display:flex; gap:12px; align-items:center; padding:12px 4px; min-height:44px; border-bottom:1px solid var(--border); }
+.msk-selection-row input { flex-shrink:0; width:20px; height:20px; accent-color:var(--brand-accent); }
