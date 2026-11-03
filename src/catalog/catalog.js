@@ -398,7 +398,7 @@ function renderCategoryRail() {
     const jsArg = id => typeof id === 'number' ? id : `'${id}'`;
     const openTile = id => onCatalogPage
         ? `openCategoryDrilldown(${jsArg(id)})`
-        : `location.href='catalog.html?category=${encodeURIComponent(id)}'`;
+        : `location.href='catalog.html?category=${encodeURIComponent(id)}&from=home'`;
 
     const hasSale = _products.some(p => isSaleForCity(p, _city));
     // Категории без единого товара не показываем — тапать на них всё
@@ -1064,6 +1064,7 @@ function renderHitsRail() {
 
 /* ─── Catalog: category → subcategory → products screens ────────── */
 function showCatalogScreen(name) {
+    document.documentElement.classList.remove('catalog-opening');
     ['root', 'subcats', 'pair', 'search'].forEach(n => {
         const el = document.getElementById('screen-' + n);
         if (el) el.classList.toggle('hidden', n !== name);
@@ -1086,10 +1087,36 @@ function showCatalogScreen(name) {
      'none'    — реакция на popstate (реальная «Назад»/«Вперёд») — URL уже
                  выставлен браузером, трогать историю не нужно, только
                  перерисовать экран.
-   _historyPushed — был ли за время жизни этой страницы хоть один pushState
-   от каталога; используется собственной кнопкой «назад» в хедере (см.
-   closeSubcatsScreen/closePairScreen) — see requirement 3. */
-let _historyPushed = false;
+   catalogDepth в history.state хранит число внутренних переходов до
+   текущей записи и переживает reload. catalogHomeEntry отмечает реальный
+   вход с Главной, чтобы вернуться к ней без промежуточного корня. */
+const _catalogFromHome = new URLSearchParams(location.search).get('from') === 'home';
+
+function hasHomeReferrer() {
+    try {
+        const ref = new URL(document.referrer);
+        return ref.origin === location.origin && (ref.pathname === '/' || ref.pathname.endsWith('/index.html'));
+    } catch {
+        return false;
+    }
+}
+
+if (document.getElementById('screen-root')) {
+    history.replaceState({
+        ...history.state,
+        catalogDepth: history.state?.catalogDepth || 0,
+        catalogHomeEntry: history.state?.catalogHomeEntry || (_catalogFromHome && hasHomeReferrer()),
+    }, '', location.href);
+}
+
+function catalogHasParentEntry() {
+    return (history.state?.catalogDepth || 0) > 0;
+}
+
+function returnToHome() {
+    if ((hasHomeReferrer() || history.state?.catalogHomeEntry) && history.length > 1) history.back();
+    else location.replace('index.html');
+}
 
 /* Экран, с которого реально начали поиск (root/subcats/pair) — нужен
    closeSearchScreen() на случай фолбэка без истории (прямая ссылка
@@ -1101,23 +1128,13 @@ let _searchFromScreen = 'root';
 
 function catalogPushOrReplace(url, navMode) {
     if (navMode === 'none') return;
+    const target = new URL(url, location.href);
+    if (_catalogFromHome) target.searchParams.set('from', 'home');
+    const depth = history.state?.catalogDepth || 0;
     if (navMode === 'push') {
-        // Пуш на URL, который и так совпадает с текущим location, не нужен —
-        // он создавал бы в истории два подряд идентичных пункта (один и тот
-        // же экран дважды). Баг 2: именно такой «невидимый» дубль заставлял
-        // системную «Назад» срабатывать через раз — первое нажатие просто
-        // перескакивало дубль молча (сам браузер меняет историю на
-        // идентичный URL без видимого эффекта), а следующее уходило дальше,
-        // чем ожидалось. Если место то же — ничего не делаем, не трогаем
-        // ни историю, ни _historyPushed (он мог быть false, если сюда
-        // попали по прямой ссылке, — это не должно стать push задним числом).
-        const target = new URL(url, location.href);
         if (target.pathname === location.pathname && target.search === location.search) return;
-        history.pushState(null, '', url);
-        _historyPushed = true;
-    } else {
-        history.replaceState(null, '', url);
-    }
+        history.pushState({ ...history.state, catalogDepth: depth + 1 }, '', target.href);
+    } else history.replaceState({ ...history.state, catalogDepth: depth }, '', target.href);
 }
 
 /* Подкатегории без единого товара не показываем — тапать в них всё равно
@@ -1167,7 +1184,8 @@ function openSubcatsScreen(catId, navMode = 'push') {
    ничего «нашего» — history.back() увёл бы мимо каталога; вместо этого
    вручную поднимаемся на уровень выше через replaceState, как раньше. */
 function closeSubcatsScreen() {
-    if (_historyPushed) { history.back(); return; }
+    if (catalogHasParentEntry()) { history.back(); return; }
+    if (_catalogFromHome) { returnToHome(); return; }
     history.replaceState(null, '', 'catalog.html');
     showCatalogScreen('root');
 }
@@ -1284,10 +1302,9 @@ function syncPairUrl(navMode = 'replace') {
 }
 
 function closePairScreen() {
-    if (_historyPushed) { history.back(); return; }
-    // Фолбэк: прямая ссылка/обновление страницы — в истории нет записи,
-    // которую сделал бы каталог (ни одного pushState за эту загрузку не
-    // было), поэтому history.back() увёл бы мимо каталога. Поднимаемся на
+    if (catalogHasParentEntry()) { history.back(); return; }
+    // Фолбэк: вход по прямой ссылке без родительского уровня каталога.
+    // history.back() мог бы увести за пределы приложения. Поднимаемся на
     // уровень выше вручную, как и раньше.
     // Категория с подкатегориями -> назад на экран подкатегорий (в том
     // числе из «Показать все товары», где _activeSubId сам null, но
@@ -1295,6 +1312,7 @@ function closePairScreen() {
     // (или «Акции») -> у неё никогда не было экрана подкатегорий, назад на корень.
     const subs = categoryNonEmptySubs(_activeCatId);
     if (subs.length) { openSubcatsScreen(_activeCatId, 'replace'); return; }
+    if (_catalogFromHome) { returnToHome(); return; }
     history.replaceState(null, '', 'catalog.html');
     showCatalogScreen('root');
 }
@@ -1727,7 +1745,7 @@ function clearSearch() {
    прямо посреди стирания слова, чтобы напечатать новое. Возврат — через
    history.back() (ТЗ: "без новой записи"), с теми же фильтрами и
    позицией — они не трогались всё это время, пока был активен поиск.
-   Фолбэк на _historyPushed — тот же приём, что у closeSubcatsScreen()/
+   Фолбэк при catalogDepth=0 — тот же приём, что у closeSubcatsScreen()/
    closePairScreen(): прямая ссылка/обновление страницы с ?q=... в адресе
    не оставляет в истории ничего "нашего", на что можно было бы вернуться. */
 function closeSearchScreen() {
@@ -1738,10 +1756,11 @@ function closeSearchScreen() {
     document.getElementById('searchScreenClear')?.classList.add('hidden');
     state.query = '';
 
-    if (_historyPushed) { history.back(); return; }
+    if (catalogHasParentEntry()) { history.back(); return; }
 
     if (_searchFromScreen === 'subcats' && _activeCatId != null) { openSubcatsScreen(_activeCatId, 'replace'); return; }
     if (_searchFromScreen === 'pair' && _activeCatId != null) { syncPairUrl('replace'); showCatalogScreen('pair'); return; }
+    if (_catalogFromHome) { returnToHome(); return; }
     history.replaceState(null, '', 'catalog.html');
     showCatalogScreen('root');
 }
@@ -2160,6 +2179,7 @@ async function init() {
         renderCategoryRail();
         renderHitsRail();
         render();
+        if (document.documentElement.classList.contains('catalog-opening')) restoreScreenFromUrl('replace');
     }
 
     try {
@@ -2181,6 +2201,13 @@ async function init() {
         // Фоновое обновление упало, но на экране уже валидный кэш — не
         // перекрываем его сообщением об ошибке, просто остаёмся на нём.
         if (!cached) {
+            if (document.documentElement.classList.contains('catalog-opening')) {
+                document.getElementById('catalogOpeningText').textContent = 'Не удалось загрузить раздел';
+                document.getElementById('catalogOpeningRetry').style.display = 'inline-flex';
+                // Без данных нельзя выбирать между подкатегориями и товарами:
+                // это меняло бы исходный URL и прятало кнопку повтора загрузки.
+                return;
+            }
             // emptyState/resultsCount — только на Главной (там общий список
             // товаров всё ещё есть); на Каталоге такого списка на корне
             // больше нет (см. catalog.html), поэтому там просто тост.

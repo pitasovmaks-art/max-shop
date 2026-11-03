@@ -85,7 +85,7 @@ function handleStoreFormOverlayClick(e) {
 }
 
 function fillStoreForm(s) {
-    sv('sf-name',       s.name);
+    sv('store-name',       s.name);
     sv('sf-city',       s.city);
     sv('sf-address',    s.address);
     sv('sf-hours',      s.hours);
@@ -97,7 +97,7 @@ function fillStoreForm(s) {
 }
 
 function clearStoreForm() {
-    ['sf-name','sf-city','sf-address','sf-hours','sf-phone','sf-directions','sf-sort'].forEach(id => sv(id, ''));
+    ['store-name','sf-city','sf-address','sf-hours','sf-phone','sf-directions','sf-sort'].forEach(id => sv(id, ''));
     document.querySelectorAll('.sff--error').forEach(el => el.classList.remove('sff--error'));
     document.querySelectorAll('.sff__error').forEach(el => el.textContent = '');
 }
@@ -123,7 +123,7 @@ function setSFE(ffId, msg) {
 
 function validateStoreForm() {
     let ok = true;
-    if (!document.getElementById('sf-name').value.trim())    { setSFE('sff-name',    'Введите название');  ok = false; }
+    if (!document.getElementById('store-name').value.trim())    { setSFE('sff-name',    'Введите название');  ok = false; }
     if (!document.getElementById('sf-city').value.trim())    { setSFE('sff-city',    'Введите город');     ok = false; }
     if (!document.getElementById('sf-address').value.trim()) { setSFE('sff-address', 'Введите адрес');     ok = false; }
     return ok;
@@ -134,7 +134,7 @@ async function saveStoreForm() {
     if (!validateStoreForm()) return;
 
     const payload = {
-        name:       document.getElementById('sf-name').value.trim(),
+        name:       document.getElementById('store-name').value.trim(),
         city:       document.getElementById('sf-city').value.trim(),
         address:    document.getElementById('sf-address').value.trim(),
         hours:      document.getElementById('sf-hours').value.trim(),

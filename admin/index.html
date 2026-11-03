@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="dark">
     <title>Точка Монтажа — Администратор</title>
-    <link rel="stylesheet" href="admin.css?v=20261103msk">
+    <link rel="stylesheet" href="admin.css?v=20261103workspace">
 </head>
 <body>
 
@@ -56,14 +56,12 @@
 
     <!-- Header -->
     <header class="header">
-        <button class="header__back" onclick="location.href='../index.html'" aria-label="Назад">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
-        <span class="header__title">Администратор</span>
+        <div class="admin-header-main">
+            <button class="admin-menu-toggle" id="adminMenuToggle" onclick="toggleAdminMenu()" aria-controls="adminSidebar" aria-expanded="false" aria-label="Открыть меню разделов"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <div class="admin-header-title"><span>Управление магазином</span><h1 id="adminSectionTitle">Товары</h1></div>
+        </div>
         <div class="header__right">
-            <button class="header__reset" id="resetBtn" onclick="confirmReset()">Сброс</button>
+
             <button class="header__logout" onclick="logout()" aria-label="Выйти">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -74,21 +72,58 @@
         </div>
     </header>
 
-    <!-- Tab bar -->
-    <div class="tab-bar">
-        <button class="tab-btn active" id="tabProducts" onclick="switchTab('products')">Товары</button>
-        <button class="tab-btn" id="tabCategories" onclick="switchTab('categories')">Категории</button>
-        <button class="tab-btn" id="tabOrders" onclick="switchTab('orders')">Заказы</button>
-        <button class="tab-btn" id="tabStores" onclick="switchTab('stores')">Магазины</button>
-        <button class="tab-btn" id="tabBanners" onclick="switchTab('banners')">Баннеры</button>
-        <button class="tab-btn" id="tabService" onclick="switchTab('service')">🔧 Сервис</button>
-        <button class="tab-btn" id="tabExports" onclick="switchTab('exports')">📥 Экспорт файлов</button>
-        <button class="tab-btn" id="tabMskPrices" onclick="switchTab('mskprices')">Цены Москвы</button>
-        <button class="tab-btn" id="tabUsdRate" onclick="switchTab('usdrate')">💵 Курс доллара</button>
-    </div>
-
+    <button class="admin-menu-scrim" id="adminMenuScrim" onclick="closeAdminMenu()" aria-label="Закрыть меню" hidden></button>
+    <aside class="admin-sidebar" id="adminSidebar" aria-label="Разделы управления">
+        <div class="admin-sidebar__brand">Точка Монтажа<span>Управление магазином</span></div>
+        <nav>
+            <div class="admin-nav-group">
+                <p class="admin-nav-group__title">Каталог</p>
+                <button class="tab-btn active" id="tabProducts" onclick="switchTab('products')" aria-current="page">Товары</button>
+                <button class="tab-btn" id="tabCategories" onclick="switchTab('categories')">Категории</button>
+                <button class="tab-btn" id="tabStores" onclick="switchTab('stores')">Магазины</button>
+            </div>
+            <div class="admin-nav-group">
+                <p class="admin-nav-group__title">Заказы и обращения</p>
+                <button class="tab-btn" id="tabOrders" onclick="switchTab('orders')">Заказы</button>
+                <button class="tab-btn" id="tabService" onclick="switchTab('service')">Ремонт и обслуживание</button>
+            </div>
+            <div class="admin-nav-group">
+                <p class="admin-nav-group__title">Витрина</p>
+                <button class="tab-btn" id="tabBanners" onclick="switchTab('banners')">Баннеры</button>
+            </div>
+            <div class="admin-nav-group">
+                <p class="admin-nav-group__title">Цены и данные</p>
+                <button class="tab-btn" id="tabMskPrices" onclick="switchTab('mskprices')">Цены Москвы</button>
+                <button class="tab-btn" id="tabUsdRate" onclick="switchTab('usdrate')">Курс доллара</button>
+                <button class="tab-btn" id="tabExports" onclick="switchTab('exports')">Экспорт файлов</button>
+            </div>
+        </nav>
+        <div class="admin-sidebar__footer">
+            <a href="../index.html">Открыть магазин</a>
+            <a href="../cart.html">Открыть корзину</a>
+            <button class="header__reset" id="resetBtn" onclick="confirmReset()">Сброс каталога</button>
+        </div>
+    </aside>
     <!-- Products section -->
     <div id="sectionProducts">
+        <div class="admin-actions"><button class="fab" id="fabProducts" onclick="openProductForm()" aria-label="Добавить товар" title="+ Добавить товар">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+        <span>Добавить товар</span></button><button class="fab fab--import" id="fabImport" onclick="triggerImport()" aria-label="Импорт товаров из XLSX" title="Импорт из XLSX">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+        <span>Импорт Excel</span></button><button class="fab fab--import" id="fabExport" onclick="exportCatalog()" aria-label="Экспорт товаров в XLSX" title="Экспорт в XLSX">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+        <span>Экспорт Excel</span></button></div>
 
         <!-- Stats -->
         <div class="stats" id="stats"></div>
@@ -116,51 +151,32 @@
             <div class="empty-state hidden" id="emptyState">
                 <div class="empty-state__icon">📦</div>
                 <p class="empty-state__title">Нет товаров</p>
-                <p class="empty-state__sub">Добавьте первый товар кнопкой ниже</p>
+                <p class="empty-state__sub">Добавьте первый товар кнопкой «Добавить товар»</p>
             </div>
         </main>
 
-        <!-- FAB: add product -->
-        <button class="fab" id="fabProducts" onclick="openProductForm()" aria-label="Добавить товар" title="+ Добавить товар">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-                <line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-            </svg>
-        </button>
 
-        <!-- FAB: import -->
-        <button class="fab fab--import" id="fabImport" onclick="triggerImport()" aria-label="Импорт товаров из XLSX" title="Импорт из XLSX">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-        </button>
+
+
         <input type="file" id="importFileInput" accept=".xlsx" style="display:none" onchange="handleImportFile(this)">
 
-        <!-- FAB: export catalog to XLSX (usd-pricing, п.13) -->
-        <button class="fab fab--import" id="fabExport" onclick="exportCatalog()" aria-label="Экспорт товаров в XLSX" title="Экспорт в XLSX">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-        </button>
+
 
     </div><!-- /sectionProducts -->
 
     <!-- Categories section -->
     <div id="sectionCategories" class="hidden">
-
-        <div class="cat-list" id="catList"></div>
-
-        <!-- FAB: add category -->
-        <button class="fab hidden" id="fabCategories" onclick="openCategoryForm()" aria-label="Добавить категорию" title="+ Добавить категорию">
+        <div class="admin-actions"><button class="fab hidden" id="fabCategories" onclick="openCategoryForm()" aria-label="Добавить категорию" title="+ Добавить категорию">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                 <line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
                 <line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
-        </button>
+        <span>Добавить категорию</span></button></div>
+
+        <div class="cat-list" id="catList"></div>
+
+        <!-- FAB: add category -->
+
 
     </div><!-- /sectionCategories -->
 
@@ -171,28 +187,30 @@
 
     <!-- Stores section -->
     <div id="sectionStores" class="hidden">
-        <div class="stores-admin-list" id="storesList"></div>
-
-        <!-- FAB: add store -->
-        <button class="fab hidden" id="fabStores" onclick="openStoreForm()" aria-label="Добавить магазин" title="+ Добавить магазин">
+        <div class="admin-actions"><button class="fab hidden" id="fabStores" onclick="openStoreForm()" aria-label="Добавить магазин" title="+ Добавить магазин">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                 <line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
                 <line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
-        </button>
+        <span>Добавить магазин</span></button></div>
+        <div class="stores-admin-list" id="storesList"></div>
+
+        <!-- FAB: add store -->
+
     </div><!-- /sectionStores -->
 
     <!-- Banners section -->
     <div id="sectionBanners" class="hidden">
-        <div class="banners-admin-list" id="bannersList"></div>
-
-        <!-- FAB: add banner -->
-        <button class="fab hidden" id="fabBanners" onclick="openBannerForm()" aria-label="Добавить баннер" title="+ Добавить баннер">
+        <div class="admin-actions"><button class="fab hidden" id="fabBanners" onclick="openBannerForm()" aria-label="Добавить баннер" title="+ Добавить баннер">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                 <line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
                 <line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
-        </button>
+        <span>Добавить баннер</span></button></div>
+        <div class="banners-admin-list" id="bannersList"></div>
+
+        <!-- FAB: add banner -->
+
     </div><!-- /sectionBanners -->
 
     <!-- Service requests section (заявки на ремонт, этап 2) -->
@@ -563,8 +581,8 @@
 
             <!-- Name -->
             <div class="ff sff" id="sff-name">
-                <label class="ff__label" for="sf-name">Название *</label>
-                <input class="ff__input" id="sf-name" type="text"
+                <label class="ff__label" for="store-name">Название *</label>
+                <input class="ff__input" id="store-name" type="text"
                     placeholder="Краснодар — ул. Селезнева"
                     oninput="clearSFE('sff-name')">
                 <span class="ff__error sff__error"></span>
@@ -849,11 +867,11 @@
 <script src="lib/xlsx.full.min.js"></script>
 <script src="../src/shared/escHtml.js?v=20261102security"></script>
 <script src="categories.js?v=20261102security"></script>
-<script src="stores.js?v=20261102security"></script>
+<script src="stores.js?v=20261103workspace"></script>
 <script src="../src/shared/bannerRender.js?v=20261016"></script>
 <script src="banners.js"></script>
 <script src="serviceRequests.js"></script>
 <script src="mskPrices.js?v=20261103msk"></script>
-<script src="admin.js?v=20261103msk"></script>
+<script src="admin.js?v=20261103workspace"></script>
 </body>
 </html>

@@ -252,6 +252,7 @@ let _adminToken = '';
 function getToken() { return _adminToken; }
 
 function showLoginScreen() {
+    closeAdminMenu();
     document.getElementById('app').style.display         = 'none';
     document.getElementById('loginScreen').style.display  = 'flex';
 }
@@ -403,6 +404,52 @@ async function doReset() {
     }
 }
 
+const ADMIN_SECTION_LABELS = {
+    products: 'Товары', categories: 'Категории', orders: 'Заказы',
+    stores: 'Магазины', banners: 'Баннеры', service: 'Ремонт и обслуживание',
+    exports: 'Экспорт файлов', mskprices: 'Цены Москвы', usdrate: 'Курс доллара',
+};
+const adminDesktop = window.matchMedia('(min-width: 960px)');
+
+function closeAdminMenu() {
+    const toggle = document.getElementById('adminMenuToggle');
+    const wasOpen = toggle.getAttribute('aria-expanded') === 'true';
+    document.getElementById('adminSidebar').classList.remove('admin-sidebar--open');
+    document.getElementById('adminMenuScrim').hidden = true;
+    toggle.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('admin-menu-open');
+    if (wasOpen && !adminDesktop.matches) toggle.focus();
+}
+
+function toggleAdminMenu() {
+    if (document.getElementById('adminMenuToggle').getAttribute('aria-expanded') === 'true') {
+        closeAdminMenu();
+        return;
+    }
+    document.getElementById('adminSidebar').classList.add('admin-sidebar--open');
+    document.getElementById('adminMenuScrim').hidden = false;
+    document.getElementById('adminMenuToggle').setAttribute('aria-expanded', 'true');
+    document.body.classList.add('admin-menu-open');
+    document.querySelector('.admin-sidebar .active')?.focus();
+}
+
+document.addEventListener('keydown', event => {
+    if (document.getElementById('adminMenuToggle')?.getAttribute('aria-expanded') !== 'true') return;
+    if (event.key === 'Tab') {
+        const items = [...document.querySelectorAll('#adminSidebar button,#adminSidebar a')];
+        const first = items[0], last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    }
+    if (event.key === 'Escape') closeAdminMenu();
+});
+adminDesktop.addEventListener('change', closeAdminMenu);
+
 /* ─── Tab switching ─────────────────────────────────────── */
 function switchTab(tab) {
     const isProducts   = tab === 'products';
@@ -450,7 +497,13 @@ function switchTab(tab) {
     if (isExports)    renderExports();
     if (isUsdRate)    renderUsdRate();
     if (isMskPrices)  renderMskScope();
-    document.querySelector('.tab-btn.active')?.scrollIntoView({block:'nearest',inline:'nearest'});
+    document.getElementById('adminSectionTitle').textContent = ADMIN_SECTION_LABELS[tab] || 'Управление магазином';
+    for (const button of document.querySelectorAll('.admin-sidebar .tab-btn')) {
+        if (button.classList.contains('active')) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+    }
+    closeAdminMenu();
+    window.scrollTo(0,0);
 }
 
 /* ─── USD rate (usd-pricing) ─────────────────────────────── */

@@ -69,7 +69,7 @@ async function main() {
         };
         const ctx = runInNewContext(
             ['src/shared/escHtml.js', 'admin/admin.js'],
-            { document: documentStub, window: {} }
+            { document: documentStub, window: { matchMedia: () => ({ matches: false, addEventListener() {} }) } }
         );
 
         const maliciousOrder = {

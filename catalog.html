@@ -6,12 +6,17 @@
     <meta name="color-scheme" content="light dark">
     <meta name="view-transition" content="same-origin">
     <title>Точка Монтажа — Каталог</title>
+    <script>if(new URLSearchParams(location.search).has('category') || new URLSearchParams(location.search).has('q')) document.documentElement.classList.add('catalog-opening');</script>
     <!-- Фон страницы — сразу, инлайном, до catalog.css (который ещё грузится
          по сети) — иначе между документами мелькает белый экран браузера
          по умолчанию вместо темы магазина. -->
     <style>
-        html { background: #EEF3F1; }
-        @media (prefers-color-scheme: dark) { html { background: #0E1613; } }
+        html { background: #EDECE6; }
+        #catalogOpening { display:none; }
+        html.catalog-opening #screen-root { display:none !important; }
+        html.catalog-opening #catalogOpening { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; min-height:65vh; padding:24px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+        .catalog-opening__retry { display:none; padding:12px 20px; border-radius:12px; background:var(--accent,#D9A520); color:var(--accent-ink,#1A1712); }
+        @media (prefers-color-scheme: dark) { html { background: #141210; } }
     </style>
     <link rel="stylesheet" href="src/catalog/catalog.css?v=20261102cataloggrid">
     <link rel="stylesheet" href="src/cookie.css?v=20261102status">
@@ -49,7 +54,7 @@
 
 <!-- City selection screen -->
 <div id="city-screen" style="position:fixed;inset:0;z-index:2000;background:var(--bg-page);flex-direction:column;align-items:center;padding:40px 20px 24px;overflow:hidden;">
-    <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:600;color:var(--accent-text);letter-spacing:-.5px;margin-bottom:4px;text-align:center;">Точка Монтажа</div>
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:28px;line-height:34px;font-weight:700;color:var(--accent-text);letter-spacing:-.5px;margin-bottom:4px;text-align:center;">Точка Монтажа</div>
     <p style="font-size:16px;color:rgba(var(--ink-rgb),0.65);margin:0 0 20px;text-align:center;">Выберите ваш город</p>
     <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:0;flex:1;min-height:0;">
         <div style="position:relative;margin-bottom:10px;">
@@ -76,6 +81,7 @@
 </div>
 
 <div class="app">
+    <div id="catalogOpening" role="status" aria-live="polite"><span id="catalogOpeningText">Открываем раздел…</span><button type="button" class="catalog-opening__retry" id="catalogOpeningRetry" onclick="location.reload()">Повторить загрузку</button></div>
 
     <!-- ══ ROOT: rails + hits + all products ══ -->
     <div id="screen-root" class="cscreen">
@@ -313,7 +319,7 @@
 </div>
 <script src="/src/shared/escHtml.js?v=20261102security" defer></script>
 <script src="/src/icons.js?v=20261102cataloggrid" defer></script>
-<script src="src/catalog/catalog.js?v=20261102security" defer></script>
+<script src="src/catalog/catalog.js?v=20261103nav" defer></script>
 <script src="src/cookie.js?v=20261005" defer></script>
 </body>
 </html>
