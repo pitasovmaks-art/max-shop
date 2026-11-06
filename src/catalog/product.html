@@ -467,6 +467,7 @@
             -webkit-user-drag: none;
         }
     </style>
+    <link rel="stylesheet" href="warranty.css?v=20261106warranty">
 </head>
 <body>
 <div class="app">
@@ -510,6 +511,8 @@
             <div class="variant-label">Вариант</div>
             <div class="variant-pills" id="variantPills"></div>
         </div>
+
+        <section class="warranty-panel hidden" id="productWarranty"></section>
 
         <p class="product-desc hidden" id="productDesc"></p>
     </div>
@@ -582,7 +585,7 @@
 
 <script src="/src/shared/escHtml.js?v=20261102security"></script>
 <script src="/src/icons.js?v=20261102cataloggrid"></script>
-<script src="product.js?v=20261102security"></script>
+<script src="product.js?v=20261106warranty"></script>
 <script>
 let _productSupportBotUsername = 'id635009278943_1_bot';
 fetch('/api/config').then(r => r.json()).then(cfg => { _productSupportBotUsername = cfg.supportBotUsername || 'id635009278943_1_bot'; }).catch(() => {});

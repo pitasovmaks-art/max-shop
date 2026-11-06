@@ -80,16 +80,19 @@ router.post('/', requireUser, async (req, res) => {
         }
         const productsById = await loadProductsForPricing(items.map(it => it.id));
         const resolved = items.map(it => resolveOrderItem(
-            { id: it.id, variantLabel: typeof it.variantLabel === 'string' ? it.variantLabel.slice(0, 200) : '' },
+            { id: it.id, variantLabel: typeof it.variantLabel === 'string' ? it.variantLabel.slice(0, 200) : '', extraService: it.extraService },
             productsById, city, deliveryMethod
         ));
         const failed = resolved.filter(r => !r.ok);
+        if (failed.some(r => r.serviceChanged)) return res.status(409).json({ error: 'service_changed' });
         if (failed.length) {
             return res.status(400).json({ error: failed.map(f => f.reason).join('\n') });
         }
 
         const realItems = resolved.map((r, idx) => ({
             id: items[idx].id, name: r.name, price: r.price, qty: items[idx].qty,
+            ...(r.warranty ? { warranty: r.warranty } : {}),
+            ...(r.extraService ? { extraService: { ...r.extraService, acceptedAt: new Date().toISOString() } } : {}),
             // usd-pricing, п.11: $ и курс на момент заказа — только для
             // аудита, в сумму/формулу не участвуют и не влияют на realTotal.
             ...(r.priceUsdCents != null ? { priceUsdCents: r.priceUsdCents, rateX10000: r.rateX10000 } : {}),

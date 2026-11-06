@@ -1,5 +1,6 @@
 const db = require('../db');
 const usdPrice = require('./usdPrice');
+const { publicWarranty } = require('./productWarranty');
 
 /* Пересчёт цены позиции заказа на сервере по реальным данным из БД — та же
    формула, что effectiveItemPrice()/_checkCartItem() в src/cart/checkout.js,
@@ -95,8 +96,8 @@ function resolveOrderItem(cartItem, productsById, city, deliveryMethod) {
         };
     }
 
-    const price = effectiveItemPrice(fresh, city, deliveryMethod);
-    if (!price || price <= 0) return { ok: false, reason: `Цена «${p.name}» не определена` };
+    const basePrice = effectiveItemPrice(fresh, city, deliveryMethod);
+    if (!basePrice || basePrice <= 0) return { ok: false, reason: `Цена «${p.name}» не определена` };
 
     // usd-pricing, п.11: для аудита сохраняем $ и курс, которым позиция
     // была посчитана на момент заказа (старые заказы это не трогает —
@@ -111,7 +112,25 @@ function resolveOrderItem(cartItem, productsById, city, deliveryMethod) {
         usdInfo = { priceUsdCents: usdCents, rateX10000: productsById.usdRateX10000 };
     }
 
-    return usdInfo ? { ok: true, price, name, ...usdInfo } : { ok: true, price, name };
+    const warranty = p.is_service === 1 ? null : publicWarranty(p.warranty);
+    let extraService;
+    if (cartItem.extraService !== undefined) {
+        const offered = warranty?.service;
+        const surcharge = isKrd ? offered?.priceKrd : offered?.priceMsk;
+        const selected = cartItem.extraService;
+        if (!selected || selected.accepted !== true || selected.consentVersion !== 'service-consent-v1' || selected.city !== city ||
+            selected.revision !== offered?.revision || !surcharge || selected.price !== surcharge) {
+            return { ok: false, serviceChanged: true, reason: 'Условия сервиса изменились или согласие не подтверждено.' };
+        }
+        const { title, terms, months, start, revision } = offered;
+        extraService = { title, terms, months, start, revision, price: surcharge, city, accepted: true, consentVersion: selected.consentVersion };
+    }
+    return {
+        ok: true, price: basePrice + (extraService?.price || 0), name,
+        ...usdInfo,
+        ...(warranty ? { warranty: { baseDays: warranty.baseDays, baseTerms: warranty.baseTerms } } : {}),
+        ...(extraService ? { extraService } : {}),
+    };
 }
 
 module.exports = { effectiveItemPrice, loadProductsForPricing, resolveOrderItem };

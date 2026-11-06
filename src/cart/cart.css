@@ -360,3 +360,10 @@ a      { text-decoration: none; color: inherit; }
 .legal-footer__info { line-height: 1.6; margin-bottom: 12px; }
 .legal-footer__links { display: flex; flex-direction: column; gap: 6px; }
 .legal-footer__links a { color: var(--accent-text); text-decoration: none; }
+
+.cart-service-remove {
+    display: block;
+    padding: 5px 0;
+    color: var(--text-primary);
+    text-decoration: underline;
+}

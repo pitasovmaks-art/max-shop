@@ -384,7 +384,8 @@ async function notifyStore(order) {
     if (!TOKEN) return;
 
     const lines = order.items.map(i =>
-        `• ${i.name} × ${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} ₽`
+        `• ${i.name} × ${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} ₽${i.extraService ?
+            ` (в т. ч. ${i.extraService.title} · ${i.extraService.months} мес., +${i.extraService.price.toLocaleString('ru-RU')} ₽/шт)` : ''}`
     );
 
     const delivery = order.delivery || 'pickup';

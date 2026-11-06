@@ -229,6 +229,45 @@ async function main() {
         check('очередь уведомления связана с реальной суммой', lastNotifyStoreCall && lastNotifyStoreCall.total === 2700);
     }
 
+    resetDb();
+    {
+        const { publicWarranty } = require('../utils/productWarranty');
+        PRODUCT_NO_VARIANTS.warranty = {
+            baseDays: 14, baseTerms: 'Гарантия магазина',
+            service: { title: 'Сервис на электронику', months: 12, start: 'handover',
+                terms: 'Плата управления', priceKrd: 200, priceMsk: 250 },
+        };
+        try {
+            const revision = publicWarranty(PRODUCT_NO_VARIANTS.warranty).service.revision;
+            const order = (city, price, extra = {}) => post(baseBody({
+                city, delivery: 'city', address: 'Тестовая улица, 1',
+                items: [{ id: 1, qty: 2, extraService: {
+                    accepted: true, consentVersion: 'service-consent-v1', city, revision, price, ...extra,
+                } }],
+                total: ((city === 'krd' ? 900 : 1000) + price) * 2,
+            }), initA);
+            const noConsent = await order('krd', 200, { accepted: false });
+            const wrongCity = await order('krd', 200, { city: 'msk' });
+            const forged = await order('msk', 1);
+            check('сервис без согласия, с чужим городом или подменённой доплатой отклонён',
+                [noConsent, wrongCity, forged].every(r => r.status === 409 && r.body.error === 'service_changed') && !orders.length);
+            const krd = await order('krd', 200);
+            const msk = await order('msk', 250);
+            const saved = JSON.parse(orders[1]?.items || '[]')[0];
+            check('заказы учитывают раздельные доплаты и количество', krd.status === 201 && msk.status === 201 &&
+                orders[0]?.total === 2200 && orders[1]?.total === 2500);
+            check('снимок условий и подтверждение сохранены', saved?.extraService?.terms === 'Плата управления' &&
+                saved.extraService.price === 250 && saved.extraService.acceptedAt && saved.warranty.baseDays === 14);
+            PRODUCT_NO_VARIANTS.warranty.service.terms = 'Новая редакция';
+            const stale = await order('msk', 250);
+            check('изменение покрытия при той же цене требует повторного согласия', stale.status === 409 &&
+                stale.body.error === 'service_changed' && orders.length === 2);
+            check('условия ранее оформленного заказа сохранены', JSON.parse(orders[1].items)[0].extraService.terms === 'Плата управления');
+        } finally {
+            delete PRODUCT_NO_VARIANTS.warranty;
+        }
+    }
+
     /* ── Нулевая/произвольная total — тоже 409, не создаёт заказ ─────── */
     resetDb();
     {

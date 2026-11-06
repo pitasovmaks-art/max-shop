@@ -13,17 +13,18 @@
    руками, синхронно с этой (см. комментарий в server/utils/pricing.js
    и server/scripts/test-pricing-match.js, который их сверяет). */
 
+function cartServicePrice(service, city) {
+    return Number(city === 'krd' ? service?.priceKrd : service?.priceMsk) || 0;
+}
+
 function effectiveItemPrice(item, city, deliveryMethod) {
-    // Carrier/delivery changes fulfilment, never the city's product price.
-    // Legacy delivery-price columns remain stored for compatibility only.
-    if (city === 'krd') {
-        const base = item.priceKrdPickup || item.priceKrd || 0;
-        const sale = item.salePriceKrd || 0;
-        return base ? (sale > 0 ? sale : base) : null;
-    }
-    const base = item.priceMskPickup || item.priceMsk || 0;
-    const sale = item.salePriceMsk || 0;
-    return base ? (sale > 0 ? sale : base) : null;
+    // Delivery changes fulfilment, never the city's product price.
+    const krd = city === 'krd';
+    const base = krd ? item.priceKrdPickup || item.priceKrd : item.priceMskPickup || item.priceMsk;
+    const sale = krd ? item.salePriceKrd : item.salePriceMsk;
+    const extra = cartServicePrice(item.extraService, city);
+    if (!base || (item.extraService && extra <= 0)) return null;
+    return (sale > 0 ? sale : base) + extra;
 }
 
 /* Пересобирает цену ОДНОЙ позиции корзины по свежим данным товара
@@ -75,6 +76,13 @@ function resolveFreshCartItem(item, freshProducts, city, deliveryMethod) {
         };
     }
 
+    if (item.extraService) {
+        const service = p.warranty?.service;
+        if (!cartServicePrice(service, city)) {
+            return { ok: false, price: 0, reason: `Сервис для «${item.name}» недоступен. Уберите его в корзине.` };
+        }
+        fields.extraService = service;
+    }
     const price = effectiveItemPrice(fields, city, deliveryMethod);
     if (!price || price <= 0) return { ok: false, price: 0, reason: `Цена «${item.name}» не определена` };
     return { ok: true, price, fields };

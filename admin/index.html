@@ -441,6 +441,34 @@
                 <textarea class="ff__input ff__textarea" id="f-desc" rows="4" placeholder="Краткое описание товара" style="resize: vertical; min-height: 80px;"></textarea>
             </div>
 
+            <details class="ff">
+                <summary>Гарантия магазина и дополнительный сервис</summary>
+                <label class="ff__label" for="f-warranty-days">Гарантия магазина, дней</label>
+                <input class="ff__input" id="f-warranty-days" type="number" min="0" max="3650" step="1" placeholder="Например, 14">
+                <label class="ff__label" for="f-warranty-terms">Условия базовой гарантии</label>
+                <textarea class="ff__input ff__textarea" id="f-warranty-terms" maxlength="3000" rows="3"></textarea>
+                <label><input id="f-extra-enabled" type="checkbox" onchange="toggleExtraServiceFields()"> Предлагать платный сервис</label>
+                <div id="f-extra-fields" class="hidden">
+                    <label class="ff__label" for="f-extra-title">Название сервиса</label>
+                    <input class="ff__input" id="f-extra-title" maxlength="100" placeholder="Сервис на электронику">
+                    <label class="ff__label" for="f-extra-months">Срок, месяцев</label>
+                    <input class="ff__input" id="f-extra-months" type="number" min="1" max="120" step="1">
+                    <label class="ff__label" for="f-extra-start">Начало срока</label>
+                    <select class="ff__input" id="f-extra-start">
+                        <option value="handover">Со дня передачи товара</option>
+                        <option value="after_base">После окончания гарантии магазина</option>
+                    </select>
+                    <label class="ff__label" for="f-extra-msk">Доплата — Москва, ₽</label>
+                    <input class="ff__input" id="f-extra-msk" type="number" min="0" max="100000000" step="1">
+                    <label class="ff__label" for="f-extra-krd">Доплата — Краснодар, ₽</label>
+                    <input class="ff__input" id="f-extra-krd" type="number" min="0" max="100000000" step="1">
+                    <p>Пустое поле или 0 скрывает сервис в этом городе.</p>
+                    <label class="ff__label" for="f-extra-terms">Что входит и как обратиться</label>
+                    <textarea class="ff__input ff__textarea" id="f-extra-terms" maxlength="6000" rows="5"></textarea>
+                    <p>Если сервис заменяет прежний платный вариант гарантии, удалите старый вариант в списке цен после сверки базовой цены.</p>
+                </div>
+            </details>
+
             <!-- Price label (services only) -->
             <div class="ff hidden" id="ff-price-label">
                 <label class="ff__label" for="f-price-label">Подпись к цене</label>
@@ -907,7 +935,7 @@
 <script src="banners.js"></script>
 <script src="serviceRequests.js"></script>
 <script src="mskPrices.js?v=20261103controls"></script>
-<script src="admin.js?v=20261106bulk"></script>
+<script src="admin.js?v=20261106warranty"></script>
 <script src="bulkProducts.js?v=20261106bulk"></script>
 </body>
 </html>

@@ -90,6 +90,40 @@ function selectVariant(variantId) {
     updatePrice();
 }
 
+function selectedProductService() {
+    const service = _product.warranty?.service;
+    const city = localStorage.getItem('city');
+    const price = city === 'krd' ? service?.priceKrd : service?.priceMsk;
+    return price > 0 && document.getElementById('productServiceChoice')?.checked ? { service, price } : null;
+}
+
+function renderProductWarranty() {
+    const panel = document.getElementById('productWarranty');
+    const warranty = _product.warranty;
+    if (!panel || !warranty || _product.isService) return;
+    const { service, baseDays, baseTerms } = warranty;
+    const city = localStorage.getItem('city');
+    const price = city === 'krd' ? service?.priceKrd : service?.priceMsk;
+    const available = price > 0 && _product.inStock &&
+        (!_product.variants?.length || !!effectiveVariant());
+    if (!baseDays && !baseTerms && !available) return;
+    panel.innerHTML = `
+        ${baseDays ? `<h2>Гарантия магазина · ${Number(baseDays)} дней</h2><p>Входит в цену инструмента</p>` : ''}
+        ${baseTerms ? `<details><summary>Условия гарантии магазина</summary><p>${escHtml(baseTerms)}</p></details>` : ''}
+        ${available ? `
+            <label class="warranty-option">
+                <input type="checkbox" id="productServiceChoice">
+                <span><strong>${escHtml(service.title)}</strong><small>${Number(service.months)} мес.</small></span>
+                <b>+${fmt(price)}</b>
+            </label>
+            <details><summary>Что входит</summary>
+                <p>Обязательство магазина. Срок начинается ${service.start === 'after_base' ? 'после окончания гарантии магазина' : 'со дня передачи товара'}.</p>
+                <p>${escHtml(service.terms)}</p>
+            </details>` : ''}`;
+    panel.classList.remove('hidden');
+    panel.querySelector('input')?.addEventListener('change', updatePrice);
+}
+
 function updatePrice() {
     const el   = document.getElementById('productPrice');
     const city = localStorage.getItem('city');
@@ -106,6 +140,12 @@ function updatePrice() {
             ? effectivePrice(ev)
             : (city === 'krd' ? (_product.priceKrd || _product.price || 0) : (_product.priceMsk || _product.price || 0));
         const salePrice = ev?.salePrice || 0;
+        const selected = selectedProductService();
+        if (selected) {
+            const productPrice = salePrice || basePrice;
+            el.innerHTML = `${fmt(productPrice + selected.price)}<span class="warranty-price-breakdown">Товар ${fmt(productPrice)} + сервис ${fmt(selected.price)}</span>`;
+            return;
+        }
         el.innerHTML    = salePrice > 0
             ? `<s class="price-old">${fmt(basePrice)}</s><span class="price-sale">${fmt(salePrice)}</span>`
             : fmt(basePrice);
@@ -371,6 +411,7 @@ function renderInfo() {
         varSection.classList.remove('hidden');
     }
 
+    renderProductWarranty();
     updatePrice();
 
     const btn = document.getElementById('addToCartBtn');
@@ -420,13 +461,16 @@ function addToCart() {
 
     const basePrice = isKrd ? priceKrdPickup : priceMskPickup;
     const salePrice = isKrd ? salePriceKrd   : salePriceMsk;
-    const price     = salePrice > 0 ? salePrice : basePrice;
-    const key       = variant ? `${_product.id}_v${variant.id}` : String(_product.id);
+    const selected = selectedProductService();
+    const price = (salePrice > 0 ? salePrice : basePrice) + (selected?.price || 0);
+    const baseKey = variant ? `${_product.id}_v${variant.id}` : String(_product.id);
+    const key = selected ? `${baseKey}_service` : baseKey;
 
     const cart     = getCart();
     const existing = cart.find(i => i.key === key);
     if (existing) {
         existing.qty += 1;
+        if (selected) existing.extraService = selected.service;
     } else {
         const item = {
             key, id: _product.id, name: _product.name,
@@ -434,6 +478,7 @@ function addToCart() {
             priceDelivery: priceMskDelivery,
             salePriceKrd, salePriceMsk,
             qty: 1, categoryId: _product.categoryId,
+            ...(selected ? { extraService: selected.service } : {}),
         };
         if (variant) { item.variantId = variant.id; item.variantLabel = variant.label; }
         cart.push(item);

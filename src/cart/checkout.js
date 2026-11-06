@@ -137,20 +137,42 @@ function itemPrice(item) {
     return effectiveItemPrice(item, localStorage.getItem('city'), _deliveryMethod) || 0;
 }
 
+function serviceSelectionSignature(cart, city) {
+    return JSON.stringify([city, cart.filter(item => item.extraService).map(item =>
+        [item.id, item.variantLabel, item.qty, item.extraService.revision, cartServicePrice(item.extraService, city)])]);
+}
+
 function renderSummary() {
     const cart     = getCart();
+    const city = localStorage.getItem('city');
     const totalQty = cart.reduce((s, i) => s + i.qty, 0);
     const total    = cart.reduce((s, i) => s + itemPrice(i) * i.qty, 0);
 
     document.getElementById('orderItems').innerHTML = cart.map(item => `
         <div class="order-item">
             <span class="order-item__name">
-                ${item.name}${item.variantLabel ? `<span class="order-item__variant"> · ${item.variantLabel}</span>` : ''}
+                ${escHtml(item.name)}${item.variantLabel ? `<span class="order-item__variant"> · ${escHtml(item.variantLabel)}</span>` : ''}
             </span>
             <span class="order-item__qty">× ${item.qty}</span>
-            <span class="order-item__price">${fmt(itemPrice(item) * item.qty)}</span>
+            <span class="order-item__price">${fmt((itemPrice(item) - cartServicePrice(item.extraService, city)) * item.qty)}</span>
         </div>
     `).join('');
+
+    const services = cart.filter(item => item.extraService);
+    const panel = document.getElementById('checkoutServices');
+    if (panel) {
+        panel.classList.toggle('hidden', !services.length);
+        panel.dataset.selection = serviceSelectionSignature(cart, city);
+        panel.innerHTML = services.length ? services.map(item => {
+            const service = item.extraService;
+            const fee = cartServicePrice(service, city);
+            return `<details>
+                <summary>${escHtml(service.title)} · ${escHtml(item.name)} × ${Number(item.qty)} · ${fee ? fmt(fee * item.qty) : 'Недоступно'}</summary>
+                <p>${Number(service.months)} мес. ${service.start === 'after_base' ? 'после окончания гарантии магазина' : 'со дня передачи товара'}.</p>
+                <p>${escHtml(service.terms)}</p>
+            </details>`;
+        }).join('') + '<label><input type="checkbox" id="agreeExtraService"> <span>Согласен приобрести указанный платный сервис по показанной цене и на указанных условиях.</span></label>' : '';
+    }
 
     document.getElementById('totalLabel').textContent = plural(totalQty, 'товар', 'товара', 'товаров');
     document.getElementById('totalPrice').textContent  = fmt(total);
@@ -308,6 +330,15 @@ async function submitOrder() {
     }
     if (!validate()) return;
 
+    const serviceItems = getCart().filter(item => item.extraService);
+    const consent = document.getElementById('agreeExtraService');
+    const consentCity = localStorage.getItem('city');
+    if (serviceItems.length && (!consent?.checked ||
+        document.getElementById('checkoutServices')?.dataset.selection !== serviceSelectionSignature(getCart(), consentCity))) {
+        alert('Подтвердите согласие на платный сервис или уберите его в корзине.');
+        return;
+    }
+
     const btn = document.getElementById('submitBtn');
 
     // ── Проверка актуальной цены (первое нажатие) ────────────────
@@ -325,6 +356,15 @@ async function submitOrder() {
         }
         const cart   = getCart();
         const checks = cart.map(i => _checkCartItem(i, fresh));
+
+        if (checks.some((check, index) => check.ok && cart[index].extraService &&
+            check.fields.extraService?.revision !== cart[index].extraService.revision)) {
+            if (consent) consent.checked = false;
+            btn.disabled = false;
+            btn.textContent = 'Подтвердить заказ';
+            alert('Условия сервиса изменились. Вернитесь в корзину и проверьте доплату и покрытие.');
+            return;
+        }
 
         const unavailable = checks.filter(c => !c.ok);
         if (unavailable.length) {
@@ -352,7 +392,19 @@ async function submitOrder() {
     btn.textContent = 'Оформляем...';
 
     const cart  = getCart();
-    const total = cart.reduce((s, i) => s + _checkCartItem(i, _pendingFreshProducts).price * i.qty, 0);
+    const checks = cart.map(item => _checkCartItem(item, _pendingFreshProducts));
+    if (checks.some((check, index) => !check.ok ||
+        (cart[index].extraService && (check.fields.extraService?.revision !== cart[index].extraService.revision ||
+         !consent?.checked || document.getElementById('checkoutServices')?.dataset.selection !==
+             serviceSelectionSignature(cart, localStorage.getItem('city')))))) {
+        if (consent) consent.checked = false;
+        _pendingFreshProducts = null;
+        btn.disabled = false;
+        btn.textContent = 'Подтвердить заказ';
+        alert('Состав заказа или условия сервиса изменились. Вернитесь в корзину и проверьте заказ.');
+        return;
+    }
+    const total = checks.reduce((sum, check, index) => sum + check.price * cart[index].qty, 0);
 
     const phone   = document.getElementById('inputPhone').value;
     const name    = document.getElementById('inputName').value.trim();
@@ -384,7 +436,7 @@ async function submitOrder() {
     }
 
     try {
-        const fingerprint = JSON.stringify({ name,phone,storeLabel,address,city,comment,items:cart.map(i=>[i.id,i.variantLabel,i.qty]),total });
+        const fingerprint = JSON.stringify({ name,phone,storeLabel,address,city,comment,items:cart.map(i=>[i.id,i.variantLabel,i.qty,i.extraService?.revision]),total });
         let pendingOrder;
         try { pendingOrder = JSON.parse(sessionStorage.getItem('pending_order') || 'null'); } catch {}
         if (!pendingOrder || pendingOrder.fingerprint !== fingerprint) {
@@ -405,11 +457,16 @@ async function submitOrder() {
                 address:  address || undefined,
                 city:     city    || undefined,
                 comment:  comment || undefined,
-                items: cart.map(i => ({
+                items: cart.map((i, index) => ({
                     id:           i.id,
                     name:         i.name + (i.variantLabel ? ` (${i.variantLabel})` : ''),
                     variantLabel: i.variantLabel || undefined,
-                    price:        _checkCartItem(i, _pendingFreshProducts).price,
+                    price:        checks[index].price,
+                    ...(i.extraService ? { extraService: {
+                        accepted: true, consentVersion: 'service-consent-v1', city,
+                        revision: i.extraService.revision,
+                        price: cartServicePrice(i.extraService, city),
+                    } } : {}),
                     qty:          i.qty,
                 })),
                 total,
@@ -428,7 +485,11 @@ async function submitOrder() {
             _pendingFreshProducts = null;
             btn.disabled = false;
             btn.classList.remove('submit-btn--disabled');
-            if (typeof body.total === 'number') {
+            if (body.error === 'service_changed') {
+                if (consent) consent.checked = false;
+                btn.textContent = 'Подтвердить заказ';
+                alert('Условия сервиса изменились. Вернитесь в корзину и проверьте доплату и покрытие.');
+            } else if (typeof body.total === 'number') {
                 showPriceCheckWarn(total, body.total);
                 btn.textContent = `Оформить за ${body.total.toLocaleString('ru-RU')} ₽`;
             } else {

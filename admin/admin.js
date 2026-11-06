@@ -1021,7 +1021,50 @@ function handleOverlayClick(e) {
 }
 
 /* ─── Fill / clear form ─────────────────────────────────── */
+function toggleExtraServiceFields() {
+    document.getElementById('f-extra-fields').classList.toggle('hidden', !document.getElementById('f-extra-enabled').checked);
+}
+
+function fillWarrantyFields(warranty) {
+    const service = warranty?.service;
+    v('f-warranty-days', warranty?.baseDays || '');
+    v('f-warranty-terms', warranty?.baseTerms || '');
+    document.getElementById('f-extra-enabled').checked = !!service;
+    v('f-extra-title', service?.title || '');
+    v('f-extra-months', service?.months || '');
+    v('f-extra-start', service?.start || 'handover');
+    v('f-extra-msk', service?.priceMsk || '');
+    v('f-extra-krd', service?.priceKrd || '');
+    v('f-extra-terms', service?.terms || '');
+    toggleExtraServiceFields();
+}
+
+function collectWarrantyFields() {
+    const read = id => document.getElementById(id).value.trim();
+    const integer = (id, max) => {
+        const value = Number(read(id));
+        if (!Number.isSafeInteger(value) || value < 0 || value > max) throw new Error('Проверьте срок гарантии и доплаты.');
+        return value;
+    };
+    const baseDays = integer('f-warranty-days', 3650);
+    const baseTerms = read('f-warranty-terms');
+    let service = null;
+    if (document.getElementById('f-extra-enabled').checked) {
+        service = {
+            title: read('f-extra-title'), terms: read('f-extra-terms'), start: read('f-extra-start'),
+            months: integer('f-extra-months', 120), priceMsk: integer('f-extra-msk', 100000000),
+            priceKrd: integer('f-extra-krd', 100000000),
+        };
+        if (!service.title || !service.terms || !service.months || (!service.priceMsk && !service.priceKrd) ||
+            (service.start === 'after_base' && !baseDays)) {
+            throw new Error('Заполните название, срок, покрытие и доплату хотя бы для одного города.');
+        }
+    }
+    return baseDays || baseTerms || service ? { baseDays, baseTerms, service } : null;
+}
+
 function fillForm(p) {
+    fillWarrantyFields(p.warranty);
     v('f-name',        p.name);
     v('f-brand',       p.brand   || '');
     v('f-article',     p.article || '');
@@ -1063,6 +1106,7 @@ function fillForm(p) {
 }
 
 function clearForm() {
+    fillWarrantyFields(null);
     ['f-name','f-brand','f-article','f-desc','f-price-label'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
     });
@@ -1116,6 +1160,9 @@ async function saveProduct() {
     if (!validateForm()) return;
 
     const isService  = document.getElementById('f-service').checked;
+    let warranty;
+    try { warranty = isService ? null : collectWarrantyFields(); }
+    catch (error) { showToast(error.message); return; }
     const ffSub      = document.getElementById('ff-sub');
     const subVisible = !ffSub.classList.contains('hidden');
     const subVal     = subVisible ? parseInt(document.getElementById('f-sub').value) || null : null;
@@ -1147,6 +1194,7 @@ async function saveProduct() {
     }
 
     const product = {
+        warranty,
         name:          document.getElementById('f-name').value.trim(),
         brand:         document.getElementById('f-brand').value.trim(),
         article:       document.getElementById('f-article').value.trim(),
@@ -1455,7 +1503,8 @@ function renderOrderList() {
         const date    = new Date(o.createdAt).toLocaleString('ru-RU', {
             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
         });
-        const itemsText = o.items.map(i => `${escHtml(i.name)} × ${Number(i.qty) || 0}`).join(', ');
+        const itemsText = o.items.map(i => `${escHtml(i.name)} × ${Number(i.qty) || 0}${i.extraService ?
+            ` · ${escHtml(i.extraService.title)} (${Number(i.extraService.months)} мес., +${Number(i.extraService.price).toLocaleString('ru-RU')} ₽/шт)` : ''}`).join(', ');
         const statusList = ORDER_STATUSES_BY_DELIVERY[o.delivery] || ORDER_STATUSES_BY_DELIVERY.russia;
         const options   = statusList.map(s =>
             `<option value="${s.key}" ${o.status === s.key ? 'selected' : ''}>${s.label}</option>`

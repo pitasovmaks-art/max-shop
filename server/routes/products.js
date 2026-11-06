@@ -2,10 +2,12 @@ const router           = require('express').Router();
 const db               = require('../db');
 const { requireAdmin, isValidAdminAuthHeader } = require('../middleware/auth');
 const usdPrice         = require('../utils/usdPrice');
+const { parseWarranty, publicWarranty } = require('../utils/productWarranty');
 
 function normalize(p) {
     return {
         id:                   p.id,
+        warranty:             p.is_service === 1 ? null : publicWarranty(p.warranty),
         name:                 p.name,
         desc:                 p.desc,
         brand:                p.brand                   || undefined,
@@ -564,6 +566,12 @@ router.put('/:id/variants', requireAdmin, async (req, res) => {
 
 /* POST /api/products */
 router.post('/', requireAdmin, async (req, res) => {
+    let warranty;
+    try {
+        if (Object.hasOwn(req.body, 'warranty')) warranty = parseWarranty(req.body.warranty);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
     const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, isHit, priceLabel, image, brand, article } = req.body;
     if (!name) return res.status(400).json({ error: 'name required' });
     if (typeof image === 'string' && image.startsWith('data:')) {
@@ -579,12 +587,13 @@ router.post('/', requireAdmin, async (req, res) => {
         const nextOrder    = (globalMax?.m ?? 0) + 1;
         const nextCatOrder = (catMax?.m ?? 0) + 1;
         const row = await db.queryOne(
-            `INSERT INTO products (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,in_stock,is_service,is_hit,price_label,image,sort_order,sort_order_in_category,brand,article)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id`,
+            `INSERT INTO products (name,"desc",category_id,sub_id,price,price_krd,price_msk,price_delivery,in_stock,is_service,is_hit,price_label,image,sort_order,sort_order_in_category,brand,article${warranty !== undefined ? ",warranty" : ""})
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17${warranty !== undefined ? ",$18" : ""}) RETURNING id`,
             [name, desc || null, categoryId || null, subId || null, price || 0,
              priceKrd || 0, priceMsk || 0, priceDelivery || 0,
              inStock ? 1 : 0, isService ? 1 : 0, isHit ? 1 : 0, priceLabel || null, image || null, nextOrder, nextCatOrder,
-             sanitizeShortText(brand) || null, sanitizeShortText(article) || null]
+             sanitizeShortText(brand) || null, sanitizeShortText(article) || null,
+             ...(warranty !== undefined ? [warranty] : [])]
         );
         const product = normalize(await db.queryOne('SELECT * FROM products WHERE id=$1', [row.id]));
         await attachVariants([product], { includeUsdRaw: true });
@@ -594,6 +603,12 @@ router.post('/', requireAdmin, async (req, res) => {
 
 /* PUT /api/products/:id */
 router.put('/:id', requireAdmin, async (req, res) => {
+    let warranty;
+    try {
+        if (Object.hasOwn(req.body, 'warranty')) warranty = parseWarranty(req.body.warranty);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
     const { name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery, inStock, isService, isHit, priceLabel, image, brand, article } = req.body;
     if (typeof image === 'string' && image.startsWith('data:')) {
         return res.status(400).json({ error: 'image must be S3 URL, not base64' });
@@ -638,14 +653,15 @@ router.put('/:id', requireAdmin, async (req, res) => {
                  in_stock=$9,is_service=$10,is_hit=COALESCE($11,is_hit),price_label=$12,image=$13,
                  brand=COALESCE(${brandPlaceholder},brand),article=COALESCE(${articlePlaceholder},article)
                  ${hasCatOrder ? ',sort_order_in_category=$15' : ''}
+                 ${warranty !== undefined ? (hasCatOrder ? ',warranty=$18' : ',warranty=$17') : ''}
              WHERE id=$14`,
             hasCatOrder
                 ? [name, desc || null, categoryId || null, subId || null, price || 0,
                    priceKrd || 0, priceMsk || 0, priceDelivery || 0,
-                   inStock ? 1 : 0, isService ? 1 : 0, isHitParam, priceLabel || null, image || null, +req.params.id, newCatOrder, brandParam, articleParam]
+                   inStock ? 1 : 0, isService ? 1 : 0, isHitParam, priceLabel || null, image || null, +req.params.id, newCatOrder, brandParam, articleParam, ...(warranty !== undefined ? [warranty] : [])]
                 : [name, desc || null, categoryId || null, subId || null, price || 0,
                    priceKrd || 0, priceMsk || 0, priceDelivery || 0,
-                   inStock ? 1 : 0, isService ? 1 : 0, isHitParam, priceLabel || null, image || null, +req.params.id, brandParam, articleParam]
+                   inStock ? 1 : 0, isService ? 1 : 0, isHitParam, priceLabel || null, image || null, +req.params.id, brandParam, articleParam, ...(warranty !== undefined ? [warranty] : [])]
         );
         if (changed === 0) return res.status(404).json({ error: 'Not found' });
         const product = normalize(await db.queryOne('SELECT * FROM products WHERE id=$1', [+req.params.id]));

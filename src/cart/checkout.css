@@ -285,3 +285,8 @@ a      { text-decoration: none; color: inherit; }
 .pvz-selected { color: var(--text-primary); font-size: 14px; line-height: 1.5; margin-top: 12px; overflow-wrap: anywhere; }
 #manualPointToggle { min-height: 44px; align-items: center; }
 #cdekOfficesList { margin-top: 8px; }
+
+.checkout-services { display:grid; gap:10px; padding:12px 0; color:var(--text-primary); font-size:14px; line-height:1.45; }
+.checkout-services details p { white-space:pre-wrap; overflow-wrap:anywhere; margin-top:6px; }
+.checkout-services label { display:flex; gap:8px; align-items:flex-start; }
+.checkout-services input { margin-top:4px; accent-color:var(--accent); }

@@ -41,6 +41,30 @@ function removeItem(key) {
     }
 }
 
+function removeExtraService(key) {
+    const cart = getCart();
+    const item = cart.find(entry => entry.key === key);
+    if (!item?.extraService) return;
+    delete item.extraService;
+    delete _priceChangeNotices[key];
+    item.key = item.variantId ? `${item.id}_v${item.variantId}` : String(item.id);
+    const base = cart.find(entry => entry !== item && entry.key === item.key);
+    if (base) base.qty += item.qty;
+    saveCart(base ? cart.filter(entry => entry !== item) : cart);
+    render();
+    refreshCartPrices();
+}
+
+function cartServiceLine(item, city, safeKey) {
+    if (!item.extraService) return '';
+    const price = cartServicePrice(item.extraService, city);
+    const summary = price ? `+${fmt(price)} / шт` : 'Недоступен в этом городе';
+    return `<div class="cart-item__variant">
+        ${escHtml(item.extraService.title)} · ${Number(item.extraService.months)} мес. · ${summary}
+        <button type="button" class="cart-service-remove" onclick="removeExtraService(${safeKey})">Убрать сервис</button>
+    </div>`;
+}
+
 function clearCart() {
     saveCart([]);
     closeDialog();
@@ -190,6 +214,7 @@ function render() {
                 <div class="cart-item__info">
                     <div class="cart-item__name">${escHtml(item.name)}</div>
                     ${item.variantLabel ? `<div class="cart-item__variant">${escHtml(item.variantLabel)}</div>` : ''}
+                    ${cartServiceLine(item, city, safeKey)}
                     <div class="cart-item__unit" style="color:#FF3B30;font-size:12px">Недоступен в выбранном городе</div>
                 </div>
                 <button class="remove-btn" onclick="removeItem(${safeKey})" aria-label="Удалить">
@@ -206,10 +231,11 @@ function render() {
         const baseForDisplay = city === 'krd'
             ? (item.priceKrdPickup || item.priceKrd || 0)
             : (item.priceMskPickup || item.priceMsk || 0);
-        const isOnSale  = ep < baseForDisplay && baseForDisplay > 0;
+        const productPrice = ep - cartServicePrice(item.extraService, city);
+        const isOnSale  = productPrice < baseForDisplay && baseForDisplay > 0;
         const unitHtml  = isOnSale
-            ? `<s class="price-old">${fmt(baseForDisplay)}</s><span class="price-sale">${fmt(ep)}</span>`
-            : fmt(ep);
+            ? `<s class="price-old">${fmt(baseForDisplay)}</s><span class="price-sale">${fmt(productPrice)}</span>`
+            : fmt(productPrice);
         const lineTotal = fmt(ep * item.qty);
         const notice    = _priceChangeNotices[item.key];
         const noticeHtml = notice
@@ -225,6 +251,7 @@ function render() {
                 <div class="cart-item__name">${escHtml(item.name)}</div>
                 ${item.variantLabel ? `<div class="cart-item__variant">${escHtml(item.variantLabel)}</div>` : ''}
                 <div class="cart-item__unit">${unitHtml}&nbsp;/ шт</div>
+                ${cartServiceLine(item, city, safeKey)}
                 ${noticeHtml}
                 <div class="cart-item__controls">
                     <button class="qty-btn qty-btn--dec" onclick="updateQty(${safeKey}, -1)" aria-label="Уменьшить">−</button>

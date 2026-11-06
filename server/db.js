@@ -98,6 +98,7 @@ async function createSchema() {
     await pool.query(`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS sale_price INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_notified INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_hit INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS warranty JSONB`);
     await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS brand TEXT`);
     await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS article TEXT`);
     await pool.query(`

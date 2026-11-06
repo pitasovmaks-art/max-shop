@@ -1899,6 +1899,14 @@ function productCardHTML(p) {
         const displayPrice = displayPriceFor(p);
         const displaySale  = activeVar?.salePrice || 0;
 
+        const warranty = p.warranty;
+        const extraService = warranty?.service;
+        const extraPrice = _city === 'krd' ? extraService?.priceKrd : extraService?.priceMsk;
+        const warrantySummary = warranty ? `<div class="warranty-summary">
+            ${warranty.baseDays ? `<strong>Гарантия магазина · ${Number(warranty.baseDays)} дней</strong>` : ''}
+            ${extraPrice ? `<span>${escHtml(extraService.title)} · ${Number(extraService.months)} мес.</span>` : ''}
+        </div>` : '';
+
         const visiblePills = cityVars.filter(vr => vr.label && vr.label.trim());
         const variantPills = visiblePills.length
             ? `<div class="variant-pills">${visiblePills.map(vr =>
@@ -1936,6 +1944,8 @@ function productCardHTML(p) {
         let btn;
         if (unavailableHere) {
             btn = `<button class="add-btn add-btn--disabled" disabled>Нет в наличии</button>`;
+        } else if (p.inStock && extraPrice) {
+            btn = `<button class="add-btn" onclick="event.stopPropagation();openProduct(${p.id})">Выбрать условия</button>`;
         } else if (p.inStock) {
             btn = `<button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})" aria-label="В корзину">${CART_SVG}В корзину</button>`;
         } else if (tgId) {
@@ -1953,6 +1963,7 @@ function productCardHTML(p) {
             <div class="product-card__img ${imgBg}">${imgIcon}${outBadge}${favBtn}</div>
             <div class="product-card__body">
                 <div class="product-card__name">${escHtml(p.name)}</div>
+                ${warrantySummary}
                 ${variantPills}
                 <div class="product-card__footer">
                     <span class="product-card__price">${unavailableHere ? '—' : fmtPrice(displayPrice, displaySale)}</span>

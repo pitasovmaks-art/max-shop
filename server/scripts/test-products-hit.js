@@ -60,7 +60,7 @@ async function fakeQuery(sql, params = []) {
     if (s.startsWith('INSERT INTO products')) {
         const [name, desc, categoryId, subId, price, priceKrd, priceMsk, priceDelivery,
                inStock, isService, isHit, priceLabel, image, sortOrder, sortOrderInCategory,
-               brand, article] = params;
+               brand, article, warranty] = params;
         const id = nextId++;
         products.push({
             id, name, desc, category_id: categoryId, sub_id: subId, price,
@@ -68,7 +68,7 @@ async function fakeQuery(sql, params = []) {
             in_stock: inStock, is_service: isService, is_hit: isHit,
             price_label: priceLabel, image, sort_order: sortOrder,
             sort_order_in_category: sortOrderInCategory, sale_notified: 0,
-            brand: brand ?? null, article: article ?? null,
+            brand: brand ?? null, article: article ?? null, warranty,
         });
         return [{ id }];
     }
@@ -91,6 +91,8 @@ async function fakeQuery(sql, params = []) {
             article: article === null ? p.article : article, // имитация article=COALESCE($N,article)
         });
         if (hasCatOrder) p.sort_order_in_category = newCatOrder;
+        const warrantyParam = s.match(/,warranty=\$(\d+)/);
+        if (warrantyParam) p.warranty = params[Number(warrantyParam[1]) - 1];
         return { rowCount: 1 };
     }
     if (s === 'SELECT * FROM product_variants ORDER BY sort_order, id') {
@@ -146,6 +148,39 @@ async function main() {
         check('POST /api/products: 201', r.status === 201);
         check('POST /api/products: isHit по умолчанию false', body.isHit === false);
         productId = body.id;
+    }
+
+    {
+        const fields = { name: 'Тестовый товар', categoryId: 1, inStock: true };
+        const save = async (method, url, body) => fetch(base + url, {
+            method, headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify(body),
+        });
+        const warranty = { baseDays: 14, baseTerms: 'Условия магазина', service: {
+            title: 'Сервис на электронику', terms: 'Плата управления', months: 12,
+            start: 'handover', priceMsk: 2500, priceKrd: 2000,
+        } };
+        const create = await save('POST', '/api/products', { ...fields, warranty });
+        const created = await create.json();
+        const url = '/api/products/' + created.id;
+        check('POST сохраняет обе доплаты и публикует редакцию условий', create.status === 201 &&
+            created.warranty?.service?.priceMsk === 2500 && created.warranty?.service?.priceKrd === 2000 &&
+            typeof created.warranty?.service?.revision === 'string');
+        const change = await save('PUT', url, { ...fields, categoryId: 2, warranty: {
+            ...warranty, service: { ...warranty.service, priceKrd: 0 },
+        } });
+        const changed = await change.json();
+        check('смена категории сохраняет новые условия и скрывает сервис в городе с 0', change.status === 200 &&
+            changed.categoryId === 2 && changed.warranty?.service?.priceKrd === 0 &&
+            changed.warranty?.service?.revision !== created.warranty?.service?.revision);
+        const legacy = await save('PUT', url, { ...fields, categoryId: 2, isHit: true });
+        const preserved = await legacy.json();
+        check('старый запрос без warranty сохраняет настройку', preserved.warranty?.service?.revision === changed.warranty?.service?.revision);
+        const invalid = await save('PUT', url, { ...fields, warranty: {
+            ...warranty, service: { ...warranty.service, priceMsk: -1 },
+        } });
+        check('отрицательная доплата отклоняется', invalid.status === 400);
+        const removed = await save('PUT', url, { ...fields, categoryId: 2, warranty: null });
+        check('явный null удаляет настройки гарантии', (await removed.json()).warranty === null);
     }
 
     /* ── (б) PUT с isHit:true -> isHit:true ─────────────────────── */

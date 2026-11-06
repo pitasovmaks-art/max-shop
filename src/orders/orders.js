@@ -169,7 +169,16 @@ function orderCardHtml(o) {
         const date = new Date(o.createdAt).toLocaleString('ru-RU', {
             day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
         });
-        const itemsText  = o.items.map(i => `${escHtml(i.name)} × ${Number(i.qty) || 0}`).join(', ');
+        const itemsText  = o.items.map(i => `${escHtml(i.name)} × ${Number(i.qty) || 0}${i.extraService ?
+            ` · ${escHtml(i.extraService.title)} (${Number(i.extraService.months)} мес., +${Number(i.extraService.price).toLocaleString('ru-RU')} ₽/шт)` : ''}`).join(', ');
+        const serviceTerms = o.items.filter(i => i.extraService).map(i => {
+            const service = i.extraService;
+            return `<details class="order-card__items">
+                <summary>Условия сервиса · ${escHtml(i.name)}</summary>
+                <div>${Number(service.months)} мес. ${service.start === 'after_base' ? 'после окончания гарантии магазина' : 'со дня передачи товара'}.</div>
+                <div style="white-space:pre-wrap;overflow-wrap:anywhere">${escHtml(service.terms)}</div>
+            </details>`;
+        }).join('');
         const itemsData  = encodeURIComponent(JSON.stringify(o.items));
         const trackBtn   = o.trackingNumber && o.deliveryCarrier !== 'ozon'
             ? `<a class="track-btn" href="https://www.cdek.ru/ru/tracking?order_id=${encodeURIComponent(o.trackingNumber)}" target="_blank">
@@ -185,6 +194,7 @@ function orderCardHtml(o) {
             </div>
             <div class="order-card__date">${date}</div>
             <div class="order-card__items">${itemsText}</div>
+            ${serviceTerms}
             <div class="order-card__store">📍 ${escHtml(o.store)}</div>
             ${o.delivery === 'russia' && o.address ? `<div class="order-card__address">📦 ${o.deliveryCarrier === 'ozon' ? 'Ozon' : 'СДЭК'}: ${escHtml(o.address)}</div>` : ''}
             ${o.delivery === 'city'   && o.address ? `<div class="order-card__address">🚗 Адрес доставки: ${escHtml(o.address)}</div>` : ''}
