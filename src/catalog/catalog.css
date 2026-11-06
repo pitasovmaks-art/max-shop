@@ -710,7 +710,8 @@ html.city-unknown #city-screen { display: flex; }
 }
 
 .product-card__img {
-    height: 96px;
+    aspect-ratio: 4 / 3;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -722,7 +723,7 @@ html.city-unknown #city-screen { display: flex; }
 .product-card__photo {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
-    object-fit: cover;
+    object-fit: contain;
 }
 .product-card__badge-out {
     position: absolute;

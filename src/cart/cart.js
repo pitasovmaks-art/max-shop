@@ -209,7 +209,7 @@ function render() {
             return `
             <div class="cart-item cart-item--unavailable" id="item-${escHtml(item.key)}">
                 ${item.image
-                    ? `<div class="cart-item__img"><img src="${escHtml(safeImageUrl(item.image))}" alt="${escHtml(item.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;opacity:.4"></div>`
+                    ? `<div class="cart-item__img"><img src="${escHtml(safeImageUrl(item.image))}" alt="${escHtml(item.name)}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;opacity:.4"></div>`
                     : `<div class="cart-item__img img-bg--default" style="opacity:.4">${iconSvg('image', 26)}</div>`}
                 <div class="cart-item__info">
                     <div class="cart-item__name">${escHtml(item.name)}</div>
@@ -245,7 +245,7 @@ function render() {
         return `
         <div class="cart-item" id="item-${escHtml(item.key)}">
             ${item.image
-                ? `<div class="cart-item__img"><img src="${escHtml(safeImageUrl(item.image))}" alt="${escHtml(item.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px"></div>`
+                ? `<div class="cart-item__img"><img src="${escHtml(safeImageUrl(item.image))}" alt="${escHtml(item.name)}" style="width:100%;height:100%;object-fit:contain;border-radius:8px"></div>`
                 : `<div class="cart-item__img img-bg--default">${iconSvg('image', 26)}</div>`}
             <div class="cart-item__info">
                 <div class="cart-item__name">${escHtml(item.name)}</div>
