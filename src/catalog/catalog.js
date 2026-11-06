@@ -1902,10 +1902,13 @@ function productCardHTML(p) {
         const warranty = p.warranty;
         const extraService = warranty?.service;
         const extraPrice = _city === 'krd' ? extraService?.priceKrd : extraService?.priceMsk;
-        const warrantySummary = warranty ? `<div class="warranty-summary">
-            ${warranty.baseDays ? `<strong>Гарантия магазина · ${Number(warranty.baseDays)} дней</strong>` : ''}
-            ${extraPrice ? `<span>${escHtml(extraService.title)} · ${Number(extraService.months)} мес.</span>` : ''}
-        </div>` : '';
+        const baseDays = Number(warranty?.baseDays) || 0;
+        const warrantyLabel = baseDays > 0
+            ? `Гарантия ${plural(baseDays, 'день', 'дня', 'дней')}`
+            : extraPrice ? 'Доп. гарантия' : '';
+        const warrantySummary = warrantyLabel
+            ? `<div class="warranty-summary">${warrantyLabel}</div>`
+            : '';
 
         const visiblePills = cityVars.filter(vr => vr.label && vr.label.trim());
         const variantPills = visiblePills.length
