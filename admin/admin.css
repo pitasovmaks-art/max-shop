@@ -1797,3 +1797,13 @@ button:focus-visible,a:focus-visible { outline:2px solid var(--brand-accent); ou
 .msk-selection-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .msk-selection-row { display:flex; gap:12px; align-items:center; padding:12px 4px; min-height:44px; border-bottom:1px solid var(--border); }
 .msk-selection-row input { flex-shrink:0; width:20px; height:20px; accent-color:var(--brand-accent); }
+
+/* Bulk product editor */
+.bulk-products fieldset { min-width: 0; border: 0; padding: 0; margin: 14px 0; }
+.bulk-products p { margin: 8px 0; }
+.bulk-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.bulk-scroll { overflow: auto; max-height: 60vh; border: 1px solid var(--border); border-radius: 10px; }
+.bulk-scroll th { position: sticky; top: 0; background: var(--bg-card); z-index: 1; }
+.bulk-scroll .ff__input { min-width: 130px; }
+.bulk-scroll textarea { min-width: 240px; min-height: 72px; }
+#bulkDetails { max-height: 260px; overflow: auto; padding-left: 22px; }

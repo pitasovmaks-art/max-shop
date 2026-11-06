@@ -405,7 +405,7 @@ async function doReset() {
 }
 
 const ADMIN_SECTION_LABELS = {
-    products: 'Товары', categories: 'Категории', orders: 'Заказы',
+    products: 'Товары', bulk: 'Массовое добавление', categories: 'Категории', orders: 'Заказы',
     stores: 'Магазины', banners: 'Баннеры', service: 'Ремонт и обслуживание',
     exports: 'Экспорт файлов', mskprices: 'Цены Москвы', usdrate: 'Курс доллара',
 };
@@ -453,6 +453,10 @@ adminDesktop.addEventListener('change', closeAdminMenu);
 /* ─── Tab switching ─────────────────────────────────────── */
 function switchTab(tab) {
     const isProducts   = tab === 'products';
+    const isBulk = tab === 'bulk';
+    document.getElementById('sectionBulk').classList.toggle('hidden', !isBulk);
+    document.getElementById('tabBulk').classList.toggle('active', isBulk);
+    if (isBulk) initBulkProducts();
     const isCategories = tab === 'categories';
     const isOrders     = tab === 'orders';
     const isStores     = tab === 'stores';
@@ -1217,6 +1221,44 @@ function triggerImport() {
     document.getElementById('importFileInput').click();
 }
 
+function readImportRows(raw) {
+    // Find header row: first row that contains 'name' or 'Название' or 'category' or 'Категория'
+    const KNOWN = ['name','Название','category','Категория','variantLabel','Вариант'];
+    const headerRowIdx = raw.findIndex(row =>
+        Array.isArray(row) && row.some(cell => KNOWN.includes(String(cell).trim()))
+    );
+    if (headerRowIdx === -1) throw new Error('Строка заголовков не найдена. Первая строка должна содержать: name (или Название), category (или Категория) и т.д.');
+    const headers = raw[headerRowIdx].map(h => String(h).trim());
+    const dataRows = raw.slice(headerRowIdx + 1).filter(row =>
+        row.some(cell => cell !== '' && cell !== null && cell !== undefined)
+    );
+    return dataRows.map(row => {
+        const r = Object.create(null);
+        headers.forEach((h, i) => { r[h] = row[i] ?? ''; });
+        return {
+            name:             String(r['name']             || r['Название']        || '').trim(),
+            category:         String(r['category']         || r['Категория']       || '').trim(),
+            subcategory:      String(r['subcategory']      || r['Подкатегория']    || '').trim(),
+            desc:             String(r['desc']             || r['Описание']        || '').trim(),
+            brand:            String(r['brand']            || r['Бренд']           || '').trim(),
+            article:          String(r['article']          || r['Артикул']          || '').trim(),
+            inStock:          r['inStock']  !== undefined && r['inStock']  !== '' ? r['inStock']  :
+                              r['Наличие'] !== undefined && r['Наличие']  !== '' ? r['Наличие']  : 1,
+            variantLabel:     String(r['variantLabel']     || r['Вариант']         || '').trim(),
+            priceKrdPickup:   +(r['priceKrdPickup']   || r['Цена КРД']      || 0),
+            priceMskPickup:   +(r['priceMskPickup']   || r['Цена МСК']      || 0),
+            priceMskDelivery: +(r['priceMskDelivery'] || r['Цена доставка'] || 0),
+            isDefault:        +(r['isDefault']        || r['По умолчанию']  || 0),
+            // usd-pricing, п.12: $-цены — отдельные колонки, смешивать
+            // с рублёвыми в одной строке нельзя (сервер отклонит строку).
+            priceKrdPickupUsd:     +(r['priceKrdPickupUsd']     || r['Цена КРД $']        || 0),
+            priceMskPickupUsd:     +(r['priceMskPickupUsd']     || r['Цена МСК $']        || 0),
+            deliverySurchargeRub:  +(r['deliverySurchargeRub']  || r['Наценка доставка ₽'] || 0),
+            salePriceUsd:          +(r['salePriceUsd']          || r['Скидка $']          || 0),
+        };
+    });
+}
+
 function handleImportFile(input) {
     const file = input.files[0];
     if (!file) return;
@@ -1231,41 +1273,7 @@ function handleImportFile(input) {
             const sheetName = wb.SheetNames.find(n => n.trim() === 'Товары') || wb.SheetNames[0];
             const ws  = wb.Sheets[sheetName];
             const raw = XLSX.utils.sheet_to_json(ws, { defval: '', header: 1 });
-            // Find header row: first row that contains 'name' or 'Название' or 'category' or 'Категория'
-            const KNOWN = ['name','Название','category','Категория','variantLabel','Вариант'];
-            const headerRowIdx = raw.findIndex(row =>
-                Array.isArray(row) && row.some(cell => KNOWN.includes(String(cell).trim()))
-            );
-            if (headerRowIdx === -1) throw new Error('Строка заголовков не найдена. Первая строка должна содержать: name (или Название), category (или Категория) и т.д.');
-            const headers = raw[headerRowIdx].map(h => String(h).trim());
-            const dataRows = raw.slice(headerRowIdx + 1).filter(row =>
-                row.some(cell => cell !== '' && cell !== null && cell !== undefined)
-            );
-            rows = dataRows.map(row => {
-                const r = Object.create(null);
-                headers.forEach((h, i) => { r[h] = row[i] ?? ''; });
-                return {
-                    name:             String(r['name']             || r['Название']        || '').trim(),
-                    category:         String(r['category']         || r['Категория']       || '').trim(),
-                    subcategory:      String(r['subcategory']      || r['Подкатегория']    || '').trim(),
-                    desc:             String(r['desc']             || r['Описание']        || '').trim(),
-                    brand:            String(r['brand']            || r['Бренд']           || '').trim(),
-                    article:          String(r['article']          || r['Артикул']          || '').trim(),
-                    inStock:          r['inStock']  !== undefined && r['inStock']  !== '' ? r['inStock']  :
-                                      r['Наличие'] !== undefined && r['Наличие']  !== '' ? r['Наличие']  : 1,
-                    variantLabel:     String(r['variantLabel']     || r['Вариант']         || '').trim(),
-                    priceKrdPickup:   +(r['priceKrdPickup']   || r['Цена КРД']      || 0),
-                    priceMskPickup:   +(r['priceMskPickup']   || r['Цена МСК']      || 0),
-                    priceMskDelivery: +(r['priceMskDelivery'] || r['Цена доставка'] || 0),
-                    isDefault:        +(r['isDefault']        || r['По умолчанию']  || 0),
-                    // usd-pricing, п.12: $-цены — отдельные колонки, смешивать
-                    // с рублёвыми в одной строке нельзя (сервер отклонит строку).
-                    priceKrdPickupUsd:     +(r['priceKrdPickupUsd']     || r['Цена КРД $']        || 0),
-                    priceMskPickupUsd:     +(r['priceMskPickupUsd']     || r['Цена МСК $']        || 0),
-                    deliverySurchargeRub:  +(r['deliverySurchargeRub']  || r['Наценка доставка ₽'] || 0),
-                    salePriceUsd:          +(r['salePriceUsd']          || r['Скидка $']          || 0),
-                };
-            });
+            rows = readImportRows(raw);
         } catch (err) {
             alert('Не удалось прочитать файл.\n\n' + (err.message || err));
             return;

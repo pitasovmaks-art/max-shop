@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="dark">
     <title>Точка Монтажа — Администратор</title>
-    <link rel="stylesheet" href="admin.css?v=20261103controls">
+    <link rel="stylesheet" href="admin.css?v=20261106bulk">
 </head>
 <body>
 
@@ -79,6 +79,7 @@
             <div class="admin-nav-group">
                 <p class="admin-nav-group__title">Каталог</p>
                 <button class="tab-btn active" id="tabProducts" onclick="switchTab('products')" aria-current="page">Товары</button>
+                <button class="tab-btn" id="tabBulk" onclick="switchTab('bulk')">Массовое добавление</button>
                 <button class="tab-btn" id="tabCategories" onclick="switchTab('categories')">Категории</button>
                 <button class="tab-btn" id="tabStores" onclick="switchTab('stores')">Магазины</button>
             </div>
@@ -229,6 +230,30 @@
     </div><!-- /sectionService -->
 
     <!-- Exports section -->
+    <section id="sectionBulk" class="hidden">
+        <div class="exports-section bulk-products">
+            <p>Заполните строки вручную или скопируйте данные из Excel вместе с заголовками. Для вариантов одного товара повторите название и категорию.</p>
+            <fieldset id="bulkFields">
+                <label for="bulkPaste">Строки из Excel с заголовками</label>
+                <textarea id="bulkPaste" class="ff__input" rows="3" placeholder="Вставьте скопированные ячейки"></textarea>
+                <div class="bulk-actions">
+                    <button type="button" class="exports-refresh-btn" onclick="pasteBulkProducts()">Перенести в таблицу</button>
+                    <button type="button" class="exports-refresh-btn" onclick="addBulkRow()">Добавить строку</button>
+                </div>
+                <div class="bulk-scroll" tabindex="0" aria-label="Таблица товаров">
+                    <table class="exports-table"><thead><tr id="bulkHeaders"></tr></thead><tbody id="bulkRows"></tbody></table>
+                </div>
+                <p>Прокрутите таблицу вправо, чтобы заполнить остальные поля. Для рублёвых и долларовых цен используйте отдельные строки.</p>
+                <div class="bulk-actions">
+                    <button type="button" class="exports-refresh-btn" onclick="submitBulkProducts(false)">Проверить товары</button>
+                    <button type="button" class="exports-refresh-btn hidden" id="bulkApply" onclick="submitBulkProducts(true)">Добавить товары</button>
+                </div>
+            </fieldset>
+            <p id="bulkStatus" role="status"></p>
+            <ul id="bulkDetails"></ul>
+        </div>
+    </section>
+
     <div id="sectionExports" class="hidden">
         <div class="exports-section">
             <div class="exports-header">
@@ -882,6 +907,7 @@
 <script src="banners.js"></script>
 <script src="serviceRequests.js"></script>
 <script src="mskPrices.js?v=20261103controls"></script>
-<script src="admin.js?v=20261103workspace"></script>
+<script src="admin.js?v=20261106bulk"></script>
+<script src="bulkProducts.js?v=20261106bulk"></script>
 </body>
 </html>
